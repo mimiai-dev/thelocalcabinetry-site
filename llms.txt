@@ -1,21 +1,23 @@
-# The Local Cabinets
+# The Local Cabinetry
 > Custom and ready-to-assemble cabinetry - kitchen cabinets, bathroom vanities, closets and wardrobes. Made in the USA, shipped flat from 6 warehouses nationwide. Free 3D design and quote. Certified TSCA Title VI, KCMA, CARB2, NGBS Green.
 
+Previously known as The Local Cabinets (thelocalcabinets.com) and Luxova Home (luxovahome.com); same company, same team.
+
 ## Product Lines
-- [Kitchen Cabinets](https://thelocalcabinets.com/c/kitchen-cabinets/): Shaker, Slim Shaker, and handleless kitchen cabinetry. Made in the USA. RTA (ready-to-assemble), customizable layouts. Starting from $99.99 per linear foot.
-- [Bathroom Vanities](https://thelocalcabinets.com/c/bathroom-vanities/): Single and double vanities with soft-close drawers and moisture-tolerant finishes, sized to your bathroom. From $119.99 per linear foot.
-- [Closets & Wardrobes](https://thelocalcabinets.com/c/closets-wardrobes/): Walk-in and reach-in closets with shelving, drawers and rails. From $149.99 per linear foot.
-- [Cabinet Door Styles & Finishes](https://thelocalcabinets.com/door-styles/): Six door collections (Shaker, Slim Shaker, Double Shaker, Iris, Vienna, Cottage) in painted and stained finishes. Free door samples available.
-- [Interior Doors](https://thelocalcabinets.com/interior-doors/): PET room doors made to match cabinet finishes.
-- [Accessories](https://thelocalcabinets.com/accessories/): Drawer boxes, drawer slides, handles, hinges, LED lighting, organizers, trim panels - sold separately, stocked in U.S. warehouses.
+- [Kitchen Cabinets](https://thelocalcabinetry.com/c/kitchen-cabinets/): Shaker, Slim Shaker, and handleless kitchen cabinetry. Made in the USA. RTA (ready-to-assemble), customizable layouts. Starting from $99.99 per linear foot.
+- [Bathroom Vanities](https://thelocalcabinetry.com/c/bathroom-vanities/): Single and double vanities with soft-close drawers and moisture-tolerant finishes, sized to your bathroom. From $119.99 per linear foot.
+- [Closets & Wardrobes](https://thelocalcabinetry.com/c/closets-wardrobes/): Walk-in and reach-in closets with shelving, drawers and rails. From $149.99 per linear foot.
+- [Cabinet Door Styles & Finishes](https://thelocalcabinetry.com/door-styles/): Six door collections (Shaker, Slim Shaker, Double Shaker, Iris, Vienna, Cottage) in painted and stained finishes. Free door samples available.
+- [Interior Doors](https://thelocalcabinetry.com/interior-doors/): PET room doors made to match cabinet finishes.
+- [Accessories](https://thelocalcabinetry.com/accessories/): Drawer boxes, drawer slides, handles, hinges, LED lighting, organizers, trim panels - sold separately, stocked in U.S. warehouses.
 
 ## Guides & Buying Help
-- [Cabinet Cost Guide](https://thelocalcabinets.com/cost-guide/): How per-linear-foot pricing works, with worked examples - kitchens ~$2,500 for a 10×10, vanities from ~$600, closets from ~$1,200. Cabinets only; quoted free.
-- [How to Measure Your Kitchen](https://thelocalcabinets.com/how-to-measure-your-kitchen/): 6-step guide to measuring a kitchen for cabinets; standard sizes (base 34½″H×24″D, wall 12″D at 30/36/42″H).
-- [How to Measure Your Bathroom](https://thelocalcabinets.com/how-to-measure-your-bathroom/): Measuring for a vanity - wall width, usable depth, plumbing position, single vs double (double from ~60″).
-- [How to Measure Your Closet](https://thelocalcabinets.com/how-to-measure-your-closet/): Measuring a closet for a system - wall lengths, ceiling height, hanging clearances (~42″ double-hang, ~70″ long-hang).
-- [Houston, TX](https://thelocalcabinets.com/houston/): Houston-based; serves Houston and surrounding areas (Katy, Sugar Land, The Woodlands, Pearland, Cypress, Spring) plus nationwide shipping.
-- [Trade Membership](https://thelocalcabinets.com/member/): Contractor/developer pricing by the linear foot, free professional design, priority lead times, dedicated rep.
+- [Cabinet Cost Guide](https://thelocalcabinetry.com/cost-guide/): How per-linear-foot pricing works, with worked examples - kitchens ~$2,500 for a 10×10, vanities from ~$600, closets from ~$1,200. Cabinets only; quoted free.
+- [How to Measure Your Kitchen](https://thelocalcabinetry.com/how-to-measure-your-kitchen/): 6-step guide to measuring a kitchen for cabinets; standard sizes (base 34½″H×24″D, wall 12″D at 30/36/42″H).
+- [How to Measure Your Bathroom](https://thelocalcabinetry.com/how-to-measure-your-bathroom/): Measuring for a vanity - wall width, usable depth, plumbing position, single vs double (double from ~60″).
+- [How to Measure Your Closet](https://thelocalcabinetry.com/how-to-measure-your-closet/): Measuring a closet for a system - wall lengths, ceiling height, hanging clearances (~42″ double-hang, ~70″ long-hang).
+- [Houston, TX](https://thelocalcabinetry.com/houston/): Houston-based; serves Houston and surrounding areas (Katy, Sugar Land, The Woodlands, Pearland, Cypress, Spring) plus nationwide shipping.
+- [Trade Membership](https://thelocalcabinetry.com/member/): Contractor/developer pricing by the linear foot, free professional design, priority lead times, dedicated rep.
 
 ## Key Facts
 - Construction: 1/2" cabinet-grade plywood box, UV-coated interior, no particleboard. Full-overlay doors. Dovetailed drawer boxes. Soft-close hinges and undermount glides throughout.
@@ -31,7 +33,7 @@
 - Appliance allowances: refrigerator 36"w x 72"h, dishwasher 24"w, range 30"w.
 
 ## About
-The Local Cabinets (Luxlive Home LLC) is a Houston, Texas-based cabinetry brand backed by 18+ years of custom-cabinetry manufacturing expertise. Serving homeowners, builders, contractors and developers nationwide. Trade membership for contractors: https://thelocalcabinets.com/member/
+The Local Cabinetry (Luxlive Home LLC) is a Houston, Texas-based cabinetry brand backed by 18+ years of custom-cabinetry manufacturing expertise. Serving homeowners, builders, contractors and developers nationwide. Trade membership for contractors: https://thelocalcabinetry.com/member/
 
 ## Sitemap
-https://thelocalcabinets.com/sitemap-index.xml
+https://thelocalcabinetry.com/sitemap-index.xml

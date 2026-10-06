@@ -1,6 +1,6 @@
-# Responsible-disclosure contact for thelocalcabinets.com
+# Responsible-disclosure contact for thelocalcabinetry.com
 # https://securitytxt.org/
 Contact: mailto:info@luxovahome.com
 Expires: 2027-06-08T00:00:00.000Z
 Preferred-Languages: en
-Canonical: https://thelocalcabinets.com/.well-known/security.txt
+Canonical: https://thelocalcabinetry.com/.well-known/security.txt

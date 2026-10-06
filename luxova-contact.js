@@ -2,7 +2,7 @@
  *
  *   <script src="/luxova-contact.js" defer
  *           data-whatsapp="66812345678"
- *           data-whatsapp-text="Hi, I saw your kitchens on luxovahome.com"
+ *           data-whatsapp-text="Hi, I saw your kitchens on thelocalcabinetry.com"
  *           data-wechat-id="luxova_home"
  *           data-wechat-qr="/img/wechat-qr.png"
  *           data-hours="Mon-Sat 09:00-18:00"
