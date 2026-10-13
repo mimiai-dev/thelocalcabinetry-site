@@ -42,7 +42,7 @@
         var d = frame.contentDocument;
         ready = !!(d && d.body && d.body.innerText.length > 40 && !/Blank design/.test(d.body.innerText));
       } catch (e) { ready = true; } // cross-origin frame: cannot look, do not hide it
-      if (ready || n > 32) done();
+      if (ready || n > 48) done();
     }, 250);
   }
 
