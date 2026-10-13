@@ -40,7 +40,8 @@
       if (!frameLoaded) return; // the old tool's document is still there until the new one commits
       try {
         var d = frame.contentDocument;
-        ready = !!(d && d.body && d.body.innerText.length > 40 && !/Blank design/.test(d.body.innerText));
+        ready = !!(d && d.body && !/Blank design/.test(d.body.innerText) && [].some.call(d.querySelectorAll("canvas,svg"), function (e) {
+          var r = e.getBoundingClientRect(); return r.width > 200 && r.height > 120; })); // a drawing is on screen
       } catch (e) { ready = true; } // cross-origin frame: cannot look, do not hide it
       if (ready || n > 48) done();
     }, 250);
