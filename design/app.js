@@ -25,12 +25,35 @@
   var tool = "kitchen", names = { kitchen: "Kitchen", closet: "Closet", vanity: "Vanity", unit: "Free design" };
   function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; }
 
+  // The tools show an empty-state ("Blank design ...") for a second or two while they fetch the visitor's draft and
+  // start 3D. Keep the frame invisible behind a quiet "Loading" line until the tool has drawn something (or 8 s).
+  var waitTimer = 0, frameLoaded = false;
+  function waitForDesign() {
+    var box = frame.parentNode, n = 0;
+    frameLoaded = false;
+    clearInterval(waitTimer);
+    box.classList.add("loading");
+    function done() { clearInterval(waitTimer); box.classList.remove("loading"); }
+    waitTimer = setInterval(function () {
+      n++;
+      var ready = false;
+      if (!frameLoaded) return; // the old tool's document is still there until the new one commits
+      try {
+        var d = frame.contentDocument;
+        ready = !!(d && d.body && d.body.innerText.length > 40 && !/Blank design/.test(d.body.innerText));
+      } catch (e) { ready = true; } // cross-origin frame: cannot look, do not hide it
+      if (ready || n > 32) done();
+    }, 250);
+  }
+
   // ---- tool tabs
   var frame = $("tool"), tabs = document.querySelectorAll("[data-tool]");
+  frame.addEventListener("load", function () { frameLoaded = true; });
   function pick(t) {
     tool = t;
     tabs.forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.tool === t)); });
     frame.src = LCO ? LCO.toolUrl(t) : "/design/" + t + "?embed=1&design=" + t;
+    waitForDesign();
     try { sessionStorage.setItem("lco_tool", t); } catch (e) {}
   }
   tabs.forEach(function (b) { b.addEventListener("click", function () { pick(b.dataset.tool); }); });

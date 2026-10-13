@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://design-api.thelocalcabinetry.com; worker-src 'self' blob:; base-uri 'none'"><meta name="robots" content="noindex"><script src="/design/lco-config.js"></script><script src="/design/lco-shim.js"></script><meta charset="utf-8">
+<html lang="en" data-theme="light"><head><meta name="color-scheme" content="light"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://design-api.thelocalcabinetry.com; worker-src 'self' blob:; base-uri 'none'"><meta name="robots" content="noindex"><script src="/design/lco-config.js"></script><script src="/design/lco-shim.js"></script><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <title>The Local Kitchen Configurator</title>
@@ -54,7 +54,9 @@
   --r2:6px;
 }
 @media (prefers-color-scheme:dark) {
+  :root:not([data-theme=light]),
   :root:not([data-theme=light]) #shell {
+    --wash:none;
     --bg:#161719;
     --panel:#1C1E21;
     --glass:#1C1E21;
@@ -76,7 +78,9 @@
     --gshadow:0 1px 2px rgba(0,0,0,.5),0 12px 28px -14px rgba(0,0,0,.9);
   }
 }
+:root[data-theme=dark],
 :root[data-theme=dark] #shell {
+  --wash:none;
   --bg:#161719;
   --panel:#1C1E21;
   --glass:#1C1E21;
@@ -2666,7 +2670,7 @@ img.render {
     margin: 0 16px 8px;
     max-width: calc(100% - 32px);
   }
-}</style><style>#jobBar,#intakeBtn,#renderTop,#aiRender,#term,[data-act=render]{display:none!important}</style></head>
+}</style><style>#jobBar,#intakeBtn,#renderTop,#aiRender,#renderBtn,#term,[data-act=render],[data-act=openIntake]{display:none!important}body.term #shell{grid-template-columns:minmax(0,1fr)!important}</style></head>
 <body>
 
 <div id="shell">
@@ -23543,7 +23547,7 @@ function selftest(cat) {
       appliances: ["sink"],
       island: { on: true, len: 72, depth: 24, alongWall: 0, aisleFront: 42, aisleBack: 42, seating: false, counterH: 36 }
     });
-    const clean = solve(roomI, cat);
+    const clean2 = solve(roomI, cat);
     const moved = solve({ ...roomI, island: { ...roomI.island, aisleFront: 6 } }, cat);
     const row = moved.clearances.find((c) => /Island aisle/.test(c.rule));
     ok(
@@ -24257,7 +24261,14 @@ const ELEV_CSS = `<style>.elev .bg {
 }
 ;
 const SCOPE_CAPTION = "Countertop and sink by others (shown for layout only)";
-const SCOPE_TABLE = "Included: cabinets, freight  /  By others: countertop, sink, appliances";
+const SCOPE_OTHERS = "By others: countertop, sink, appliances";
+const INCLUDED_WORDS = ["cabinets", "freight", "hardware", "installation"];
+function scopeTable(plan) {
+  const raw = Array.isArray(plan?.room?.included) ? plan.room.included.map((s) => String(s).trim().toLowerCase()) : [];
+  const inc = ["cabinets", ...INCLUDED_WORDS.filter((w) => w !== "cabinets" && raw.includes(w))];
+  return `Included: ${inc.join(", ")}  /  ${SCOPE_OTHERS}`;
+}
+const SCOPE_TABLE = scopeTable(null);
 const SCOPE_MARK = /shown for layout only/i;
 const FIXTURE_WORDS = [
   ["hood", /\b(range ?hood|vent ?hood|extractor|hood)s?\b/],
@@ -24394,9 +24405,40 @@ function drawnFixtures(plan) {
   if (out.has("range") && !out.has("cooktop")) out.add("cooktop");
   return out;
 }
+function wrapWords(text, width = 72, maxLines = 2) {
+  const words = String(text ?? "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let cur = "";
+  let i = 0;
+  for (; i < words.length; i++) {
+    const next = cur ? `${cur} ${words[i]}` : words[i];
+    if (next.length <= width || !cur) {
+      cur = next;
+      continue;
+    }
+    if (lines.length + 1 >= maxLines) break;
+    lines.push(cur);
+    cur = words[i];
+  }
+  if (i < words.length) {
+    const ws = cur.split(" ");
+    while (ws.length > 1 && `${ws.join(" ")} \u2026`.length > width) ws.pop();
+    cur = `${ws.join(" ").replace(/[,;:\s]+$/, "")} \u2026`;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+const clean = (a, n) => (Array.isArray(a) ? a : []).map((s) => String(s ?? "").trim().replace(/\s+/g, " ")).filter(Boolean).slice(0, n);
+function assumptionLines(plan) {
+  const parts = [];
+  const asm = clean(plan?.room?.assumed, 6);
+  if (asm.length) parts.push(`Estimated from your picture, not measured: ${asm.join("; ")}.`);
+  const nd = clean(plan?.room?.notDrawn, 6);
+  if (nd.length) parts.push(`Not drawn: ${nd.join(", ")}`);
+  return parts.length ? wrapWords(parts.join(" "), 72, 2) : [];
+}
 function scopeCaptionLines(plan) {
-  const nd = (Array.isArray(plan?.room?.notDrawn) ? plan.room.notDrawn : []).map((s) => String(s).trim()).filter(Boolean).slice(0, 6);
-  return [SCOPE_CAPTION, SCOPE_TABLE, ...nd.length ? [`Not drawn: ${nd.join(", ")}`] : []];
+  return [SCOPE_CAPTION, scopeTable(plan), ...assumptionLines(plan)];
 }
 function notDrawnKinds(plan) {
   const out = /* @__PURE__ */ new Set();
@@ -29191,7 +29233,16 @@ function sanitize(o) {
     notes: Array.isArray(o?.notes) ? o.notes.filter((n2) => typeof n2 === "string").slice(0, 20).map((n2) => String(n2).slice(0, 160)) : [],
     // 2026-10-07 what the buyer asked for that the set does not draw: "Not drawn: …" on every buyer image (buyer-ready.mjs).
     // Only written when there is some, so a design that never had it sanitizes to the same bytes.
-    ...Array.isArray(o?.notDrawn) && o.notDrawn.some((n2) => typeof n2 === "string" && n2.trim()) ? { notDrawn: o.notDrawn.filter((n2) => typeof n2 === "string" && n2.trim()).slice(0, 6).map((n2) => n2.trim().slice(0, 40)) } : {},
+    // 2026-10-13 what the quote really includes (cabinets always; freight only with a freight line): the caption's "Included:" list.
+    ...Array.isArray(o?.included) ? { included: o.included.filter((n2) => typeof n2 === "string").map((n2) => n2.trim().toLowerCase()).filter((n2) => ["freight", "hardware", "installation"].includes(n2)).slice(0, 3) } : {},
+    ...Array.isArray(o?.notDrawn) && o.notDrawn.some((n2) => typeof n2 === "string" && n2.trim()) ? { notDrawn: o.notDrawn.filter((n2) => typeof n2 === "string" && n2.trim()).slice(0, 6).map((n2) => {
+      const t = n2.trim();
+      if (t.length <= 60) return t;
+      const c = t.slice(0, 60);
+      return c.slice(0, Math.max(c.lastIndexOf(" "), 20)).replace(/[,;:\s]+$/, "");
+    }) } : {},
+    // 2026-10-13 the room's assumed / changed notes (texts), printed on the drawing as "Estimated from your picture, not measured"
+    ...Array.isArray(o?.assumed) && o.assumed.some((n2) => typeof n2 === "string" && n2.trim()) ? { assumed: o.assumed.filter((n2) => typeof n2 === "string" && n2.trim()).slice(0, 6).map((n2) => n2.trim().slice(0, 80)) } : {},
     /* ⛔ E54-70 THE TOOL DECIDED EVERYTHING AND OFFERED NOTHING. A real order adds glass
      * doors, open shelving, a wine rack, a trash pull-out, a waterfall end — none of it
      * was reachable. Each of these is a choice, defaulting off, so the automatic answer is
@@ -29999,7 +30050,10 @@ document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-rep]");
   if (!b) return;
   if (b.dataset.rep === "shut") REPSHUT = !REPSHUT;
-  else REPTAB = b.dataset.rep;
+  else {
+    REPTAB = b.dataset.rep;
+    REPSHUT = false;
+  }
   if (PLAN) drawReport(PLAN);
   applyZoom();
 });
@@ -31370,6 +31424,14 @@ function sheetSet() {
   return out;
 }
 function buyerPlan() {
+  const assumed = (() => {
+    try {
+      return inspectRoomNotes().filter((n) => n.kind === "assumed" || n.kind === "changed").map((n) => n.text);
+    } catch {
+      return [];
+    }
+  })();
+  if (assumed.length && !PLAN.room?.assumed) return { ...PLAN, room: { ...PLAN.room, assumed, ...PLAN.room?.counterTop === false ? { counterTop: void 0 } : {} } };
   return PLAN.room?.counterTop === false ? { ...PLAN, room: { ...PLAN.room, counterTop: void 0 } } : PLAN;
 }
 function scheduleRows() {
