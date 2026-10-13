@@ -8,7 +8,13 @@
   window.fetch = function (input, init) {
     if (typeof input === "string" && /^\/(tools|api)\//.test(input)) {
       init = Object.assign({}, init, { credentials: "include" });
-      return real(API + input, init);
+      var p = real(API + input, init);
+      // tell the design page when the tool has its draft (the page keeps a "Loading" veil until then)
+      if (/^\/tools\/design\?/.test(input) && (!init.method || init.method === "GET")) {
+        var told = function () { try { window.parent.postMessage({ lco: "draft" }, location.origin); } catch (e) {} };
+        p.then(told, told);
+      }
+      return p;
     }
     return real(input, init);
   };

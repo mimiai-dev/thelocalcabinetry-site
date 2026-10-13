@@ -27,17 +27,18 @@
 
   // The tools show an empty-state ("Blank design ...") for a second or two while they fetch the visitor's draft and
   // start 3D. Keep the frame invisible behind a quiet "Loading" line until the tool has drawn something (or 8 s).
-  var waitTimer = 0, frameLoaded = false;
+  var waitTimer = 0, frameLoaded = false, frameDrafted = false;
+  window.addEventListener("message", function (e) { if (e.origin === location.origin && e.data && e.data.lco === "draft") frameDrafted = true; });
   function waitForDesign() {
     var box = frame.parentNode, n = 0;
-    frameLoaded = false;
+    frameLoaded = false; frameDrafted = false;
     clearInterval(waitTimer);
     box.classList.add("loading");
     function done() { clearInterval(waitTimer); box.classList.remove("loading"); }
     waitTimer = setInterval(function () {
       n++;
       var ready = false;
-      if (!frameLoaded) return; // the old tool's document is still there until the new one commits
+      if (!frameLoaded || (LCO && !frameDrafted)) return; // the old tool's document is still there until the new one commits
       try {
         var d = frame.contentDocument;
         ready = !!(d && d.body && !/Blank design/.test(d.body.innerText) && [].some.call(d.querySelectorAll("canvas,svg"), function (e) {
