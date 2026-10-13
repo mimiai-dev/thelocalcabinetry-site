@@ -89,3 +89,4 @@ iframe#tool{background:var(--paper);border:1px solid var(--card-edge);border-rad
 .left.loading iframe#tool{opacity:0}
 .left.loading::after{content:"Loading your design...";position:absolute;left:0;right:0;top:40%;text-align:center;color:var(--muted);font-size:15px;pointer-events:none}
 iframe#tool{transition:opacity .2s}
+@media (min-width:901px){iframe#tool{flex:none;height:max(900px,calc(100vh - 190px))}.app{height:auto;min-height:100%}.main{flex:none}.left{min-height:auto}}
