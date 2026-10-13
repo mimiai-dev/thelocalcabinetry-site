@@ -1,0 +1,10 @@
+{
+  "build": "2c34a457644a6b1a",
+  "api": "https://design-api.thelocalcabinetry.com",
+  "tools": [
+    "kitchen",
+    "closet",
+    "vanity",
+    "unit"
+  ]
+}

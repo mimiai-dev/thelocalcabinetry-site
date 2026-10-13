@@ -2,15 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src https://design-api.thelocalcabinetry.com; frame-src 'self'; form-action 'none'; base-uri 'none'">
 <meta name="robots" content="noindex">
 <title>Design your cabinets | The Local Cabinetry</title>
-<link rel="canonical" href="https://www.thelocalcabinetry.com/design">
-<meta http-equiv="refresh" content="0; url=https://lco-portal.davidhoneu.workers.dev/design">
-<script>location.replace("https://lco-portal.davidhoneu.workers.dev/design");</script>
+<link rel="canonical" href="https://thelocalcabinetry.com/design/">
+<link rel="stylesheet" href="/design/app.css">
 </head>
-<body style="font-family:system-ui,sans-serif;text-align:center;padding:48px 16px">
-<p>Opening the cabinet design tool&hellip;</p>
-<p><a href="https://lco-portal.davidhoneu.workers.dev/design">Continue to the design tool</a></p>
-</body>
-</html>
+<body data-guest="1"><div class="app">
+<div class="top"><b>Design your cabinets</b><span id="who">Guest</span><a class="signin" id="signin" href="/design/login/" hidden>Sign in to send to our team</a><span class="soon" id="soon" hidden>Email sign-in is opening soon.</span><button type="button" id="logout" data-user hidden>Log out</button></div>
+<div class="main solo" id="main">
+<section class="left"><div class="tabs" role="tablist"><button type="button" role="tab" data-tool="kitchen" aria-selected="false">Kitchen</button><button type="button" role="tab" data-tool="closet" aria-selected="false">Closet</button><button type="button" role="tab" data-tool="vanity" aria-selected="false">Vanity</button><button type="button" role="tab" data-tool="unit" aria-selected="false">Free design</button><span class="grow"></span><button type="button" class="save" id="save" data-user hidden>Save design</button></div>
+<div class="save-status guestnote" id="guestnote" data-guest-only aria-live="polite"></div>
+<div class="save-status" id="save-status" data-user hidden aria-live="polite"></div>
+<iframe id="tool" title="Design tool"></iframe></section>
+<section class="right" data-user hidden><div class="tabs" role="tablist"><button type="button" role="tab" data-pane="chat" aria-selected="true">Chat with our team</button><button type="button" role="tab" data-pane="items" aria-selected="false">My items</button></div>
+<div class="pane" id="pane-chat"><div id="chat-root"></div></div>
+<div class="pane" id="pane-items" hidden><div class="items-wrap"><select id="design-pick" aria-label="Saved design"></select><div class="chat-note" id="items-note"></div><table id="items"></table></div></div>
+</section></div></div>
+<script src="/design/lco-config.js"></script><script src="/design/chat.js"></script><script src="/design/app.js"></script></body></html>

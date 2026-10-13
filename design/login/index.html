@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://design-api.thelocalcabinetry.com; form-action 'none'; base-uri 'none'">
+<meta name="robots" content="noindex">
+<title>Sign in | The Local Cabinetry</title>
+<link rel="stylesheet" href="/design/app.css">
+</head>
+<body class="plain"><main class="login">
+<h1>Sign in</h1>
+<p id="intro">Enter your email and we will send you a 6-digit code.</p>
+<p class="err" id="err" role="alert"></p>
+<form id="f-email"><input name="email" id="email" type="email" autocomplete="email" placeholder="you@example.com" required><button>Send my code</button></form>
+<form id="f-code" hidden><input name="code" id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="123456" required><button>Log in</button></form>
+<p><a href="/design/">Design as a guest, no sign-in</a></p>
+</main>
+<script src="/design/lco-config.js"></script><script src="/design/login.js"></script></body></html>
