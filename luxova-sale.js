@@ -146,11 +146,10 @@
       go.textContent = cta
       go.addEventListener('click', function () {
         dismiss()
-        // The chat widget owns the conversation; this file only presses its
-        // open control. Absent, the popup simply closes: the code above is
-        // already on screen and usable through any contact route.
-        var api = window.__luxovaChatApi
-        if (api && api.open) api.open()
+        // The button goes to the design page (data-href, https://design.thelocalcabinetry.com only):
+        // that is where a visitor talks to us. The old on-page chat widget is gone.
+        var to = (d.href || '').trim()
+        if (/^https:\/\/design\.thelocalcabinetry\.com\//.test(to)) window.location.assign(to)
       })
       box.appendChild(go)
     }
