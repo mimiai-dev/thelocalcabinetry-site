@@ -1,6 +1,6 @@
 /* Chat bubble for thelocalcabinetry.com. One same-origin file: no third party, no cookie, no account.
  *
- *   <script src="/chat.js" defer data-label="Chat with us"></script>
+ *   <script src="/chat.js" defer data-label="Chat with Hannah"></script>
  *
  * It replaces the old floating link (luxova-contact.js). The corner button looks and sits the same (bottom right, dark navy pill,
  * chat-bubble icon) but opens a panel. Lines go to OUR server (same origin, /design/api/visit/*) and land with the team; the
@@ -22,14 +22,16 @@
   if (window.__lcoChat) return
   window.__lcoChat = true
   var s = document.currentScript
-  var label = ((s && s.dataset && s.dataset.label) || 'Chat with us').trim().slice(0, 40)
+  var label = ((s && s.dataset && s.dataset.label) || 'Chat with Hannah').trim().slice(0, 40)
   var DESIGN = '/design'
   var API = '/design/api/visit/'
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
-  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0 }
+  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0, emailAsked: false, emailTimer: 0, sentOnce: false }
   try { var saved = localStorage.getItem(KEY); if (saved && /^[0-9a-f]{32}$/.test(saved)) state.id = saved } catch (e) { /* storage blocked: memory only */ }
+  var EMAIL_KEY = 'lco_email_asked_v1'
+  try { if (state.id && localStorage.getItem(EMAIL_KEY) === state.id) state.emailAsked = true } catch (e) { /* ignore */ }
   function remember() { try { if (state.id) localStorage.setItem(KEY, state.id); else localStorage.removeItem(KEY) } catch (e) { /* ignore */ } }
 
   function el(tag, cls, text) {
@@ -81,29 +83,31 @@
     '@media (prefers-reduced-motion:reduce){.lcochat-typing i{animation:none;opacity:.7}}',
     '.lcochat-err{padding:6px 14px;font-size:13px;background:#fdecea;color:#8a1c12}',
     '.lcochat-err[hidden]{display:none}',
-    '.lcochat-box{display:flex;flex-direction:column;gap:4px;padding:10px 14px 6px;border-top:1px solid #e3ded4;background:#fff}',
+    '.lcochat-box{display:flex;flex-direction:column;gap:4px;padding:10px 14px 12px;border-top:1px solid #e3ded4;background:#fff}',
     '.lcochat-row{display:flex;gap:8px;align-items:flex-end}',
     '.lcochat-box textarea{flex:1;min-height:44px;max-height:120px;resize:none;overflow-y:auto;padding:11px 12px;border:1px solid #bdb6a8;border-radius:22px;font:inherit;line-height:1.35;color:inherit}',
     '.lcochat-ic,.lcochat-send{flex:0 0 44px;width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}',
     '.lcochat-ic{border:1px solid #bdb6a8;background:#fff;color:#0e2740}',
     '.lcochat-send{border:0;background:#0e2740;color:#fff}',
     '.lcochat-send:hover{background:#14365a}',
-    '.lcochat-ic:disabled,.lcochat-send:disabled{opacity:.45;cursor:default}',
+    '.lcochat-send:disabled,.lcochat-ic[aria-disabled=true]{opacity:.45;cursor:default}',
+    '.lcochat-ext{margin:-8px 0 -8px auto;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}',
+    '.lcochat-ext+.lcochat-x{margin-left:-6px}',
+    '.lcochat-ask{position:relative;min-width:230px;padding-right:34px}',
+    '.lcochat-ask-x{position:absolute;top:2px;right:2px;width:32px;height:32px;border:0;background:transparent;color:#7a7468;font-size:18px;line-height:1;cursor:pointer;border-radius:50%}',
+    '.lcochat-ask-f{display:flex;gap:6px;margin-top:8px;align-items:center}',
+    '.lcochat-ask-f input{flex:1;min-width:0;min-height:40px;padding:0 12px;border:1px solid #bdb6a8;border-radius:20px;font:inherit;font-size:14px}',
+    '.lcochat-ask-f button{flex:0 0 40px;width:40px;height:40px;border:0;border-radius:50%;background:#0e2740;color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}',
+    '.lcochat-ask-msg{margin-top:4px;font-size:12.5px;color:#8a1c12}',
     '.lcochat-mini{min-height:44px;padding:0 16px;border:0;border-radius:10px;background:#0e2740;color:#fff;font:600 14px/1 system-ui,sans-serif;cursor:pointer}',
     '.lcochat-mini.alt{background:#fff;color:#0e2740;border:1px solid #0e2740}',
     '.lcochat-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}',
     '.lcochat-tools:empty{display:none}',
-    '.lcochat-lnk{align-self:flex-start;min-height:36px;padding:0 4px;border:0;background:transparent;color:#0e2740;text-decoration:underline;cursor:pointer;font:inherit;font-size:13px}',
-    '.lcochat-email{display:flex;gap:8px}',
-    '.lcochat-email[hidden]{display:none}',
-    '.lcochat-email input{flex:1;min-height:44px;padding:0 10px;border:1px solid #bdb6a8;border-radius:10px;font:inherit}',
-    '.lcochat-foot{padding:2px 14px 10px;font-size:12.5px;background:#fff}',
-    '.lcochat-foot a{color:#0e2740;font-weight:600}',
-    '@media (max-width:520px){.lcochat-panel{inset:0;width:auto;max-width:none;height:auto;border-radius:0;box-shadow:none}.lcochat-head,.lcochat-log,.lcochat-box,.lcochat-foot,.lcochat-err{padding-left:16px;padding-right:16px}.lcochat-btn.open{display:none}.lcochat-box textarea,.lcochat-email input{font-size:16px}}',
+    '@media (max-width:520px){.lcochat-panel{inset:0;width:auto;max-width:none;height:auto;border-radius:0;box-shadow:none}.lcochat-head,.lcochat-log,.lcochat-box,.lcochat-err{padding-left:16px;padding-right:16px}.lcochat-btn.open{display:none}.lcochat-box textarea,.lcochat-ask-f input{font-size:16px}}',
     '@media print{.lcochat-btn,.lcochat-panel{display:none}}'
   ].join('')
 
-  var btn, panel, log, err, ta, sendB, photoIn, photoB, chips, emailRow, emailIn, emailMsg
+  var btn, panel, log, err, ta, sendB, photoIn, photoB, chips
 
   function headers(extra) {
     var h = { 'x-lco-design': '1' }
@@ -155,7 +159,8 @@
     log.appendChild(row('us', "Hi, I'm Muse, the AI assistant for The Local Cabinetry, here with Hannah's team to help with layouts and pricing.", ''))
     log.appendChild(row('us', 'What are you planning: kitchen, vanity or closet?', stamp()))
   }
-  function resetLog() { hideTyping(); log.textContent = ''; greet() }
+  function resetLog() { hideTyping(); clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; greet(); if (photoB) setPhoto() }
+  function setPhoto() { photoB.setAttribute('aria-disabled', state.id ? 'false' : 'true'); photoB.title = state.id ? 'Add a photo' : 'Send a message first, then add photos' }
   function addMsg(m) {
     if (state.seen[m.seq]) return
     state.seen[m.seq] = 1
@@ -165,9 +170,41 @@
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.last = Math.max(state.last, m.seq)
     state.lastFrom = from
+    if (from === 'us' && state.sentOnce) setTimeout(promptEmail, 800)
   }
   function scrollDown() { log.scrollTop = log.scrollHeight }
   function grow() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px' }
+
+  // One message-style prompt inside the conversation, once per conversation: after our first reply (or 20 s without one).
+  function promptEmail() {
+    if (!state.id || state.emailAsked) return
+    state.emailAsked = true; clearTimeout(state.emailTimer)
+    try { localStorage.setItem(EMAIL_KEY, state.id) } catch (e) { /* ignore */ }
+    var r = el('div', 'lcochat-r us'); r.appendChild(avatar(true, true))
+    var c = el('div', 'lcochat-c'); var b = el('div', 'lcochat-m lcochat-ask')
+    b.appendChild(el('span', '', 'Want us to follow up by email too?'))
+    var xb = el('button', 'lcochat-ask-x', '×'); xb.type = 'button'; xb.setAttribute('aria-label', 'No thanks'); xb.title = 'No thanks'
+    var f = el('form', 'lcochat-ask-f'); f.noValidate = true
+    var inp = el('input'); inp.type = 'email'; inp.placeholder = 'you@example.com'; inp.autocomplete = 'email'; inp.setAttribute('aria-label', 'Your email')
+    var go = el('button'); go.type = 'submit'; go.setAttribute('aria-label', 'Save email'); go.appendChild(svg('M5 12h14M13 6l6 6-6 6'))
+    var msg = el('div', 'lcochat-ask-msg'); msg.setAttribute('role', 'status')
+    f.appendChild(inp); f.appendChild(go); b.appendChild(xb); b.appendChild(f); b.appendChild(msg)
+    c.appendChild(b); r.appendChild(c)
+    xb.addEventListener('click', function () { if (r.parentNode) r.parentNode.removeChild(r) })
+    f.addEventListener('submit', function (e) {
+      e.preventDefault()
+      var v = inp.value.trim()
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) { msg.textContent = 'Please enter a valid email address.'; return }
+      go.disabled = true; msg.textContent = ''
+      fetch(API + 'email', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify({ email: v }), cache: 'no-store' })
+        .then(function (res) {
+          if (res.ok) { b.textContent = "Thanks, we'll write to " + v; b.classList.remove('lcochat-ask'); poll(); return }
+          go.disabled = false; msg.textContent = res.status === 429 ? 'Please try again later.' : 'That did not save. Please try again.'
+        }).catch(function () { go.disabled = false; msg.textContent = 'That did not save. Please try again.' })
+    })
+    if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
+    scrollDown()
+  }
 
   function poll() {
     clearTimeout(state.timer)
@@ -205,9 +242,11 @@
     }).then(function (x) {
       state.busy = false; sendB.disabled = false
       if (x.s === 200 && x.j && x.j.ok) {
-        if (x.j.conversation) { state.id = x.j.conversation; remember(); photoB.disabled = false; emailMsg.textContent = '' }
+        if (x.j.conversation) { state.id = x.j.conversation; remember(); setPhoto() }
         ta.value = ''; grow(); state.files = []; paintChips(); state.idleSince = Date.now()
         showTyping()
+        state.sentOnce = true
+        if (!state.emailAsked) { clearTimeout(state.emailTimer); state.emailTimer = setTimeout(promptEmail, 20000) }
         poll()
         return
       }
@@ -244,16 +283,6 @@
         showErr(x.s === 415 ? 'Only photos please (JPEG, PNG, WebP or HEIC).' : x.s === 429 ? 'Too many photos for now. Please try again later.' : 'That photo did not upload. Please try again.')
       }).catch(function () { showErr('That photo did not upload. Please try again.') })
   }
-  function saveEmail() {
-    var v = emailIn.value.trim()
-    if (!state.id) return
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) { emailMsg.textContent = 'Please enter a valid email address.'; return }
-    fetch(API + 'email', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify({ email: v }), cache: 'no-store' })
-      .then(function (r) {
-        if (r.ok) { emailMsg.textContent = 'Thanks. We will use it to follow up.'; emailIn.value = ''; emailRow.hidden = true; poll(); return }
-        emailMsg.textContent = r.status === 429 ? 'Please try again later.' : 'That did not save. Please try again.'
-      }).catch(function () { emailMsg.textContent = 'That did not save. Please try again.' })
-  }
 
   function open() {
     state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open')
@@ -278,14 +307,16 @@
     btn.appendChild(el('span', '', label))
 
     panel = el('div', 'lcochat-panel'); panel.hidden = true
-    panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Chat with Hannah and Muse, the AI assistant, at The Local Cabinetry')
+    panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Chat with Hannah at The Local Cabinetry')
     var head = el('div', 'lcochat-head')
     head.appendChild(avatar(false))
     var who = el('div', 'lcochat-who')
     who.appendChild(el('h2', '', 'Hannah'))
-    var st = el('div', 'lcochat-st'); st.appendChild(el('span', 'lcochat-dot')); st.appendChild(el('span', '', 'Online')); st.appendChild(el('span', '', '· The Local Cabinetry'))
-    var st2 = el('div', 'lcochat-st', 'with Muse, our AI assistant')
-    who.appendChild(st); who.appendChild(st2); head.appendChild(who)
+    var st = el('div', 'lcochat-st'); st.appendChild(el('span', 'lcochat-dot')); st.appendChild(el('span', '', 'Online'));
+    who.appendChild(st); head.appendChild(who)
+    var ext = el('a', 'lcochat-x lcochat-ext'); ext.href = DESIGN; ext.title = 'Open the full design tool'; ext.setAttribute('aria-label', 'Open the full design tool'); ext.setAttribute('data-track', 'chat-design-link')
+    ext.appendChild(svg('M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3'))
+    head.appendChild(ext)
     var x = el('button', 'lcochat-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close chat'); x.setAttribute('data-track', 'chat-close')
     head.appendChild(x)
     log = el('div', 'lcochat-log'); log.setAttribute('role', 'log'); log.setAttribute('aria-live', 'polite'); log.setAttribute('aria-label', 'Conversation')
@@ -295,26 +326,16 @@
     chips = el('div', 'lcochat-tools')
     var rw = el('div', 'lcochat-row')
     photoIn = el('input'); photoIn.type = 'file'; photoIn.accept = 'image/jpeg,image/png,image/webp,image/heic'; photoIn.hidden = true
-    photoB = el('button', 'lcochat-ic'); photoB.type = 'button'; photoB.disabled = !state.id; photoB.title = 'Add a photo (available after your first message)'; photoB.setAttribute('aria-label', 'Add a photo')
+    photoB = el('button', 'lcochat-ic'); photoB.type = 'button'; photoB.setAttribute('aria-label', 'Add a photo'); setPhoto()
     photoB.appendChild(svg('M21 19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-2h4l2 2h3a2 2 0 0 1 2 2zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'))
     photoB.addEventListener('click', function () { if (state.id) photoIn.click() })
     ta = el('textarea'); ta.rows = 1; ta.maxLength = MAX_TEXT; ta.placeholder = 'Type your message'; ta.setAttribute('aria-label', 'Your message')
     sendB = el('button', 'lcochat-send'); sendB.type = 'button'; sendB.setAttribute('aria-label', 'Send'); sendB.setAttribute('data-track', 'chat-send')
     sendB.appendChild(svg('M22 2L11 13M22 2l-7 20-4-9-9-4z'))
     rw.appendChild(photoB); rw.appendChild(ta); rw.appendChild(sendB); rw.appendChild(photoIn)
-    var emailB = el('button', 'lcochat-lnk', 'Leave your email'); emailB.type = 'button'
-    emailRow = el('div', 'lcochat-email'); emailRow.hidden = true
-    emailIn = el('input'); emailIn.type = 'email'; emailIn.placeholder = 'you@example.com'; emailIn.setAttribute('aria-label', 'Your email'); emailIn.autocomplete = 'email'
-    var emailGo = el('button', 'lcochat-mini', 'Save'); emailGo.type = 'button'
-    emailRow.appendChild(emailIn); emailRow.appendChild(emailGo)
-    emailMsg = el('div', '', ''); emailMsg.style.fontSize = '13px'; emailMsg.setAttribute('role', 'status')
-    box.appendChild(chips); box.appendChild(rw); box.appendChild(emailB); box.appendChild(emailRow); box.appendChild(emailMsg)
+    box.appendChild(chips); box.appendChild(rw)
 
-    var foot = el('div', 'lcochat-foot')
-    var a = el('a', '', 'Open the full design tool'); a.href = DESIGN; a.setAttribute('data-track', 'chat-design-link')
-    foot.appendChild(a)
-
-    panel.appendChild(head); panel.appendChild(log); panel.appendChild(err); panel.appendChild(box); panel.appendChild(foot)
+    panel.appendChild(head); panel.appendChild(log); panel.appendChild(err); panel.appendChild(box)
     document.body.appendChild(btn); document.body.appendChild(panel)
     greet()
 
@@ -324,9 +345,6 @@
     ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send() } })
     ta.addEventListener('input', grow)
     photoIn.addEventListener('change', pickPhoto)
-    emailB.addEventListener('click', function () { if (!state.id) { emailMsg.textContent = 'Send us a first message, then you can leave your email.'; return } emailRow.hidden = !emailRow.hidden; if (!emailRow.hidden) emailIn.focus() })
-    emailGo.addEventListener('click', saveEmail)
-    emailIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); saveEmail() } })
     panel.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') { e.stopPropagation(); close(); return }
       if (e.key !== 'Tab') return
