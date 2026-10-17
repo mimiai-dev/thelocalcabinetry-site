@@ -55,7 +55,8 @@
     'border-radius:14px;box-shadow:0 12px 40px rgba(8,20,34,.3);overflow:hidden;font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}',
     '.lcochat-panel[hidden]{display:none}',
     '.lcochat-head{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#0e2740;color:#fff}',
-    '.lcochat-av{position:relative;flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#14365a;border:1px solid #b4862f;color:#e9c46a;display:flex;align-items:center;justify-content:center;font:600 18px/1 Georgia,"Times New Roman",serif}',
+    '.lcochat-av{position:relative;flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#f3efe7;border:1px solid #b4862f;color:#0e2740;display:flex;align-items:center;justify-content:center;font:600 18px/1 Georgia,"Times New Roman",serif}',
+    '.lcochat-av.ai{background:#1d4a78;color:#e9c46a}',
     '.lcochat-av.sm{flex:0 0 28px;width:28px;height:28px;font-size:13px}',
     '.lcochat-who{flex:1;min-width:0}',
     '.lcochat-who h2{margin:0;font:600 16px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}',
@@ -115,7 +116,7 @@
     showErr(msg || 'Chat is not available right now. You can still open the full design tool and leave a message there.')
   }
 
-  function avatar(sm) { return el('span', 'lcochat-av' + (sm ? ' sm' : ''), 'H') }
+  function avatar(sm, ai) { return el('span', 'lcochat-av' + (sm ? ' sm' : '') + (ai ? ' ai' : ''), ai ? 'M' : 'H') }
   function stamp(v) {
     var d = null
     if (typeof v === 'number') d = new Date(v < 1e12 ? v * 1000 : v)
@@ -124,9 +125,9 @@
     var h = d.getHours(), m = d.getMinutes()
     return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ' ' + (h < 12 ? 'AM' : 'PM')
   }
-  function row(from, textNode, time, photos) {
+  function row(from, textNode, time, photos, human) {
     var r = el('div', 'lcochat-r ' + from)
-    if (from === 'us') r.appendChild(avatar(true))
+    if (from === 'us') r.appendChild(avatar(true, !human))
     var c = el('div', 'lcochat-c')
     var b = el('div', 'lcochat-m')
     if (textNode != null) b.appendChild(document.createTextNode(String(textNode)))
@@ -143,15 +144,15 @@
   }
   function showTyping() {
     hideTyping()
-    var r = el('div', 'lcochat-r us lcochat-typing'); r.setAttribute('aria-label', 'Hannah is typing')
-    r.appendChild(avatar(true))
+    var r = el('div', 'lcochat-r us lcochat-typing'); r.setAttribute('aria-label', 'Muse is typing')
+    r.appendChild(avatar(true, true))
     var b = el('div', 'lcochat-m'); b.appendChild(el('i')); b.appendChild(el('i')); b.appendChild(el('i'))
     r.appendChild(b); log.appendChild(r); state.typing = r; scrollDown()
     state.typingTimer = setTimeout(hideTyping, 60000)
   }
   // Our own local greeting, never sent to the server and never stored: the AI says so in its first words.
   function greet() {
-    log.appendChild(row('us', "Hi, I'm Muse, the AI assistant for Luxova Home, here with Hannah's team to help with layouts and pricing.", ''))
+    log.appendChild(row('us', "Hi, I'm Muse, the AI assistant for The Local Cabinetry, here with Hannah's team to help with layouts and pricing.", ''))
     log.appendChild(row('us', 'What are you planning: kitchen, vanity or closet?', stamp()))
   }
   function resetLog() { hideTyping(); log.textContent = ''; greet() }
@@ -160,7 +161,7 @@
     state.seen[m.seq] = 1
     var from = m.from === 'us' ? 'us' : 'you'
     if (from === 'us') hideTyping()
-    var r = row(from, String(m.text || ''), stamp(m.ts || m.at || m.time || m.created_at || m.created), m.photos)
+    var r = row(from, String(m.text || ''), stamp(m.at || m.ts || m.time || m.created_at || m.created), m.photos, m.human === true || m.by === 'human')
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.last = Math.max(state.last, m.seq)
     state.lastFrom = from
@@ -277,13 +278,14 @@
     btn.appendChild(el('span', '', label))
 
     panel = el('div', 'lcochat-panel'); panel.hidden = true
-    panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Chat with Hannah at Luxova Home')
+    panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Chat with Hannah and Muse, the AI assistant, at The Local Cabinetry')
     var head = el('div', 'lcochat-head')
     head.appendChild(avatar(false))
     var who = el('div', 'lcochat-who')
     who.appendChild(el('h2', '', 'Hannah'))
-    var st = el('div', 'lcochat-st'); st.appendChild(el('span', 'lcochat-dot')); st.appendChild(el('span', '', 'Online')); st.appendChild(el('span', '', '· Luxova Home'))
-    who.appendChild(st); head.appendChild(who)
+    var st = el('div', 'lcochat-st'); st.appendChild(el('span', 'lcochat-dot')); st.appendChild(el('span', '', 'Online')); st.appendChild(el('span', '', '· The Local Cabinetry'))
+    var st2 = el('div', 'lcochat-st', 'with Muse, our AI assistant')
+    who.appendChild(st); who.appendChild(st2); head.appendChild(who)
     var x = el('button', 'lcochat-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close chat'); x.setAttribute('data-track', 'chat-close')
     head.appendChild(x)
     log = el('div', 'lcochat-log'); log.setAttribute('role', 'log'); log.setAttribute('aria-live', 'polite'); log.setAttribute('aria-label', 'Conversation')
