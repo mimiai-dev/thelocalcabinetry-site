@@ -34,6 +34,20 @@
   try { if (state.id && localStorage.getItem(EMAIL_KEY) === state.id) state.emailAsked = true } catch (e) { /* ignore */ }
   function remember() { try { if (state.id) localStorage.setItem(KEY, state.id); else localStorage.removeItem(KEY) } catch (e) { /* ignore */ } }
 
+  // Steps for the site's own traffic page (our server only): this file never talks to a tracker. It fires a DOM event; /t.js (first party, off when the visitor
+  // has Do-Not-Track or Global Privacy Control) turns it into a tiny request. Fields: k = the step, x = characters in the box, m = the server's message number,
+  // c = failure class (4xx / 5xx / net / rate), tx = the first 80 characters of a message the server REFUSED (never for anything that was sent or not sent).
+  function track(k, o) {
+    try { var d = { k: k }; for (var n in o) d[n] = o[n]; document.dispatchEvent(new CustomEvent('tlc:chat', { detail: d })) } catch (e) { /* never break the chat */ }
+  }
+  function failClass(s) { return s === 429 ? 'rate' : s >= 500 ? '5xx' : s >= 400 ? '4xx' : 'net' }
+  var typed = false, draftSaid = false
+  function draftLeft() {
+    if (!ta || draftSaid) return
+    var n = ta.value.trim().length
+    if (n && !state.busy) { draftSaid = true; track('draft_left', { x: n }) }
+  }
+
   function el(tag, cls, text) {
     var n = document.createElement(tag)
     if (cls) n.className = cls
@@ -179,6 +193,7 @@
   function promptEmail() {
     if (!state.id || state.emailAsked) return
     state.emailAsked = true; clearTimeout(state.emailTimer)
+    track('email_shown')
     try { localStorage.setItem(EMAIL_KEY, state.id) } catch (e) { /* ignore */ }
     var r = el('div', 'lcochat-r us'); r.appendChild(avatar(true, true))
     var c = el('div', 'lcochat-c'); var b = el('div', 'lcochat-m lcochat-ask')
@@ -198,7 +213,7 @@
       go.disabled = true; msg.textContent = ''
       fetch(API + 'email', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify({ email: v }), cache: 'no-store' })
         .then(function (res) {
-          if (res.ok) { b.textContent = "Thanks, we'll write to " + v; b.classList.remove('lcochat-ask'); poll(); return }
+          if (res.ok) { track('email_sent'); b.textContent = "Thanks, we'll write to " + v; b.classList.remove('lcochat-ask'); poll(); return }
           go.disabled = false; msg.textContent = res.status === 429 ? 'Please try again later.' : 'That did not save. Please try again.'
         }).catch(function () { go.disabled = false; msg.textContent = 'That did not save. Please try again.' })
     })
@@ -235,6 +250,7 @@
     if (!text && !state.files.length) return
     if (text.length > MAX_TEXT) { showErr('That is a bit long. Please keep it under ' + MAX_TEXT + ' characters.'); return }
     state.busy = true; sendB.disabled = true; showErr('')
+    track('send_click', { x: text.length })
     var body = { text: text }
     if (state.files.length) body.file_ids = state.files.map(function (f) { return f.id })
     fetch(API + 'message', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify(body), cache: 'no-store' }).then(function (r) {
@@ -242,6 +258,7 @@
     }).then(function (x) {
       state.busy = false; sendB.disabled = false
       if (x.s === 200 && x.j && x.j.ok) {
+        track('send_ok', { m: Number(x.j.seq) || 0 }); typed = false; draftSaid = false
         if (x.j.conversation) { state.id = x.j.conversation; remember(); setPhoto() }
         ta.value = ''; grow(); state.files = []; paintChips(); state.idleSince = Date.now()
         showTyping()
@@ -250,12 +267,13 @@
         poll()
         return
       }
+      track('send_fail', { c: failClass(x.s), x: text.length, tx: text })
       if (x.s === 404 && state.id) { state.id = null; state.last = 0; state.seen = {}; state.lastFrom = ''; remember(); resetLog(); showErr('That chat had ended. Please send your message again.'); return }
       if (x.s === 429) return showErr('Please slow down a little and try again in a minute.')
       if (x.s === 413) return showErr('That message is too long.')
       if (x.s === 503 || x.s === 403 || x.s === 404) return fallback()
       showErr((x.j && x.j.message) || 'Sorry, that did not send. Please try again.')
-    }).catch(function () { state.busy = false; sendB.disabled = false; fallback('We could not reach the server. Please try again, or open the full design tool.') })
+    }).catch(function () { state.busy = false; sendB.disabled = false; track('send_fail', { c: 'net', x: text.length, tx: text }); fallback('We could not reach the server. Please try again, or open the full design tool.') })
   }
 
   function paintChips() {
@@ -279,17 +297,19 @@
     fetch(API + 'file', { method: 'POST', headers: headers({ 'x-file-name': encodeURIComponent(f.name.slice(0, 80)), 'content-type': 'application/octet-stream' }), body: f, cache: 'no-store' })
       .then(function (r) { return r.json().catch(function () { return {} }).then(function (j) { return { s: r.status, j: j } }) })
       .then(function (x) {
-        if (x.s === 200 && x.j.file_id) { state.files.push({ id: x.j.file_id, name: f.name.slice(0, 30) }); paintChips(); return }
+        if (x.s === 200 && x.j.file_id) { track('photo_added'); state.files.push({ id: x.j.file_id, name: f.name.slice(0, 30) }); paintChips(); return }
         showErr(x.s === 415 ? 'Only photos please (JPEG, PNG, WebP or HEIC).' : x.s === 429 ? 'Too many photos for now. Please try again later.' : 'That photo did not upload. Please try again.')
       }).catch(function () { showErr('That photo did not upload. Please try again.') })
   }
 
   function open() {
+    track('bubble_open')
     state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open')
     if (state.id) poll()   // only re-reads a conversation this browser already has
     setTimeout(function () { ta.focus() }, 0)
   }
   function close() {
+    draftLeft()
     state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer)
     btn.focus()
   }
@@ -343,7 +363,8 @@
     x.addEventListener('click', close)
     sendB.addEventListener('click', send)
     ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send() } })
-    ta.addEventListener('input', grow)
+    ta.addEventListener('input', function () { grow(); if (!typed && ta.value.length) { typed = true; track('first_key') } })
+    window.addEventListener('pagehide', draftLeft)
     photoIn.addEventListener('change', pickPhoto)
     panel.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') { e.stopPropagation(); close(); return }
