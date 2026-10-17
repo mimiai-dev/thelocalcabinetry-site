@@ -79,12 +79,15 @@
       } catch (e) { return ""; }
     }
 
+    // "/" stays readable in the query (a path is not a secret; keeps page slugs out of the server-side token redaction)
+    function enc(s) { return encodeURIComponent(s).replace(/%2F/g, "/"); }
+
     function send(ev, extra) {
       if (ev !== "leave" && sent >= MAX_EVENTS) return;
       sent++; seq++;
-      var q = "e=" + ev + "&p=" + encodeURIComponent(location.pathname.slice(0, 120)) +
+      var q = "e=" + ev + "&p=" + enc(location.pathname.slice(0, 120)) +
         "&v=" + (window.innerWidth < 768 ? "m" : "d") + "&s=" + sid + "&n=" + seq;
-      if (extra) for (var k in extra) if (extra[k] !== "" && extra[k] != null) q += "&" + k + "=" + encodeURIComponent(extra[k]);
+      if (extra) for (var k in extra) if (extra[k] !== "" && extra[k] != null) q += "&" + k + "=" + enc(extra[k]);
       var url = ENDPOINT + "?" + q;
       try {
         if (window.fetch) fetch(url, { method: "GET", keepalive: true, credentials: "omit", cache: "no-store" }).catch(function () {});
