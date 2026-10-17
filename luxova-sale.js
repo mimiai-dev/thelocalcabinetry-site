@@ -146,10 +146,10 @@
       go.textContent = cta
       go.addEventListener('click', function () {
         dismiss()
-        // The button goes to the design page (data-href, https://design.thelocalcabinetry.com only):
+        // The button goes to the design page (data-href: the same-site /design path, or the old design host):
         // that is where a visitor talks to us. The old on-page chat widget is gone.
         var to = (d.href || '').trim()
-        if (/^https:\/\/design\.thelocalcabinetry\.com\//.test(to)) window.location.assign(to)
+        if (/^(https:\/\/design\.thelocalcabinetry\.com\/|\/design(\/|$|\?))/.test(to)) window.location.assign(to)
       })
       box.appendChild(go)
     }
