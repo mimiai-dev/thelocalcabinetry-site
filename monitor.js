@@ -49,7 +49,7 @@
       })
       .catch(function () {
         // Never lose a lead: fall back to the original email path.
-        var email = f.getAttribute('data-email') || 'info@luxovahome.com';
+        var email = f.getAttribute('data-email') || 'info@thelocalcabinetry.com';
         var body = 'Name: ' + (fd.get('name') || '') + '\nPhone: ' + (fd.get('phone') || '') +
           '\nEmail: ' + (fd.get('email') || '') + '\n\n' + (fd.get('message') || '');
         location.href = 'mailto:' + email + '?subject=' + encodeURIComponent('Website enquiry') +
