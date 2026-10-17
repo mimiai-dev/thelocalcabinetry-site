@@ -6,17 +6,17 @@
  * not open yet" notice) was removed on purpose: it pointed at a chat nobody answered.
  *
  *   <script src="/luxova-contact.js" defer
- *           data-href="https://design.thelocalcabinetry.com/design"
+ *           data-href="/design"
  *           data-label="Design your cabinets"></script>
  *
- * Only an https://design.thelocalcabinetry.com/ address is accepted; anything else renders nothing.
+ * Only the same-site path /design is accepted (the design page is served from this very host); anything else renders nothing.
  */
 (function () {
   var s = document.currentScript
   var d = (s && s.dataset) || {}
   var href = (d.href || '').trim()
   var label = (d.label || 'Design your cabinets').trim().slice(0, 40)
-  if (!/^https:\/\/design\.thelocalcabinetry\.com\//.test(href)) return
+  if (!/^\/design(\/|$)/.test(href)) return
 
   function mount() {
     if (document.querySelector('[data-luxova-contact]')) return
