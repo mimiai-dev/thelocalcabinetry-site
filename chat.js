@@ -38,7 +38,7 @@
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
-  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0, emailAsked: false, emailTimer: 0, sentOnce: false, day: '' }
+  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0, emailAsked: false, emailTimer: 0, sentOnce: false, day: '', owedSince: 0, ackSeen: false, still: null }
   try { var saved = localStorage.getItem(KEY); if (saved && /^[0-9a-f]{32}$/.test(saved)) state.id = saved } catch (e) { /* storage blocked: memory only */ }
   var EMAIL_KEY = 'lco_email_asked_v1'
   try { if (state.id && localStorage.getItem(EMAIL_KEY) === state.id) state.emailAsked = true } catch (e) { /* ignore */ }
@@ -93,6 +93,7 @@
     '.lcochat-r.us .lcochat-m{background:#fff;color:#1b2733;border:1px solid #e3ded4;border-bottom-left-radius:4px}',
     '.lcochat-m small{display:block;margin-top:4px;opacity:.75;font-size:12px}',
     '.lcochat-t{font-size:11px;color:#7a7468;padding:0 4px}',
+    '.lcochat-still{font-size:12px;color:#7a7468;margin:2px 4px 0}',
     '.lcochat-typing .lcochat-m{display:flex;gap:4px;align-items:center;padding:13px 14px}',
     '.lcochat-typing i{width:7px;height:7px;border-radius:50%;background:#9aa3ad;animation:lcochat-b 1.2s infinite ease-in-out}',
     '.lcochat-typing i:nth-child(2){animation-delay:.15s}.lcochat-typing i:nth-child(3){animation-delay:.3s}',
@@ -193,35 +194,50 @@
   function hideTyping() {
     clearTimeout(state.typingTimer)
     if (state.typing && state.typing.parentNode) state.typing.parentNode.removeChild(state.typing)
-    state.typing = null
+    state.typing = null; state.still = null
+  }
+  // After 60 s: if the server acknowledged our line (ack: true) a designer really is on it, so the dots stay and a quiet line says so;
+  // without an ack nothing promised an answer, so the dots go away as before.
+  function stillOrHide() {
+    if (!state.typing) return
+    if (!state.ackSeen) { hideTyping(); return }
+    if (state.still) return
+    state.still = el('div', 'lcochat-still', 'Still here, a designer is on it')
+    var c = state.typing.querySelector('.lcochat-c'); if (c) c.appendChild(state.still)
+    scrollDown()
   }
   function showTyping() {
     hideTyping()
     var r = el('div', 'lcochat-r us lcochat-typing'); r.setAttribute('aria-label', 'Muse is typing')
     r.appendChild(avatar(true, true))
+    var c = el('div', 'lcochat-c')
     var b = el('div', 'lcochat-m'); b.appendChild(el('i')); b.appendChild(el('i')); b.appendChild(el('i'))
-    r.appendChild(b); log.appendChild(r); state.typing = r; scrollDown()
-    state.typingTimer = setTimeout(hideTyping, 60000)
+    c.appendChild(b); r.appendChild(c); log.appendChild(r); state.typing = r; scrollDown()
+    var left = Math.max(0, 60000 - (Date.now() - (state.owedSince || Date.now())))
+    if (left === 0) stillOrHide(); else state.typingTimer = setTimeout(stillOrHide, left)
   }
   // Our own local greeting, never sent to the server and never stored: the AI says so in its first words.
   function greet() {
     log.appendChild(row('us', "Hi, I'm Muse, the AI assistant for The Local Cabinetry, here with Hannah's team to help with layouts and pricing.", ''))
     log.appendChild(row('us', 'What are you planning: kitchen, vanity or closet?', ''))
   }
-  function resetLog() { hideTyping(); clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
+  function resetLog() { hideTyping(); state.owedSince = 0; state.ackSeen = false; clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
   function setPhoto() { photoB.setAttribute('aria-disabled', state.id ? 'false' : 'true'); photoB.title = state.id ? 'Add a photo' : 'Send a message first, then add photos' }
   function addMsg(m) {
     if (state.seen[m.seq]) return
     state.seen[m.seq] = 1
     var from = m.from === 'us' ? 'us' : 'you'
-    if (from === 'us') hideTyping()
+    var isAck = from === 'us' && m.ack === true
+    if (isAck) state.ackSeen = true
+    else if (from === 'us') { hideTyping(); state.owedSince = 0; state.ackSeen = false }
     var at = m.at || m.ts || m.time || m.created_at || m.created
     daySep(toDate(at))
     var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human')
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.last = Math.max(state.last, m.seq)
     state.lastFrom = from
-    if (from === 'us' && state.sentOnce) setTimeout(promptEmail, 800)
+    if (isAck && !state.typing && state.owedSince) showTyping()
+    if (from === 'us' && !isAck && state.sentOnce) setTimeout(promptEmail, 800)
   }
   function scrollDown() { log.scrollTop = log.scrollHeight }
   function grow() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px' }
@@ -257,10 +273,16 @@
     scrollDown()
   }
 
+  // While a reply is owed: every 2 s for 30 s after the visitor's line, then 4 s (to 2 min), then 10 s. Otherwise the calm idle schedule.
+  function nextDelay() {
+    if (state.owedSince) { var age = Date.now() - state.owedSince; return age < 30000 ? 2000 : age < 120000 ? 4000 : 10000 }
+    var idle = Date.now() - state.idleSince
+    return idle < 120000 ? 4000 : idle < 600000 ? 8000 : 15000
+  }
   function poll() {
     clearTimeout(state.timer)
     if (!state.id || !state.open) return
-    if (document.hidden) { state.timer = setTimeout(poll, 8000); return }
+    if (document.hidden) return   // stop while the tab is hidden; the visibilitychange handler resumes it
     fetch(API + 'messages?after=' + state.last, { headers: headers(), cache: 'no-store' }).then(function (r) {
       if (r.status === 404 || r.status === 400) { // the server does not know this conversation (any more): start clean on the next message
         state.id = null; state.last = 0; state.seen = {}; state.lastFrom = ''; remember(); resetLog(); return null
@@ -275,8 +297,7 @@
       var fresh = (j.messages || []).length
       ;(j.messages || []).forEach(addMsg)
       if (fresh) { state.idleSince = Date.now(); scrollDown() }
-      var idle = Date.now() - state.idleSince
-      state.timer = setTimeout(poll, idle < 120000 ? 4000 : idle < 600000 ? 8000 : 15000)
+      state.timer = setTimeout(poll, nextDelay())
     }).catch(function () { state.timer = setTimeout(poll, 15000) })
   }
 
@@ -295,6 +316,7 @@
       if (x.s === 200 && x.j && x.j.ok) {
         if (x.j.conversation) { state.id = x.j.conversation; remember(); setPhoto() }
         ta.value = ''; grow(); state.files = []; paintChips(); state.idleSince = Date.now()
+        state.owedSince = Date.now(); state.ackSeen = x.j.ack === true
         showTyping()
         state.sentOnce = true
         if (!state.emailAsked) { clearTimeout(state.emailTimer); state.emailTimer = setTimeout(promptEmail, 20000) }
