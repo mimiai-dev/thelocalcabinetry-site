@@ -25,3 +25,12 @@
 .nav.is-open .actions .nav-sec{text-align:center;padding:10px 2px}
 }
 @media (min-width:761px){.nav .links{margin:0 auto}}
+
+/* typographic wordmark (no logo file: plain text in the site serif) */
+.wordmark{display:inline-flex;flex-direction:column;justify-content:center;line-height:1;text-decoration:none;color:var(--navy)}
+.wordmark .wm-top{font-family:var(--sans);font-size:10.5px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);padding-left:2px}
+.wordmark .wm-main{font-family:var(--serif);font-size:25px;font-weight:600;letter-spacing:.005em;margin-top:3px}
+.wordmark-light{color:#fff}
+.wordmark-light .wm-top{color:var(--gold-lt)}
+.wordmark-light .wm-main{font-size:30px}
+.nav .brand.wordmark{padding:2px 0}
