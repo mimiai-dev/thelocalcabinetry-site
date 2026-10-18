@@ -1,107 +1,77 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>The Local Cabinetry Catalog</title>
-<style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>The Local Cabinetry Catalog</title><style>
 @font-face{font-family:"Figtree";src:url("fonts/Figtree-VF.ttf") format("truetype");font-weight:300 900}
 @page{size:8.5in 11in;margin:0}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{font-family:"Figtree";font-size:10.5pt;line-height:1.5;color:#14273f;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.page{position:relative;width:8.5in;height:11in;overflow:hidden;page-break-after:always;background:#fff;padding:.75in .8in}
+body{font-family:"Figtree";font-size:10pt;line-height:1.45;color:#14273f;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{position:relative;width:8.5in;height:11in;overflow:hidden;page-break-after:always;background:#fff;padding:.7in .75in}
 .page:last-child{page-break-after:auto}
 .eyebrow{font-size:8pt;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#b4862f;margin:0 0 6pt}
-h1,h2{font-weight:700;margin:0;letter-spacing:-.01em}
-h2{font-size:24pt;line-height:1.15;color:#0e2740}
-.lead{color:#51606f;margin:8pt 0 18pt}
-.foot{position:absolute;left:.8in;right:.8in;bottom:.45in;display:flex;justify-content:space-between;font-size:8pt;color:#51606f}
+h2{font-size:23pt;line-height:1.15;color:#0e2740;margin:0;font-weight:700;letter-spacing:-.01em}
+h3{font-size:12pt;margin:0 0 4pt;color:#0e2740}
+.lead{color:#51606f;margin:8pt 0 14pt}
+.foot{position:absolute;left:.75in;right:.75in;bottom:.42in;display:flex;justify-content:space-between;font-size:8pt;color:#51606f}
 .cover{padding:0;background:#0e2740}
-.cover .img{height:6.6in;background:url("../../hero-kitchen.jpg") center 38%/cover}
-.cover .band{padding:.55in .8in;color:#fff}
+.cover .img{height:6.7in;background:url("../../accessories/kitchen-led.jpg") center/cover}
+.cover .band{padding:.55in .75in;color:#fff}
 .wm .t{display:block;font-size:9pt;font-weight:700;letter-spacing:.3em;color:#d8b25c;text-transform:uppercase}
 .wm .m{display:block;font-size:30pt;font-weight:700;margin-top:2pt}
-.cover h1{font-size:32pt;line-height:1.1;margin:.28in 0 8pt;color:#fff}
+.cover h1{font-size:30pt;line-height:1.1;margin:.26in 0 8pt;color:#fff;font-weight:700}
 .cover p{margin:0;color:#c9d3de;font-size:11pt}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.35in .4in}
-.coll img{width:100%;height:2.6in;object-fit:contain;background:#fafafa;border:1px solid #e7e5df}
-.coll h3{margin:8pt 0 2pt;font-size:13pt;color:#0e2740}
-.coll p{margin:0 0 3pt;color:#51606f;font-size:9.5pt;line-height:1.4}
-.coll .f{color:#7a5a14;font-size:8.5pt;font-weight:500}
-.fin h3{margin:0 0 3pt;font-size:11pt;color:#0e2740}
-.fin .row{margin:0 0 10pt;padding-bottom:9pt;border-bottom:1px solid #e0d6bd;color:#14273f}
-.pair{display:grid;grid-template-columns:1fr 1fr;gap:.25in;margin-top:.15in}
-.pair img{width:100%;height:3.1in;object-fit:cover}
-ul{margin:0 0 14pt;padding-left:14pt}
-li{margin:0 0 6pt}
-h4{font-size:8pt;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#b4862f;margin:16pt 0 7pt}
+.coll{border-top:1px solid #e0d6bd;padding:9pt 0 7pt}
+.coll h3{margin:0 0 5pt}
+.coll .row{display:flex;flex-wrap:wrap;gap:3pt 14pt}
+.coll .it{font-size:9.3pt;color:#14273f}
+.coll .it b{color:#7a5a14;font-weight:700;margin-right:3pt}
+.sub{font-size:8pt;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b4862f;margin:14pt 0 4pt}
+table{border-collapse:collapse;width:100%;font-size:8.6pt}
+th,td{border-top:1px solid #e0d6bd;padding:5pt 6pt;text-align:left;vertical-align:top}
+th{font-size:7.8pt;letter-spacing:.06em;text-transform:uppercase;color:#51606f;font-weight:700;border-top:2px solid #0e2740}
+td:first-child{font-weight:700;color:#0e2740;width:1.2in}
+.cols2{column-count:2;column-gap:.35in;height:8.5in;column-fill:auto}
+.g{display:grid;grid-template-columns:.52in 1fr;gap:5pt;padding:3pt 0;border-top:1px solid #eee6d2;break-inside:avoid}
+.g b{color:#0e2740;font-size:9pt}
+.c{display:flex;flex-wrap:wrap;gap:2pt 7pt}
+.c span{font-size:7.2pt;color:#14273f;letter-spacing:.01em}
+.photos{display:grid;grid-template-columns:1fr 1fr;gap:.2in}
+.photos img{width:100%;height:2.3in;object-fit:cover;display:block}
+.cap{font-size:8pt;color:#51606f;margin-top:3pt}
 .end{background:#f3f0ea}
 .end .big{font-size:12.5pt;margin:0 0 10pt}
-</style></head><body>
-
-<section class="page cover">
-  <div class="img"></div>
-  <div class="band">
-    <div class="wm"><span class="t">The Local</span><span class="m">Cabinetry</span></div>
-    <h1>RTA kitchen cabinets,<br>vanities &amp; closets</h1>
-    <p>Door styles &middot; finishes &middot; construction</p>
-  </div>
-</section>
-
-<section class="page">
-  <p class="eyebrow">Step one</p><h2>Cabinet door collections</h2>
-  <p class="lead">Six framed-door collections, each offered in its own range of painted and stained finishes.</p>
-  <div class="grid2">
-    <div class="coll"><img src="../../doors/shaker.jpg" alt="Shaker collection door swatches"><h3>Shaker</h3><p>The timeless recessed five-piece door: clean lines that suit any kitchen, traditional to modern.</p><p class="f">White &middot; Gray &middot; Blue &middot; Oak &middot; Maple &middot; Espresso &middot; Plata &middot; Ash &middot; Black</p></div>
-    <div class="coll"><img src="../../doors/shaker-slim.jpg" alt="Slim Shaker collection door swatches"><h3>Slim Shaker</h3><p>A narrower frame and tighter reveal for a crisp, contemporary take on the Shaker look.</p><p class="f">White &middot; Grey &middot; Blue &middot; Oak &middot; Maple &middot; Black</p></div>
-    <div class="coll"><img src="../../doors/double-shaker.jpg" alt="Double Shaker collection door swatches"><h3>Double Shaker</h3><p>An extra inner frame adds depth and a tailored, furniture-grade feel.</p><p class="f">White &middot; Plata &middot; Oak &middot; Caf&eacute; &middot; Walnut &middot; Black Oak</p></div>
-  </div>
-  <div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>2</span></div>
-</section>
-
-<section class="page">
-  <p class="eyebrow">Step one</p><h2>Cabinet door collections</h2>
-  <p class="lead">Six framed-door collections, each offered in its own range of painted and stained finishes.</p>
-  <div class="grid2">
-    <div class="coll"><img src="../../doors/iris.jpg" alt="Iris collection door swatches"><h3>Iris</h3><p>A slim-frame raised panel: a soft step up in detail without the fuss.</p><p class="f">White &middot; Gray &middot; Blue &middot; Oak &middot; Maple &middot; Black Oak</p></div>
-    <div class="coll"><img src="../../doors/vienna.jpg" alt="Vienna collection door swatches"><h3>Vienna</h3><p>A beveled recessed panel with quiet shadow lines: transitional and elegant.</p><p class="f">White &middot; Gray &middot; Green &middot; Oak &middot; Maple &middot; Black Oak</p></div>
-    <div class="coll"><img src="../../doors/cottage.jpg" alt="Cottage collection door swatches"><h3>Cottage</h3><p>A traditional raised-panel door with warmth and character for a classic kitchen.</p><p class="f">Antique White &middot; Grey &middot; Maple Cherry &middot; Mocha &middot; Chestnut &middot; Chocolate &middot; Ash</p></div>
-  </div>
-  <div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>3</span></div>
-</section>
-
-<section class="page fin">
-  <p class="eyebrow">Step two</p><h2>Finishes</h2>
-  <p class="lead">Seventeen painted and stained finishes. Ask for any as a free door sample before you decide.</p>
-  <h3>Whites</h3><p class="row">Shaker White, Dove White, Aspen White, Charleston White</p>
-  <h3>Grays</h3><p class="row">Lunar Gray, Gray Shaker, Smokey Gray, Aspen Charcoal</p>
-  <h3>Colors</h3><p class="row">Sage Breeze, Aston Green, Navy Blue, Iron Black</p>
-  <h3>Woods &amp; Stains</h3><p class="row">White Oak, Treasure Chest, Amber Oak, Rustic Wood, Shaker Espresso</p>
-  <div class="pair"><img src="../../kitchens/kitchen-shaker-white.jpg" alt="White shaker kitchen"><img src="../../kitchens/kitchen-modern-green.jpg" alt="Green kitchen"></div>
-  <div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>4</span></div>
-</section>
-
-<section class="page">
-  <p class="eyebrow">Built the same, whatever you pick</p><h2>Construction</h2>
-  <ul style="margin-top:14pt">
-    <li><b>Full-overlay doors.</b> Five-piece door and drawer fronts with a smooth MDF center panel, built for a flawless painted finish.</li>
-    <li><b>Plywood box.</b> &frac12; inch cabinet-grade plywood box with a UV-coated natural interior, no particleboard.</li>
-    <li><b>Dovetail drawers.</b> Dovetailed drawer boxes, built to take daily use.</li>
-    <li><b>Soft-close everywhere.</b> Undermount full-extension glides and 6-way adjustable hinges, all soft-close.</li>
-  </ul>
-  <h4>Cabinet types</h4>
-  <ul>
-    <li>Base, drawer base, sink base and corner base cabinets</li>
-    <li>Wall, glass-front, corner and over-fridge / hood cabinets</li>
-    <li>Tall / pantry cabinets, open shelving and ends</li>
-    <li>Bath vanities, islands and accessories</li>
-  </ul>
-  <div class="pair"><img src="../../kitchens/kitchen-shaker-grey.jpg" alt="Grey shaker kitchen"><img src="../../closets/closet-walkin-oak.jpg" alt="Walk-in closet in oak"></div>
-  <div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>5</span></div>
-</section>
-
-<section class="page end">
-  <p class="eyebrow">Next step</p><h2>Order free door samples</h2>
-  <p class="lead" style="margin-top:14pt">Not sure on a color? We will get door samples in your hands before you commit.</p>
-  <p class="big">Design your cabinets online: <b>thelocalcabinetry.com/design</b></p>
-  <p class="big">Email: <b>info@thelocalcabinetry.com</b><br>Phone: <b>+1 346-758-7867</b><br>Houston, TX &middot; warehouses nationwide</p>
-  <div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>6</span></div>
-</section>
-</body></html>
+.note{font-size:8pt;color:#51606f;margin-top:10pt}
+</style></head><body><section class="page cover"><div class="img"></div><div class="band">
+<div class="wm"><span class="t">The Local</span><span class="m">Cabinetry</span></div>
+<h1>Cabinet catalog</h1><p>Collections &middot; construction &middot; sizes</p></div></section><section class="page"><p class="eyebrow">Collections</p><h2>Finishes by collection</h2>
+<p class="lead">Each finish has a short code. Use the code when you ask for a quote or a sample.</p>
+<p class="sub">Framed cabinets, single package</p>
+<div class="coll"><h3>Essential</h3><div class="row"><span class="it"><b>SW</b>Shaker White</span><span class="it"><b>GR</b>Gray Shaker</span><span class="it"><b>SE</b>Shaker Espresso</span></div></div>
+<div class="coll"><h3>Classic</h3><div class="row"><span class="it"><b>AC</b>Aspen Charcoal</span><span class="it"><b>AW</b>Aspen White</span><span class="it"><b>CW</b>Charleston White</span></div></div>
+<div class="coll"><h3>Slim Shaker</h3><div class="row"><span class="it"><b>SDW</b>Slim Dove White</span><span class="it"><b>SWO</b>Slim White Oak</span></div></div>
+<div class="coll"><h3>Charm</h3><div class="row"><span class="it"><b>NB</b>Navy Blue</span></div></div>
+<p class="sub">Framed cabinets, two package</p>
+<div class="coll"><h3>Charm</h3><div class="row"><span class="it"><b>RW</b>Rustic Wood</span><span class="it"><b>SB</b>Sage Breeze</span><span class="it"><b>LG</b>Lunar Gray</span><span class="it"><b>AG</b>Aston Green</span><span class="it"><b>SA</b>Smokey Gray</span><span class="it"><b>TC</b>Treasure Chest</span><span class="it"><b>IB</b>Iron Black</span></div></div>
+<div class="coll"><h3>Slim Shaker</h3><div class="row"><span class="it"><b>SAO</b>Slim Amber Oak</span><span class="it"><b>SIB</b>Slim Iron Black</span><span class="it"><b>SAG</b>Slim Aston Green</span></div></div>
+<div class="coll"><h3>Double Shaker</h3><div class="row"><span class="it"><b>DDW</b>Double Dove White</span><span class="it"><b>DSG</b>Double Smokey Gray</span></div></div>
+<p class="sub">Frameless cabinets, two package</p>
+<div class="coll"><h3>Frameless</h3><div class="row"><span class="it"><b>OB</b>Oak Blonde</span><span class="it"><b>OS</b>Oak Shade</span><span class="it"><b>MB</b>Matte Black</span><span class="it"><b>MI</b>Matte Ivory</span><span class="it"><b>CG</b>Crystal Glass</span><span class="it"><b>MG</b>Midnight Glass</span><span class="it"><b>HW</b>High Glossy White</span><span class="it"><b>HG</b>High Glossy Gray</span></div></div>
+<p class="sub">Builder grade, drop-ship</p>
+<div class="coll"><h3>Builder Grade</h3><div class="row"><span class="it"><b>FW</b>Floral White</span><span class="it"><b>FG</b>Floral Gray</span><span class="it"><b>FE</b>Floral Espresso</span></div></div>
+<div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>2</span></div></section><section class="page"><p class="eyebrow">Construction</p><h2>How each line is built</h2>
+<p class="lead">Single package: Essential and Classic. Two package: Charm, Slim Shaker and Double Shaker (framed) and Frameless. Builder grade ships direct.</p>
+<table><tr><th></th><th>Single package</th><th>Two package, framed</th><th>Two package, frameless</th><th>Builder grade</th></tr><tr><td>Door and drawer front</td><td>Full overlay, five-piece, solid wood with MDF center panel</td><td>Full overlay, five-piece, solid wood with MDF center panel</td><td>Full overlay, PET high glossy slab door style</td><td>Full overlay, five-piece, solid wood with MDF center panel</td></tr><tr><td>Face frame</td><td>3/4 inch solid wood</td><td>3/4 inch solid wood</td><td>None (frameless)</td><td>3/4 inch solid wood</td></tr><tr><td>Cabinet box</td><td>1/2 inch cabinet-grade plywood</td><td>1/2 inch cabinet-grade plywood</td><td>3/4 inch plywood with white melamine finish</td><td>1/2 inch cabinet-grade furniture board</td></tr><tr><td>Drawer box</td><td>Solid wood, dovetail, 2 1/2 inch depth</td><td>Solid wood, dovetail, 3 1/8 inch depth</td><td>3/4 inch plywood with white melamine finish</td><td>Plywood, rebate joint</td></tr><tr><td>Drawer glides</td><td>Concealed undermount, full extension, soft-close</td><td>Concealed undermount, full extension, soft-close</td><td>Concealed undermount, full extension, soft-close</td><td>Builder grade undermount</td></tr><tr><td>Hinges</td><td>6-way adjustable, soft-close</td><td>6-way adjustable, soft-close</td><td>6-way adjustable, soft-close</td><td>6-way adjustable, not soft-close</td></tr><tr><td>Exterior finish</td><td>Matching color</td><td>Clear UV-coated natural plywood</td><td>White melamine</td><td>Matching color</td></tr><tr><td>Interior finish</td><td>Clear UV-coated natural plywood</td><td>Clear UV-coated natural plywood</td><td>White melamine</td><td>Natural melamine</td></tr><tr><td>Shelves</td><td>3/4 inch plywood, front edge banding</td><td>3/4 inch plywood, front edge banding</td><td>3/4 inch plywood, white melamine, front edge banding</td><td>5/8 inch furniture board, natural melamine, edge banding on all sides</td></tr><tr><td>Accessories included</td><td>Door bumper, metal shelf pin, metal clips, L bracket for base cabinet</td><td>Door bumper, metal shelf pin, metal clips, L bracket for base cabinet</td><td>Door bumper, metal shelf pin</td><td>Door bumper, metal shelf pin, metal clips, L bracket for base cabinet</td></tr><tr><td>Package</td><td>One box per cabinet</td><td>Two packages: universal box and front set</td><td>Two packages: universal box and front set</td><td>One box per cabinet</td></tr><tr><td>Certification</td><td>TSCA VI, KCMA, CARB2, NGBS Green</td><td>TSCA VI, KCMA, CARB2, NGBS Green</td><td>TSCA VI, KCMA, CARB2, NGBS Green</td><td>TSCA VI, KCMA, CARB2, NGBS Green</td></tr></table>
+<p class="note">Frameless boxes join with camlock and dowel construction and have predrilled shelf-pin holes with metal shelf pins.</p>
+<div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>3</span></div></section><section class="page"><p class="eyebrow">Sizes</p><h2>Framed cabinet codes</h2>
+<p class="lead">The codes of our standard framed range, grouped by their letters. Ask us for dimensions and drawings of any code.</p>
+<div class="cols2"><div class="g"><b>W</b><div class="c"><span>W1212GD</span><span>W1512GD</span><span>W1812GD</span><span>W2112GD</span><span>W3012</span><span>W3312</span><span>W3612</span><span>W3015</span><span>W3315</span><span>W3615</span><span>W2418</span><span>W3018</span><span>W3318</span><span>W3618</span><span>W301224</span><span>W301524</span><span>W301824</span><span>W331224</span><span>W331524</span><span>W331824</span><span>W2412GD</span><span>W2712GD</span><span>W3012GD</span><span>W3312GD</span><span>W3612GD</span><span>W3018GD</span><span>W1530GD</span><span>W1830GD</span><span>W1536GD</span><span>W1836GD</span><span>W1542GD</span><span>W1842GD</span><span>W2430GD</span><span>W3030GD</span><span>W2436GD</span><span>W3036GD</span><span>W2442GD</span><span>W3042GD</span><span>W0930</span><span>W1836</span><span>W1230</span><span>W2136</span><span>W1530</span><span>W0942</span><span>W1830</span><span>W1242</span><span>W2130</span><span>W1542</span><span>W0936</span><span>W1842</span><span>W1236</span><span>W2142</span><span>W1536</span><span>W3024</span><span>W3324</span><span>W3624</span><span>W2430</span><span>W2730</span><span>W3030</span><span>W3330</span><span>W3630</span><span>W3930</span><span>W2436</span><span>W3642</span><span>W2736</span><span>W302424</span><span>W3036</span><span>W332424</span><span>W3336</span><span>W361224</span><span>W3636</span><span>W361524</span><span>W2442</span><span>W361824</span><span>W2742</span><span>W362424</span><span>W3042</span><span>W3342</span></div></div><div class="g"><b>DCW</b><div class="c"><span>DCW2412GD</span><span>DCW2430GD</span><span>DCW2436GD</span><span>DCW2442GD</span><span>DCW2712GD</span><span>DCW2430</span><span>DCW2436</span><span>DCW2442</span><span>DCW2736</span><span>DCW2742</span></div></div><div class="g"><b>WER</b><div class="c"><span>WER2430</span><span>WER2436</span><span>WER2442</span></div></div><div class="g"><b>WBC</b><div class="c"><span>WBC2430</span><span>WBC2730</span><span>WBC3630</span><span>WBC2736</span><span>WBC2442</span><span>WBC2742</span><span>WBC3642</span></div></div><div class="g"><b>MO</b><div class="c"><span>MO3030</span><span>MO3036</span><span>MO3042</span></div></div><div class="g"><b>OE</b><div class="c"><span>OE630</span><span>OE636</span><span>OE642</span></div></div><div class="g"><b>AW</b><div class="c"><span>AW1230</span><span>AW1236</span><span>AW1242</span></div></div><div class="g"><b>PR</b><div class="c"><span>PR3015</span></div></div><div class="g"><b>WD</b><div class="c"><span>WD1848</span><span>WD1854</span><span>WD1860</span></div></div><div class="g"><b>WRC</b><div class="c"><span>WRC3015</span><span>WRC3018</span><span>WRC2430</span></div></div><div class="g"><b>WSD</b><div class="c"><span>WSD630</span></div></div><div class="g"><b>B</b><div class="c"><span>B12</span><span>B15</span><span>B18</span><span>B21</span><span>B24</span><span>B27</span><span>B30</span><span>B33</span><span>B36</span><span>B42</span></div></div><div class="g"><b>2DB</b><div class="c"><span>2DB24</span><span>2DB30</span><span>2DB36</span></div></div><div class="g"><b>ERB</b><div class="c"><span>ERB33</span><span>ERB36</span></div></div><div class="g"><b>3DB</b><div class="c"><span>3DB12</span><span>3DB15</span><span>3DB18</span><span>3DB21</span><span>3DB24</span><span>3DB27</span><span>3DB30</span><span>3DB33</span><span>3DB36</span></div></div><div class="g"><b>BEC</b><div class="c"><span>BEC24</span></div></div><div class="g"><b>CSB</b><div class="c"><span>CSB36</span></div></div><div class="g"><b>BFH</b><div class="c"><span>BFH24</span><span>BFH27</span><span>BFH30</span><span>BFH33</span><span>BFH36</span><span>BFH12</span><span>BFH15</span><span>BFH18</span><span>BFH21</span></div></div><div class="g"><b>DFB</b><div class="c"><span>DFB18</span></div></div><div class="g"><b>BBC</b><div class="c"><span>BBC36</span><span>BBC39</span><span>BBC42</span></div></div><div class="g"><b>MB</b><div class="c"><span>MB30</span><span>MB33</span></div></div><div class="g"><b>BT</b><div class="c"><span>BT09</span></div></div><div class="g"><b>SB</b><div class="c"><span>SB27</span><span>SB30</span><span>SB33</span><span>SB36</span></div></div><div class="g"><b>BWB</b><div class="c"><span>BWB18</span></div></div><div class="g"><b>FSB</b><div class="c"><span>FSB36</span></div></div><div class="g"><b>VS</b><div class="c"><span>VS24</span><span>VS27</span><span>VS30</span><span>VS33</span><span>VS36</span></div></div><div class="g"><b>3VDB</b><div class="c"><span>3VDB12</span><span>3VDB15</span><span>3VDB18</span><span>3VDB21</span><span>3VDB24</span></div></div><div class="g"><b>V</b><div class="c"><span>V3021DL</span><span>V3021DR</span><span>V3321DL</span><span>V3321DR</span><span>V3621DL</span><span>V3621DR</span></div></div><div class="g"><b>VSD</b><div class="c"><span>VSD36</span><span>VSD42</span><span>VSD48</span></div></div><div class="g"><b>O</b><div class="c"><span>O308424</span><span>O309024</span><span>O309624</span><span>O338424</span><span>O339024</span><span>O339624</span></div></div><div class="g"><b>U</b><div class="c"><span>U248624</span><span>U249024</span><span>U249624</span><span>U308424</span><span>U309024</span><span>U309624</span><span>U188424</span><span>U189024</span><span>U189624</span></div></div><div class="g"><b>RCM</b><div class="c"><span>RCM4S</span></div></div><div class="g"><b>RS</b><div class="c"><span>RS18</span><span>RS21</span><span>RS24</span><span>RS27</span><span>RS30</span><span>RS33</span><span>RS36</span></div></div><div class="g"><b>BES</b><div class="c"><span>BES12</span></div></div><div class="g"><b>F</b><div class="c"><span>F342</span><span>F396</span><span>F642</span><span>F696</span></div></div><div class="g"><b>SBF</b><div class="c"><span>SBF4242</span></div></div><div class="g"><b>USV</b><div class="c"><span>USV2496</span></div></div><div class="g"><b>FPV</b><div class="c"><span>FPV4296</span></div></div><div class="g"><b>S</b><div class="c"><span>S2496</span></div></div><div class="g"><b>WSV</b><div class="c"><span>WSV24</span><span>WSV30</span><span>WSV36</span><span>WSV42</span></div></div><div class="g"><b>REPV</b><div class="c"><span>REPV2496</span><span>REPV2796</span></div></div><div class="g"><b>WDEP</b><div class="c"><span>WDEP30</span><span>WDEP36</span><span>WDEP42</span></div></div><div class="g"><b>SGH</b><div class="c"><span>SGH30</span></div></div><div class="g"><b>TDEP</b><div class="c"><span>TDEP2484</span><span>TDEP2490</span><span>TDEP2496</span></div></div><div class="g"><b>FS</b><div class="c"><span>FS24</span><span>FS30</span><span>FS36</span></div></div><div class="g"><b>VA</b><div class="c"><span>VA30</span><span>VA36</span><span>VA42</span><span>VA48</span></div></div><div class="g"><b>VKD</b><div class="c"><span>VKD36</span></div></div></div><div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>4</span></div></section><section class="page"><p class="eyebrow">Sizes</p><h2>Frameless cabinet codes</h2>
+<p class="lead">The codes of our standard frameless range, grouped by their letters. Ask us for dimensions and drawings of any code.</p>
+<div class="cols2"><div class="g"><b>W</b><div class="c"><span>W3012GD</span><span>W3312GD</span><span>W3612GD</span><span>W3015GD</span><span>W3315GD</span><span>W3615GD</span><span>W3018GD</span><span>W3318GD</span><span>W3618GD</span><span>W3021GD</span><span>W3321GD</span><span>W3024GD</span><span>W3324GD</span><span>W3624GD</span><span>W3027GD</span><span>W3327GD</span><span>W0930GD</span><span>W1230GD</span><span>W1530GD</span><span>W1830GD</span><span>W2130GD</span><span>W0936GD</span><span>W1236GD</span><span>W1536GD</span><span>W1836GD</span><span>W2136GD</span><span>W0942GD</span><span>W1242GD</span><span>W1542GD</span><span>W1842GD</span><span>W2142GD</span><span>W2730GD</span><span>W2736GD</span><span>W2742GD</span><span>W3330GD</span><span>W3336GD</span><span>W3342GD</span><span>W3024</span><span>W3324</span><span>W3624</span><span>W0930</span><span>W1230</span><span>W1530</span><span>W1830</span><span>W2130</span><span>W0936</span><span>W1236</span><span>W1536</span><span>W1836</span><span>W2136</span><span>W301224</span><span>W331224</span><span>W361224</span><span>W301824</span><span>W331824</span><span>W361824</span><span>W302424</span><span>W332424</span><span>W362424</span><span>W3012</span><span>W3312</span><span>W3612</span><span>W3015</span><span>W3315</span><span>W3615</span><span>W3018</span><span>W3318</span><span>W3618</span><span>W2430</span><span>W2730</span><span>W3030</span><span>W3330</span><span>W3630</span><span>W2436</span><span>W2736</span><span>W3036</span><span>W3336</span><span>W3636</span><span>W0942</span><span>W1242</span><span>W1542</span><span>W1842</span><span>W2142</span><span>W2442</span><span>W2742</span><span>W3042</span><span>W3342</span><span>W3642</span></div></div><div class="g"><b>WER</b><div class="c"><span>WER2430</span><span>WER2436</span><span>WER2442</span></div></div><div class="g"><b>B</b><div class="c"><span>B24</span><span>B27</span><span>B12</span><span>B15</span><span>B18</span><span>B21</span><span>B30</span><span>B33</span><span>B36</span><span>B42</span></div></div><div class="g"><b>3DB</b><div class="c"><span>3DB12</span><span>3DB15</span><span>3DB18</span><span>3DB21</span><span>3DB24</span><span>3DB27</span><span>3DB30</span><span>3DB33</span><span>3DB36</span></div></div><div class="g"><b>2DB</b><div class="c"><span>2DB24</span><span>2DB30</span><span>2DB36</span></div></div><div class="g"><b>ERB</b><div class="c"><span>ERB33</span><span>ERB36</span></div></div><div class="g"><b>BWB</b><div class="c"><span>BWB18</span></div></div><div class="g"><b>SB</b><div class="c"><span>SB27</span><span>SB30</span><span>SB33</span><span>SB36</span><span>SB42</span></div></div><div class="g"><b>WBC</b><div class="c"><span>WBC2730</span><span>WBC3630</span><span>WBC2736</span></div></div><div class="g"><b>BFH</b><div class="c"><span>BFH09</span><span>BFH18</span><span>BFH24</span><span>BFH30</span><span>BFH36</span></div></div><div class="g"><b>BBC</b><div class="c"><span>BBC36</span><span>BBC39</span><span>BBC42</span><span>BBC45</span></div></div><div class="g"><b>MB</b><div class="c"><span>MB30</span></div></div><div class="g"><b>FSB</b><div class="c"><span>FSB36</span></div></div><div class="g"><b>VS</b><div class="c"><span>VS24</span><span>VS27</span><span>VS30</span><span>VS36</span></div></div><div class="g"><b>U</b><div class="c"><span>U188424</span><span>U189024</span><span>U189624</span><span>U248624</span><span>U249024</span><span>U249624</span><span>U308424</span><span>U309024</span><span>U309624</span></div></div><div class="g"><b>3VDB</b><div class="c"><span>3VDB12</span><span>3VDB15</span><span>3VDB18</span></div></div><div class="g"><b>V</b><div class="c"><span>V30TDL</span><span>V30TDR</span><span>V36TDL</span><span>V36TDR</span></div></div><div class="g"><b>O</b><div class="c"><span>O308424</span><span>O309024</span><span>O309624</span><span>O338424</span><span>O339024</span><span>O339624</span></div></div></div><div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>5</span></div></section><section class="page"><p class="eyebrow">Sizes</p><h2>Panels and finishing pieces</h2>
+<p class="lead">Sizes in inches, width x height x thickness as listed in our factory SKU list.</p>
+<table style="width:3.6in"><tr><th>Code</th><th>Size, inches</th></tr><tr><td>BSV</td><td>23 1/4 x 34 1/2 x 1/4</td></tr><tr><td>USV2496</td><td>23 1/4 x 96 x 1/4</td></tr><tr><td>FPV4296</td><td>42 x 96 x 1/4</td></tr><tr><td>S2496</td><td>24 x 96 x 3/4</td></tr><tr><td>WSV24</td><td>15 x 24 x 1/4</td></tr><tr><td>WSV30</td><td>15 x 30 x 1/4</td></tr><tr><td>WSV36</td><td>15 x 36 x 1/4</td></tr><tr><td>WSV42</td><td>15 x 42 x 1/4</td></tr><tr><td>Skin Panel, interior</td><td>48 x 48 x 1/4</td></tr><tr><td>DWR3</td><td>24 x 34 1/2 x 3/4</td></tr><tr><td>REPV2496</td><td>24 x 96 x 1/2</td></tr><tr><td>REPV2796</td><td>27 x 96 x 1/2</td></tr><tr><td>SD</td><td>11 x 15 x 3/4</td></tr><tr><td>WDEP30</td><td>11 1/2 x 29 x 3/4</td></tr><tr><td>WDEP36</td><td>11 1/2 x 35 x 3/4</td></tr><tr><td>WDEP42</td><td>11 1/2 x 41 x 3/4</td></tr><tr><td>BDEP</td><td>23 1/2 x 29 x 3/4</td></tr><tr><td>VDEP</td><td>20 1/2 x 29 x 3/4</td></tr></table><div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>6</span></div></section><section class="page"><p class="eyebrow">Projects</p><h2>Built and installed</h2>
+<p class="lead">Photos from our projects.</p>
+<div class="photos"><div><img src="../../accessories/closet.jpg" alt="Walk-in closet"><div class="cap">Project photo</div></div><div><img src="../../accessories/handles.jpg" alt="Shaker doors with black handles"><div class="cap">Project photo</div></div><div><img src="../../accessories/drawers-run.jpg" alt="Drawer boxes in a base run"><div class="cap">Project photo</div></div><div><img src="../../accessories/wardrobe-open.jpg" alt="Open wardrobe with shelves and rails"><div class="cap">Project photo</div></div><div><img src="../../accessories/boxes.jpg" alt="Drawer base cabinet"><div class="cap">Project photo</div></div><div><img src="../../accessories/slides.jpg" alt="Vanity drawers"><div class="cap">Project photo</div></div></div><div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>7</span></div></section><section class="page end"><p class="eyebrow">Factory direct orders</p><h2>Made to your specification</h2>
+<p class="lead" style="margin-top:14pt">Our factory specializes in fully customized cabinetry for the particular needs of your project. Send us your specifications and our team guides you through the special-order options.</p>
+<p class="big">Choose from thousands of door styles and finishes: paint, stain, thermofoil, melamine and more. We also offer custom designs on request.</p>
+<h3 style="margin-top:26pt">Next step</h3>
+<p class="big">Design your cabinets online: <b>thelocalcabinetry.com/design</b></p>
+<p class="big">Email: <b>info@thelocalcabinetry.com</b><br>Phone: <b>+1 346-758-7867</b><br>Houston, TX &middot; warehouses nationwide</p>
+<div class="foot"><span>The Local Cabinetry &middot; thelocalcabinetry.com</span><span>8</span></div></section></body></html>
