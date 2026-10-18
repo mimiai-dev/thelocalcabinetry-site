@@ -38,7 +38,7 @@
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
-  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0, emailAsked: false, emailTimer: 0, sentOnce: false, day: '', owedSince: 0, ackSeen: false, still: null }
+  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0, emailAsked: false, emailTimer: 0, sentOnce: false, day: '', owedSince: 0, ackSeen: false, still: null, chipsEl: null }
   try { var saved = localStorage.getItem(KEY); if (saved && /^[0-9a-f]{32}$/.test(saved)) state.id = saved } catch (e) { /* storage blocked: memory only */ }
   var EMAIL_KEY = 'lco_email_asked_v1'
   try { if (state.id && localStorage.getItem(EMAIL_KEY) === state.id) state.emailAsked = true } catch (e) { /* ignore */ }
@@ -93,6 +93,12 @@
     '.lcochat-r.us .lcochat-m{background:#fff;color:#1b2733;border:1px solid #e3ded4;border-bottom-left-radius:4px}',
     '.lcochat-m small{display:block;margin-top:4px;opacity:.75;font-size:12px}',
     '.lcochat-t{font-size:11px;color:#7a7468;padding:0 4px}',
+    '.lcochat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;max-width:100%}',
+    '.lcochat-chip{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 14px;border:1px solid #0e2740;border-radius:20px;background:#fff;color:#0e2740;font:600 14px/1.1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;cursor:pointer}',
+    '.lcochat-chip:hover:not(:disabled){background:#0e2740;color:#fff}',
+    '.lcochat-chip:disabled{opacity:.55;cursor:default}',
+    '.lcochat-sw{display:inline-block;width:16px;height:16px;border-radius:50%;border:1px solid rgba(14,39,64,.35);flex:0 0 16px}',
+    '.lcochat-ic.hot{border-color:#b4862f;box-shadow:0 0 0 3px rgba(180,134,47,.28)}',
     '.lcochat-still{font-size:12px;color:#7a7468;margin:2px 4px 0}',
     '.lcochat-typing .lcochat-m{display:flex;gap:4px;align-items:center;padding:13px 14px}',
     '.lcochat-typing i{width:7px;height:7px;border-radius:50%;background:#9aa3ad;animation:lcochat-b 1.2s infinite ease-in-out}',
@@ -221,13 +227,32 @@
     log.appendChild(row('us', "Hi, I'm Muse, the AI assistant for The Local Cabinetry, here with Hannah's team to help with layouts and pricing.", ''))
     log.appendChild(row('us', 'What are you planning: kitchen, vanity or closet?', ''))
   }
-  function resetLog() { hideTyping(); state.owedSince = 0; state.ackSeen = false; clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
+  function resetLog() { hideTyping(); clearChips(); hotUpload(false); state.owedSince = 0; state.ackSeen = false; clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
   function setPhoto() { photoB.setAttribute('aria-disabled', state.id ? 'false' : 'true'); photoB.title = state.id ? 'Add a photo' : 'Send a message first, then add photos' }
+  // Quick replies: optional `chips: [{label, value, swatch?}]` on OUR lines. Shown only under the LAST 'us' line; any newer line or a tap removes them.
+  function clearChips() { if (state.chipsEl && state.chipsEl.parentNode) state.chipsEl.parentNode.removeChild(state.chipsEl); state.chipsEl = null }
+  function setChipsDisabled(on) { if (state.chipsEl) Array.prototype.forEach.call(state.chipsEl.querySelectorAll('button'), function (b) { b.disabled = !!on }) }
+  function hotUpload(on) { if (!photoB) return; photoB.classList.toggle('hot', !!on); if (on) photoB.title = 'Add a photo or sketch' }
+  function renderChips(r, chips) {
+    var c = r.querySelector('.lcochat-c'); if (!c) return
+    var box = el('div', 'lcochat-chips'); box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Quick replies')
+    chips.slice(0, 8).forEach(function (ch) {
+      if (!ch || typeof ch.label !== 'string' || typeof ch.value !== 'string' || !ch.label || !ch.value) return
+      var b = el('button', 'lcochat-chip'); b.type = 'button'
+      if (typeof ch.swatch === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(ch.swatch)) { var sw = el('i', 'lcochat-sw'); sw.style.background = ch.swatch; b.appendChild(sw) }
+      b.appendChild(document.createTextNode(ch.label.slice(0, 40)))
+      b.addEventListener('click', function () { if (state.busy) return; setChipsDisabled(true); post({ text: ch.label.slice(0, 40), chip: ch.value.slice(0, 64) }) })
+      box.appendChild(b)
+    })
+    if (!box.childNodes.length) return
+    c.appendChild(box); state.chipsEl = box
+  }
   function addMsg(m) {
     if (state.seen[m.seq]) return
     state.seen[m.seq] = 1
     var from = m.from === 'us' ? 'us' : 'you'
     var isAck = from === 'us' && m.ack === true
+    clearChips(); hotUpload(false)
     if (isAck) state.ackSeen = true
     else if (from === 'us') { hideTyping(); state.owedSince = 0; state.ackSeen = false }
     var at = m.at || m.ts || m.time || m.created_at || m.created
@@ -237,6 +262,7 @@
     state.last = Math.max(state.last, m.seq)
     state.lastFrom = from
     if (isAck && !state.typing && state.owedSince) showTyping()
+    if (from === 'us' && !isAck) { if (Array.isArray(m.chips) && m.chips.length) renderChips(r, m.chips); if (m.upload === true) hotUpload(true) }
     if (from === 'us' && !isAck && state.sentOnce) setTimeout(promptEmail, 800)
   }
   function scrollDown() { log.scrollTop = log.scrollHeight }
@@ -245,6 +271,7 @@
   // One message-style prompt inside the conversation, once per conversation: after our first reply (or 20 s without one).
   function promptEmail() {
     if (!state.id || state.emailAsked) return
+    if (state.chipsEl) { clearTimeout(state.emailTimer); state.emailTimer = setTimeout(promptEmail, 8000); return }   // not while quick replies are on offer
     state.emailAsked = true; clearTimeout(state.emailTimer)
     try { localStorage.setItem(EMAIL_KEY, state.id) } catch (e) { /* ignore */ }
     var r = el('div', 'lcochat-r us'); r.appendChild(avatar(true, true))
@@ -306,16 +333,25 @@
     var text = ta.value.trim()
     if (!text && !state.files.length) return
     if (text.length > MAX_TEXT) { showErr('That is a bit long. Please keep it under ' + MAX_TEXT + ' characters.'); return }
+    post({ text: text, files: state.files.map(function (f) { return f.id }) })
+  }
+  function rid() { var a = new Uint8Array(8); try { crypto.getRandomValues(a) } catch (e) { for (var i = 0; i < 8; i++) a[i] = Math.floor(Math.random() * 256) } return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2) }).join('') }
+  // o = { text, files? } for typed lines; { text: <chip label>, chip: <chip value> } for a tap on a quick reply
+  function post(o) {
+    if (state.busy) return
     state.busy = true; sendB.disabled = true; showErr('')
-    var body = { text: text }
-    if (state.files.length) body.file_ids = state.files.map(function (f) { return f.id })
+    var body = { text: o.text }
+    if (o.files && o.files.length) body.file_ids = o.files
+    if (o.chip) { body.chip = o.chip; body.client_id = 'chip-' + rid() }
     fetch(API + 'message', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify(body), cache: 'no-store' }).then(function (r) {
       return r.json().catch(function () { return {} }).then(function (j) { return { s: r.status, j: j } })
     }).then(function (x) {
       state.busy = false; sendB.disabled = false
+      if (!(x.s === 200 && x.j && x.j.ok)) setChipsDisabled(false)
       if (x.s === 200 && x.j && x.j.ok) {
         if (x.j.conversation) { state.id = x.j.conversation; remember(); setPhoto() }
-        ta.value = ''; grow(); state.files = []; paintChips(); state.idleSince = Date.now()
+        if (!o.chip) { ta.value = ''; grow(); state.files = []; paintChips() }
+        clearChips(); hotUpload(false); state.idleSince = Date.now()
         state.owedSince = Date.now(); state.ackSeen = x.j.ack === true
         showTyping()
         state.sentOnce = true
@@ -328,7 +364,7 @@
       if (x.s === 413) return showErr('That message is too long.')
       if (x.s === 503 || x.s === 403 || x.s === 404) return fallback()
       showErr((x.j && x.j.message) || 'Sorry, that did not send. Please try again.')
-    }).catch(function () { state.busy = false; sendB.disabled = false; fallback('We could not reach the server. Please try again, or open the full design tool.') })
+    }).catch(function () { state.busy = false; sendB.disabled = false; setChipsDisabled(false); fallback('We could not reach the server. Please try again, or open the full design tool.') })
   }
 
   function paintChips() {
@@ -352,7 +388,7 @@
     fetch(API + 'file', { method: 'POST', headers: headers({ 'x-file-name': encodeURIComponent(f.name.slice(0, 80)), 'content-type': 'application/octet-stream' }), body: f, cache: 'no-store' })
       .then(function (r) { return r.json().catch(function () { return {} }).then(function (j) { return { s: r.status, j: j } }) })
       .then(function (x) {
-        if (x.s === 200 && x.j.file_id) { state.files.push({ id: x.j.file_id, name: f.name.slice(0, 30) }); paintChips(); return }
+        if (x.s === 200 && x.j.file_id) { state.files.push({ id: x.j.file_id, name: f.name.slice(0, 30) }); paintChips(); hotUpload(false); return }
         showErr(x.s === 415 ? 'Only photos please (JPEG, PNG, WebP or HEIC).' : x.s === 429 ? 'Too many photos for now. Please try again later.' : 'That photo did not upload. Please try again.')
       }).catch(function () { showErr('That photo did not upload. Please try again.') })
   }
