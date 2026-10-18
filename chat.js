@@ -6,6 +6,9 @@
  * chat-bubble icon) but opens a panel. Lines go to OUR server (same origin, /design/api/visit/*) and land with the team; the
  * replies come back into the panel (polling). The panel keeps a clear link to the full design tool (/design).
  *
+ * EMAIL STEP: before the first message the panel asks where to send the design and our replies (mode switched by the server config: email_gate first | after_chip | off,
+ * or email_required). The address stays in this browser (localStorage, optional) and is sent ONCE, with the first message of a conversation. Someone who types it and
+ * closes the chat sends us nothing. A 'seen' ping (POST visit/seen) tells the server which of our lines were really on screen, so a reminder is sent only for unseen replies.
  * Sends NOTHING until the visitor presses Send on a first message: no request on page load, none when the panel opens
  * (the old conversation, if the browser kept one, is only re-read). The server mints the conversation id on the first message;
  * it is kept in this browser's localStorage under lco_visit_v1 and sent in the x-lco-visit header (never in a URL).
@@ -38,10 +41,19 @@
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
-  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0, emailAsked: false, emailTimer: 0, sentOnce: false, day: '', owedSince: 0, ackSeen: false, still: null, chipsEl: null }
+  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0, emailAsked: false, emailTimer: 0, sentOnce: false, day: '', owedSince: 0, ackSeen: false, still: null, chipsEl: null, email: '', emailMode: 'first', maxUs: 0, seenSent: 0, needEmail: false, emailCard: null }
   try { var saved = localStorage.getItem(KEY); if (saved && /^[0-9a-f]{32}$/.test(saved)) state.id = saved } catch (e) { /* storage blocked: memory only */ }
-  var EMAIL_KEY = 'lco_email_asked_v1'
-  try { if (state.id && localStorage.getItem(EMAIL_KEY) === state.id) state.emailAsked = true } catch (e) { /* ignore */ }
+  // The visitor's email: asked before the first message, kept only in this browser (localStorage, try/catch: it works without it) and sent ONCE,
+  // with the first message of a conversation. Someone who types it and closes the chat sends us nothing.
+  var EMAIL_LS = 'lco_email_v1'
+  function validEmail(v) {
+    if (typeof v !== 'string' || v.length > 254 || /[\s\u0000-\u001f\u007f]/.test(v)) return false
+    var p = v.split('@'); if (p.length !== 2 || !p[0] || !p[1]) return false
+    var d = p[1]; var dot = d.indexOf('.'); return dot > 0 && dot < d.length - 1 && d.charAt(d.length - 1) !== '.'
+  }
+  function loadEmail() { try { var v = (localStorage.getItem(EMAIL_LS) || '').trim().toLowerCase(); return validEmail(v) ? v : '' } catch (e) { return '' } }
+  function storeEmail(v) { try { if (v) localStorage.setItem(EMAIL_LS, v); else localStorage.removeItem(EMAIL_LS) } catch (e) { /* memory only */ } }
+  state.email = loadEmail()
   function remember() { try { if (state.id) localStorage.setItem(KEY, state.id); else localStorage.removeItem(KEY) } catch (e) { /* ignore */ } }
 
   function el(tag, cls, text) {
@@ -99,6 +111,17 @@
     '.lcochat-chip:disabled{opacity:.55;cursor:default}',
     '.lcochat-sw{display:inline-block;width:16px;height:16px;border-radius:50%;border:1px solid rgba(14,39,64,.35);flex:0 0 16px}',
     '.lcochat-ic.hot{border-color:#b4862f;box-shadow:0 0 0 3px rgba(180,134,47,.28)}',
+    '.lcochat-panel.gating .lcochat-log,.lcochat-panel.gating .lcochat-err,.lcochat-panel.gating .lcochat-box{display:none}',
+    '.lcochat-gate{flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:24px 20px;background:#f6f4ef;overflow-y:auto}',
+    '.lcochat-gate[hidden]{display:none}',
+    '.lcochat-gate h3{margin:0;font:600 19px/1.25 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0e2740}',
+    '.lcochat-gate-f{display:flex;flex-direction:column;gap:10px}',
+    '.lcochat-gate-f input{min-height:48px;padding:0 14px;border:1px solid #bdb6a8;border-radius:10px;font:inherit;font-size:16px;color:#1b2733;background:#fff}',
+    '.lcochat-gate-go{min-height:48px;border:0;border-radius:10px;background:#0e2740;color:#fff;font:600 16px/1 system-ui,sans-serif;cursor:pointer}',
+    '.lcochat-gate-go:hover{background:#14365a}',
+    '.lcochat-gate-msg{min-height:18px;font-size:13px;color:#8a1c12}',
+    '.lcochat-gate-note{margin:0;font-size:13px;color:#51606f}',
+    '.lcochat-gate-note a{color:#0e2740;font-weight:600}',
     '.lcochat-still{font-size:12px;color:#7a7468;margin:2px 4px 0}',
     '.lcochat-typing .lcochat-m{display:flex;gap:4px;align-items:center;padding:13px 14px}',
     '.lcochat-typing i{width:7px;height:7px;border-radius:50%;background:#9aa3ad;animation:lcochat-b 1.2s infinite ease-in-out}',
@@ -144,6 +167,16 @@
     '@media print{.lcocat{display:none}.lcochat-btn,.lcochat-panel,.lcochat-wa{display:none}}'
   ].join('')
 
+  var gate, gateIn, gateGo, gateMsg
+  // Before the first message: the email step (mode 'first', no stored email, no conversation yet). Returning visitors skip it.
+  function applyGate(message) {
+    if (!panel) return
+    var need = state.emailMode === 'first' && !state.email && !state.id
+    panel.classList.toggle('gating', need); gate.hidden = !need
+    btn.setAttribute('data-track', need ? 'chat-open-gate' : 'chat-open')
+    if (need && message) gateMsg.textContent = message
+    if (state.open) setTimeout(function () { (need ? gateIn : ta).focus() }, 0)
+  }
   var dot, stText, checked = 0, btn, wa, panel, log, err, ta, sendB, photoIn, photoB, chips
 
   function headers(extra) {
@@ -230,7 +263,7 @@
     // The server never sends the first set: the widget offers the rooms itself, but only for a NEW conversation (a returning visitor sees the thread instead).
     if (!state.id) renderChips(q, [{ label: 'Kitchen', value: 'room:kitchen' }, { label: 'Vanity', value: 'room:vanity' }, { label: 'Closet', value: 'room:closet' }, { label: 'Not sure', value: 'room:unsure' }])
   }
-  function resetLog() { hideTyping(); clearChips(); hotUpload(false); state.owedSince = 0; state.ackSeen = false; clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
+  function resetLog() { setTimeout(applyGate, 0); hideTyping(); state.maxUs = 0; state.seenSent = 0; state.needEmail = false; state.emailCard = null; clearChips(); hotUpload(false); state.owedSince = 0; state.ackSeen = false; clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
   function setPhoto() { photoB.setAttribute('aria-disabled', state.id ? 'false' : 'true'); photoB.title = state.id ? 'Add a photo' : 'Send a message first, then add photos' }
   // Quick replies: optional `chips: [{label, value, swatch?}]` on OUR lines. Shown only under the LAST 'us' line; any newer line or a tap removes them.
   function clearChips() { if (state.chipsEl && state.chipsEl.parentNode) state.chipsEl.parentNode.removeChild(state.chipsEl); state.chipsEl = null }
@@ -244,6 +277,7 @@
       var b = el('button', 'lcochat-chip'); b.type = 'button'
       if (typeof ch.swatch === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(ch.swatch)) { var sw = el('i', 'lcochat-sw'); sw.style.background = ch.swatch; b.appendChild(sw) }
       b.appendChild(document.createTextNode(ch.label.slice(0, 40)))
+      if (state.needEmail) b.disabled = true   // chips that arrive while the mandatory email card is open wait for it too
       b.addEventListener('click', function () { if (state.busy) return; setChipsDisabled(true); post({ text: ch.label.slice(0, 40), chip: ch.value.slice(0, 64) }) })
       box.appendChild(b)
     })
@@ -263,39 +297,35 @@
     var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human')
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.last = Math.max(state.last, m.seq)
+    if (from === 'us') state.maxUs = Math.max(state.maxUs, m.seq)
     state.lastFrom = from
     if (isAck && !state.typing && state.owedSince) showTyping()
     if (from === 'us' && !isAck) { if (Array.isArray(m.chips) && m.chips.length) renderChips(r, m.chips); if (m.upload === true) hotUpload(true) }
-    if (from === 'us' && !isAck && state.sentOnce) setTimeout(promptEmail, 800)
   }
   function scrollDown() { log.scrollTop = log.scrollHeight }
   function grow() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px' }
 
-  // One message-style prompt inside the conversation, once per conversation: after our first reply (or 20 s without one).
-  function promptEmail() {
-    if (!state.id || state.emailAsked) return
-    if (state.chipsEl) { clearTimeout(state.emailTimer); state.emailTimer = setTimeout(promptEmail, 8000); return }   // not while quick replies are on offer
-    state.emailAsked = true; clearTimeout(state.emailTimer)
-    try { localStorage.setItem(EMAIL_KEY, state.id) } catch (e) { /* ignore */ }
+  // 'after_chip' mode only (switch in the server config): after the first chip step a mandatory email card sits in the thread; chips and the box wait for it.
+  function emailCard() {
+    if (!state.id || state.emailCard || state.email) return
     var r = el('div', 'lcochat-r us'); r.appendChild(avatar(true, true))
-    var c = el('div', 'lcochat-c'); var b = el('div', 'lcochat-m lcochat-ask')
-    b.appendChild(el('span', '', 'Want us to follow up by email too?'))
-    var xb = el('button', 'lcochat-ask-x', '×'); xb.type = 'button'; xb.setAttribute('aria-label', 'No thanks'); xb.title = 'No thanks'
+    var c = el('div', 'lcochat-c'); var b = el('div', 'lcochat-m lcochat-ask lcochat-ask-need')
+    b.appendChild(el('span', '', 'Where should we send your design and our replies?'))
     var f = el('form', 'lcochat-ask-f'); f.noValidate = true
     var inp = el('input'); inp.type = 'email'; inp.placeholder = 'you@example.com'; inp.autocomplete = 'email'; inp.setAttribute('aria-label', 'Your email')
     var go = el('button'); go.type = 'submit'; go.setAttribute('aria-label', 'Save email'); go.appendChild(svg('M5 12h14M13 6l6 6-6 6'))
     var msg = el('div', 'lcochat-ask-msg'); msg.setAttribute('role', 'status')
-    f.appendChild(inp); f.appendChild(go); b.appendChild(xb); b.appendChild(f); b.appendChild(msg)
+    f.appendChild(inp); f.appendChild(go); b.appendChild(f); b.appendChild(msg)
     c.appendChild(b); r.appendChild(c)
-    xb.addEventListener('click', function () { if (r.parentNode) r.parentNode.removeChild(r) })
+    state.needEmail = true; state.emailCard = r; setChipsDisabled(true)
     f.addEventListener('submit', function (e) {
       e.preventDefault()
-      var v = inp.value.trim()
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) { msg.textContent = 'Please enter a valid email address.'; return }
+      var v = inp.value.trim().toLowerCase()
+      if (!validEmail(v)) { msg.textContent = 'Please enter a valid email address.'; return }
       go.disabled = true; msg.textContent = ''
       fetch(API + 'email', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify({ email: v }), cache: 'no-store' })
         .then(function (res) {
-          if (res.ok) { b.textContent = "Thanks, we'll write to " + v; b.classList.remove('lcochat-ask'); poll(); return }
+          if (res.ok) { state.email = v; storeEmail(v); state.needEmail = false; b.textContent = "Thanks, we'll write to " + v; b.classList.remove('lcochat-ask'); b.classList.remove('lcochat-ask-need'); setChipsDisabled(false); poll(); return }
           go.disabled = false; msg.textContent = res.status === 429 ? 'Please try again later.' : 'That did not save. Please try again.'
         }).catch(function () { go.disabled = false; msg.textContent = 'That did not save. Please try again.' })
     })
@@ -303,6 +333,12 @@
     scrollDown()
   }
 
+  // Tell the server which of our lines the visitor has actually had in front of them: panel open AND tab visible, highest seq rendered.
+  function maybeSeen() {
+    if (!state.id || !state.open || document.hidden || state.maxUs <= state.seenSent) return
+    var q = state.maxUs; state.seenSent = q
+    fetch(API + 'seen', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify({ seq: q }), cache: 'no-store' }).catch(function () { /* the reminder just stays possible */ })
+  }
   // While a reply is owed: every 2 s for 30 s after the visitor's line, then 4 s (to 2 min), then 10 s. Otherwise the calm idle schedule.
   function nextDelay() {
     if (state.owedSince) { var age = Date.now() - state.owedSince; return age < 30000 ? 2000 : age < 120000 ? 4000 : 10000 }
@@ -326,6 +362,7 @@
       showErr('')
       var fresh = (j.messages || []).length
       ;(j.messages || []).forEach(addMsg)
+      maybeSeen()
       if (fresh) { state.idleSince = Date.now(); scrollDown() }
       state.timer = setTimeout(poll, nextDelay())
     }).catch(function () { state.timer = setTimeout(poll, 15000) })
@@ -333,6 +370,7 @@
 
   function send() {
     if (state.busy) return
+    if (state.needEmail) { showErr('Please add your email above first, so we can send you our reply.'); return }
     var text = ta.value.trim()
     if (!text && !state.files.length) return
     if (text.length > MAX_TEXT) { showErr('That is a bit long. Please keep it under ' + MAX_TEXT + ' characters.'); return }
@@ -342,8 +380,11 @@
   // o = { text, files? } for typed lines; { text: <chip label>, chip: <chip value> } for a tap on a quick reply
   function post(o) {
     if (state.busy) return
+    if (state.needEmail) { showErr('Please add your email above first, so we can send you our reply.'); return }
     state.busy = true; sendB.disabled = true; showErr('')
     var body = { text: o.text }
+    var firstOfConversation = !state.id
+    if (firstOfConversation && state.email) body.email = state.email
     if (o.files && o.files.length) body.file_ids = o.files
     if (o.chip) { body.chip = o.chip; body.client_id = 'chip-' + rid() }
     fetch(API + 'message', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify(body), cache: 'no-store' }).then(function (r) {
@@ -358,13 +399,14 @@
         state.owedSince = Date.now(); state.ackSeen = x.j.ack === true
         showTyping()
         state.sentOnce = true
-        if (!state.emailAsked) { clearTimeout(state.emailTimer); state.emailTimer = setTimeout(promptEmail, 20000) }
+        if (firstOfConversation && state.emailMode === 'after_chip' && !state.email) emailCard()
         poll()
         return
       }
       if (x.s === 404 && state.id) { state.id = null; state.last = 0; state.seen = {}; state.lastFrom = ''; remember(); resetLog(); showErr('That chat had ended. Please send your message again.'); return }
       if (x.s === 429) return showErr('Please slow down a little and try again in a minute.')
       if (x.s === 413) return showErr('That message is too long.')
+      if (x.s === 400 && x.j && /email/i.test(String(x.j.message || ''))) { state.email = ''; storeEmail(''); applyGate(String(x.j.message)); return }
       if (x.s === 503 || x.s === 403 || x.s === 404) return fallback()
       showErr((x.j && x.j.message) || 'Sorry, that did not send. Please try again.')
     }).catch(function () { state.busy = false; sendB.disabled = false; setChipsDisabled(false); fallback('We could not reach the server. Please try again, or open the full design tool.') })
@@ -402,6 +444,13 @@
     if (checked && Date.now() - checked < 60000) return
     checked = Date.now()
     fetch(API + 'config', { headers: { 'x-lco-design': '1' }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null }).then(function (j) {
+      if (j) {   // the email step is switched from the server: email_gate 'first' | 'after_chip' | 'off', or the older email_required true | false
+        var g = j.email_gate
+        if (g === 'first' || g === 'after_chip' || g === 'off') state.emailMode = g
+        else if (j.email_required === false) state.emailMode = 'off'
+        else if (j.email_required === true) state.emailMode = 'first'
+        applyGate()
+      }
       if (!j || typeof j.enabled !== 'boolean') return
       dot.className = 'lcochat-dot' + (j.enabled ? '' : ' off'); stText.textContent = j.enabled ? 'Online' : 'Away: leave a message in the design tool'
     }).catch(function () { /* keep the header as it is */ })
@@ -433,7 +482,8 @@
     catClose()
     state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); if (wa) wa.classList.add('open'); checkOnline()
     if (state.id) poll()   // only re-reads a conversation this browser already has
-    setTimeout(function () { ta.focus() }, 0)
+    setTimeout(function () { (panel.classList.contains('gating') ? gateIn : ta).focus() }, 0)
+    maybeSeen()
   }
   function close() {
     state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); if (wa) wa.classList.remove('open'); clearTimeout(state.timer)
@@ -486,8 +536,24 @@
     rw.appendChild(photoB); rw.appendChild(ta); rw.appendChild(sendB); rw.appendChild(photoIn)
     box.appendChild(chips); box.appendChild(rw)
 
-    panel.appendChild(head); panel.appendChild(log); panel.appendChild(err); panel.appendChild(box)
+    gate = el('div', 'lcochat-gate'); gate.hidden = true
+    gate.appendChild(el('h3', '', 'Where should we send your design and our replies?'))
+    var gf = el('form', 'lcochat-gate-f'); gf.noValidate = true
+    gateIn = el('input'); gateIn.type = 'email'; gateIn.placeholder = 'you@example.com'; gateIn.autocomplete = 'email'; gateIn.setAttribute('aria-label', 'Your email'); gateIn.maxLength = 254
+    gateGo = el('button', 'lcochat-gate-go', 'Start chat'); gateGo.type = 'submit'
+    gateMsg = el('div', 'lcochat-gate-msg'); gateMsg.setAttribute('role', 'status')
+    var gn = el('p', 'lcochat-gate-note', 'Only to send you our reply; no spam. '); var gl = el('a', '', 'How we use it'); gl.href = '/policies/#privacy'; gl.target = '_blank'; gl.rel = 'noopener'; gn.appendChild(gl)
+    gf.appendChild(gateIn); gf.appendChild(gateGo); gf.appendChild(gateMsg); gate.appendChild(gf); gate.appendChild(gn)
+    gateIn.addEventListener('input', function () { if (validEmail(gateIn.value.trim())) gateGo.setAttribute('data-track', 'gate-start'); else gateGo.removeAttribute('data-track') })
+    gf.addEventListener('submit', function (e) {
+      e.preventDefault()
+      var v = gateIn.value.trim().toLowerCase()
+      if (!validEmail(v)) { gateMsg.textContent = 'Please enter a valid email address.'; return }
+      state.email = v; storeEmail(v); gateMsg.textContent = ''; applyGate()
+    })
+    panel.appendChild(head); panel.appendChild(gate); panel.appendChild(log); panel.appendChild(err); panel.appendChild(box)
     document.body.appendChild(btn); document.body.appendChild(panel)
+    applyGate()
     if (WA_URL) {
       wa = el('a', 'lcochat-wa'); wa.href = WA_URL; wa.target = '_blank'; wa.rel = 'noopener'; wa.title = 'Message us on WhatsApp'
       wa.setAttribute('aria-label', 'Message us on WhatsApp'); wa.setAttribute('data-track', 'whatsapp-open'); wa.appendChild(svg(WA_PATH))
@@ -511,7 +577,7 @@
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
     })
-    document.addEventListener('visibilitychange', function () { if (!document.hidden && state.open && state.id) poll() })
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && state.open && state.id) { poll(); maybeSeen() } })
   }
 
   if (document.body) mount()
