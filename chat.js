@@ -33,6 +33,8 @@
   var WA_URL = waOk(WHATSAPP) ? 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(WA_TEXT) : ''
   var WA_PATH = 'M3 21l1.6-5A8.5 8.5 0 1 1 8 19.4zM9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 .8c-1-.4-2-1.4-2.4-2.4l.8-1-1-2z'
   var API = '/design/api/visit/'
+  var CATALOG = '/catalog/The-Local-Cabinetry-Catalog.pdf'
+  var CAT_KEY = 'lco_catalog_pop_v1'   // set once the popup was shown: it never comes back for this browser
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
@@ -119,7 +121,20 @@
     '.lcochat-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}',
     '.lcochat-tools:empty{display:none}',
     '@media (max-width:520px){.lcochat-panel{inset:0;width:auto;max-width:none;height:auto;border-radius:0;box-shadow:none}.lcochat-head,.lcochat-log,.lcochat-box,.lcochat-err{padding-left:16px;padding-right:16px}.lcochat-btn.open{display:none}.lcochat-box textarea,.lcochat-ask-f input{font-size:16px}}',
-    '@media print{.lcochat-btn,.lcochat-panel,.lcochat-wa{display:none}}'
+    '.lcocat{position:fixed;inset:0;z-index:2147483002;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,20,34,.55)}',
+    '.lcocat[hidden]{display:none}',
+    '.lcocat-card{position:relative;display:flex;width:760px;max-width:100%;max-height:calc(100dvh - 32px);overflow:auto;background:#fff;color:#1b2733;border-radius:14px;box-shadow:0 12px 40px rgba(8,20,34,.35);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}',
+    '.lcocat-img{flex:0 0 42%;min-height:0;overflow:hidden;background:#0e2740}',
+    '.lcocat-img img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}',
+    '.lcocat-tx{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:36px 32px}',
+    '.lcocat-tx h2{margin:0 0 10px;font:600 26px/1.15 Georgia,"Times New Roman",serif;color:#0e2740}',
+    '.lcocat-tx p{margin:0 0 20px;color:#4a5560}',
+    '.lcocat-go{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 24px;border-radius:8px;background:#b4862f;color:#fff;font-weight:600;text-decoration:none}',
+    '.lcocat-go:hover{background:#9a7226}',
+    '.lcocat-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#0e2740;font-size:26px;line-height:1;cursor:pointer}',
+    '.lcocat-go:focus-visible,.lcocat-x:focus-visible{outline:3px solid #0e2740;outline-offset:2px}',
+    '@media (max-width:620px){.lcocat-card{flex-direction:column}.lcocat-img{flex:0 0 150px}.lcocat-tx{padding:22px 20px 24px}.lcocat-tx h2{font-size:22px}}',
+    '@media print{.lcocat{display:none}.lcochat-btn,.lcochat-panel,.lcochat-wa{display:none}}'
   ].join('')
 
   var dot, stText, checked = 0, btn, wa, panel, log, err, ta, sendB, photoIn, photoB, chips
@@ -330,7 +345,31 @@
       dot.className = 'lcochat-dot' + (j.enabled ? '' : ' off'); stText.textContent = j.enabled ? 'Online' : 'Away: leave a message in the design tool'
     }).catch(function () { /* keep the header as it is */ })
   }
+  // Catalog popup: once per browser, about 15 s after the page loads, never while the chat panel is open. No email, no request:
+  // it is a link to a file on this site. Closes with the x, Escape or a click outside; the 'seen' flag is set when it is shown.
+  var cat, catFrom
+  function catClose() { if (!cat || cat.hidden) return; cat.hidden = true; if (catFrom && catFrom.focus) { try { catFrom.focus() } catch (e) { /* ignore */ } } }
+  function catShow() {
+    try { if (localStorage.getItem(CAT_KEY)) return } catch (e) { return }   // storage blocked: never nag
+    if (state.open || cat) return
+    try { localStorage.setItem(CAT_KEY, '1') } catch (e) { return }
+    catFrom = document.activeElement
+    cat = el('div', 'lcocat'); cat.setAttribute('role', 'dialog'); cat.setAttribute('aria-modal', 'true'); cat.setAttribute('aria-label', 'Get our catalog')
+    var card = el('div', 'lcocat-card'), im = el('div', 'lcocat-img'), pic = el('img'); pic.src = '/catalog/cover.jpg'; pic.alt = 'The Local Cabinetry catalog cover'; im.appendChild(pic)
+    var tx = el('div', 'lcocat-tx')
+    tx.appendChild(el('h2', '', 'See every door style and finish'))
+    tx.appendChild(el('p', '', 'Our catalog: six door collections, seventeen finishes and how every cabinet is built. Free PDF, no sign-up.'))
+    var go = el('a', 'lcocat-go', 'Download the catalog'); go.href = CATALOG; go.setAttribute('download', ''); go.setAttribute('data-track', 'catalog-popup')
+    tx.appendChild(go)
+    var x = el('button', 'lcocat-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close')
+    card.appendChild(im); card.appendChild(tx); card.appendChild(x); cat.appendChild(card); document.body.appendChild(cat)
+    x.addEventListener('click', catClose); go.addEventListener('click', function () { setTimeout(catClose, 0) })
+    cat.addEventListener('click', function (e) { if (e.target === cat) catClose() })
+    cat.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); catClose() } else if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === go ? x : go).focus() } })
+    go.focus()
+  }
   function open() {
+    catClose()
     state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); if (wa) wa.classList.add('open'); checkOnline()
     if (state.id) poll()   // only re-reads a conversation this browser already has
     setTimeout(function () { ta.focus() }, 0)
@@ -394,6 +433,7 @@
       document.body.appendChild(wa)
     }
     greet()
+    setTimeout(catShow, 15000)
 
     btn.addEventListener('click', function () { state.open ? close() : open() })
     x.addEventListener('click', close)
