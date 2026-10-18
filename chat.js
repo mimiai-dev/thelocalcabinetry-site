@@ -15,7 +15,7 @@
  * Honest wording: the first bubble is a LOCAL greeting (never sent, never stored on the server) that says the assistant is an AI helping
  * Hannah's team; every later line and every reply comes from the desk. While no reply has come a 'typing' indicator shows for at most 60 s.
  * If the server answers "closed" (kill switch), is unreachable, or an older server does not know the path, the panel says so and
- * points to the design tool. Messenger-style window: avatar, name, Online dot, bubbles with time, typing dots, growing composer.
+ * points to the design tool. A WhatsApp link (header icon + a round corner button) only opens WhatsApp on the owner's phone: it sends nothing. Messenger-style window: avatar, name, Online dot, bubbles with time, typing dots, growing composer.
  */
 (function () {
   'use strict'
@@ -24,11 +24,19 @@
   var s = document.currentScript
   var label = ((s && s.dataset && s.dataset.label) || 'Chat with Hannah').trim().slice(0, 40)
   var DESIGN = '/design'
+  // The owner's WhatsApp number: the ONE place to change it (country code, digits only, no + and no leading 0).
+  // A placeholder-looking number renders no WhatsApp button at all: a button that dials a stranger is worse than none.
+  var WHATSAPP = '84976096632'
+  var WA_TEXT = 'Hi, I saw your kitchens on thelocalcabinetry.com'
+  var PLACEHOLDERS = [/^0+$/, /^(\d)\1+$/, /^1?234567890$/, /^1?5551?\d{4}$/, /^123456789\d*$/, /^(44)?0?7700900\d{3}$/, /^1?5550\d{3}$/]
+  function waOk(n) { return /^[1-9]\d{7,14}$/.test(n) && !PLACEHOLDERS.some(function (re) { return re.test(n) }) }
+  var WA_URL = waOk(WHATSAPP) ? 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(WA_TEXT) : ''
+  var WA_PATH = 'M3 21l1.6-5A8.5 8.5 0 1 1 8 19.4zM9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 .8c-1-.4-2-1.4-2.4-2.4l.8-1-1-2z'
   var API = '/design/api/visit/'
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
-  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0, emailAsked: false, emailTimer: 0, sentOnce: false }
+  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0, emailAsked: false, emailTimer: 0, sentOnce: false, day: '' }
   try { var saved = localStorage.getItem(KEY); if (saved && /^[0-9a-f]{32}$/.test(saved)) state.id = saved } catch (e) { /* storage blocked: memory only */ }
   var EMAIL_KEY = 'lco_email_asked_v1'
   try { if (state.id && localStorage.getItem(EMAIL_KEY) === state.id) state.emailAsked = true } catch (e) { /* ignore */ }
@@ -51,6 +59,11 @@
     '.lcochat-btn{position:fixed;right:16px;bottom:16px;z-index:2147483000;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 20px;border:0;border-radius:999px;background:#0e2740;color:#fff;cursor:pointer;',
     'font:600 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 6px 24px rgba(8,20,34,.25)}',
     '.lcochat-btn:hover{background:#14365a}',
+    '.lcochat-wa{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:calc(max(16px,env(safe-area-inset-bottom)) + 60px);z-index:2147483000;width:48px;height:48px;border-radius:50%;background:#1f9d55;color:#fff;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 6px 24px rgba(8,20,34,.25)}',
+    '.lcochat-wa:hover{background:#188548}',
+    '.lcochat-wa svg{width:24px;height:24px}',
+    '.lcochat-wa:focus-visible{outline:3px solid #b4862f;outline-offset:3px}',
+    '.lcochat-wa.open{display:none}',
     '.lcochat-btn svg{flex:0 0 18px}',
     '.lcochat-btn:focus-visible,.lcochat-panel button:focus-visible,.lcochat-panel a:focus-visible,.lcochat-panel textarea:focus-visible,.lcochat-panel input:focus-visible{outline:3px solid #b4862f;outline-offset:2px}',
     '.lcochat-panel{position:fixed;right:16px;bottom:76px;z-index:2147483001;width:380px;max-width:calc(100vw - 32px);height:min(600px,calc(100dvh - 100px));display:flex;flex-direction:column;background:#fff;color:#1b2733;',
@@ -63,6 +76,8 @@
     '.lcochat-who{flex:1;min-width:0}',
     '.lcochat-who h2{margin:0;font:600 16px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}',
     '.lcochat-st{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:12.5px;color:#cfd8e3}',
+    '.lcochat-dot.off{background:#9aa3ad;box-shadow:0 0 0 2px rgba(154,163,173,.25)}',
+    '.lcochat-day{align-self:center;padding:3px 12px;border-radius:999px;background:#e9e4d9;color:#5d574b;font-size:12px;font-weight:600}',
     '.lcochat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#2fb26a;box-shadow:0 0 0 2px rgba(47,178,106,.25)}',
     '.lcochat-x{min-width:44px;min-height:44px;margin:-8px -8px -8px 0;border:0;background:transparent;color:#fff;font-size:26px;line-height:1;cursor:pointer;border-radius:8px}',
     '.lcochat-log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#f6f4ef}',
@@ -104,10 +119,10 @@
     '.lcochat-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}',
     '.lcochat-tools:empty{display:none}',
     '@media (max-width:520px){.lcochat-panel{inset:0;width:auto;max-width:none;height:auto;border-radius:0;box-shadow:none}.lcochat-head,.lcochat-log,.lcochat-box,.lcochat-err{padding-left:16px;padding-right:16px}.lcochat-btn.open{display:none}.lcochat-box textarea,.lcochat-ask-f input{font-size:16px}}',
-    '@media print{.lcochat-btn,.lcochat-panel{display:none}}'
+    '@media print{.lcochat-btn,.lcochat-panel,.lcochat-wa{display:none}}'
   ].join('')
 
-  var btn, panel, log, err, ta, sendB, photoIn, photoB, chips
+  var dot, stText, checked = 0, btn, wa, panel, log, err, ta, sendB, photoIn, photoB, chips
 
   function headers(extra) {
     var h = { 'x-lco-design': '1' }
@@ -122,12 +137,31 @@
 
   function avatar(sm, ai) { return el('span', 'lcochat-av' + (sm ? ' sm' : '') + (ai ? ' ai' : ''), ai ? 'M' : 'H') }
   function stamp(v) {
+    var d = toDate(v)
+    var h = d.getHours(), m = d.getMinutes()
+    return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ' ' + (h < 12 ? 'AM' : 'PM')
+  }
+  function dayKey(d) { return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate() }
+  function dayLabel(d) {
+    var now = new Date(), y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+    if (dayKey(d) === dayKey(now)) return 'Today'
+    if (dayKey(d) === dayKey(y)) return 'Yesterday'
+    var M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    return M[d.getMonth()] + ' ' + d.getDate() + (d.getFullYear() !== now.getFullYear() ? ', ' + d.getFullYear() : '')
+  }
+  // A centred 'Today' / 'Yesterday' / 'Oct 17' chip whenever the day changes from the last stamped line (viewer's local time zone).
+  function daySep(d) {
+    var k = dayKey(d)
+    if (state.day === k) return
+    state.day = k
+    var n = el('div', 'lcochat-day', dayLabel(d)); n.setAttribute('role', 'separator')
+    if (state.typing) log.insertBefore(n, state.typing); else log.appendChild(n)
+  }
+  function toDate(v) {
     var d = null
     if (typeof v === 'number') d = new Date(v < 1e12 ? v * 1000 : v)
     else if (typeof v === 'string' && v) d = new Date(v)
-    if (!d || isNaN(d.getTime())) d = new Date()
-    var h = d.getHours(), m = d.getMinutes()
-    return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ' ' + (h < 12 ? 'AM' : 'PM')
+    return d && !isNaN(d.getTime()) ? d : new Date()
   }
   function row(from, textNode, time, photos, human) {
     var r = el('div', 'lcochat-r ' + from)
@@ -157,16 +191,18 @@
   // Our own local greeting, never sent to the server and never stored: the AI says so in its first words.
   function greet() {
     log.appendChild(row('us', "Hi, I'm Muse, the AI assistant for The Local Cabinetry, here with Hannah's team to help with layouts and pricing.", ''))
-    log.appendChild(row('us', 'What are you planning: kitchen, vanity or closet?', stamp()))
+    log.appendChild(row('us', 'What are you planning: kitchen, vanity or closet?', ''))
   }
-  function resetLog() { hideTyping(); clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; greet(); if (photoB) setPhoto() }
+  function resetLog() { hideTyping(); clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
   function setPhoto() { photoB.setAttribute('aria-disabled', state.id ? 'false' : 'true'); photoB.title = state.id ? 'Add a photo' : 'Send a message first, then add photos' }
   function addMsg(m) {
     if (state.seen[m.seq]) return
     state.seen[m.seq] = 1
     var from = m.from === 'us' ? 'us' : 'you'
     if (from === 'us') hideTyping()
-    var r = row(from, String(m.text || ''), stamp(m.at || m.ts || m.time || m.created_at || m.created), m.photos, m.human === true || m.by === 'human')
+    var at = m.at || m.ts || m.time || m.created_at || m.created
+    daySep(toDate(at))
+    var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human')
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.last = Math.max(state.last, m.seq)
     state.lastFrom = from
@@ -284,13 +320,23 @@
       }).catch(function () { showErr('That photo did not upload. Please try again.') })
   }
 
+  // 'Online' only while the server says chat is on (GET visit/config -> { enabled }, the same switch that makes every send answer 503).
+  // Read when the panel opens, not on page load; no id, no body, nothing about the visitor. If the read fails the header is left as it is.
+  function checkOnline() {
+    if (checked && Date.now() - checked < 60000) return
+    checked = Date.now()
+    fetch(API + 'config', { headers: { 'x-lco-design': '1' }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null }).then(function (j) {
+      if (!j || typeof j.enabled !== 'boolean') return
+      dot.className = 'lcochat-dot' + (j.enabled ? '' : ' off'); stText.textContent = j.enabled ? 'Online' : 'Away: leave a message in the design tool'
+    }).catch(function () { /* keep the header as it is */ })
+  }
   function open() {
-    state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open')
+    state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); if (wa) wa.classList.add('open'); checkOnline()
     if (state.id) poll()   // only re-reads a conversation this browser already has
     setTimeout(function () { ta.focus() }, 0)
   }
   function close() {
-    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer)
+    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); if (wa) wa.classList.remove('open'); clearTimeout(state.timer)
     btn.focus()
   }
 
@@ -312,10 +358,15 @@
     head.appendChild(avatar(false))
     var who = el('div', 'lcochat-who')
     who.appendChild(el('h2', '', 'Hannah'))
-    var st = el('div', 'lcochat-st'); st.appendChild(el('span', 'lcochat-dot')); st.appendChild(el('span', '', 'Online'));
+    var st = el('div', 'lcochat-st'); dot = el('span', 'lcochat-dot'); stText = el('span', '', 'Online'); st.appendChild(dot); st.appendChild(stText)
     who.appendChild(st); head.appendChild(who)
     var ext = el('a', 'lcochat-x lcochat-ext'); ext.href = DESIGN; ext.title = 'Open the full design tool'; ext.setAttribute('aria-label', 'Open the full design tool'); ext.setAttribute('data-track', 'chat-design-link')
     ext.appendChild(svg('M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3'))
+    if (WA_URL) {
+      var wh = el('a', 'lcochat-x lcochat-ext'); wh.href = WA_URL; wh.target = '_blank'; wh.rel = 'noopener'; wh.title = 'Message us on WhatsApp'
+      wh.setAttribute('aria-label', 'Message us on WhatsApp'); wh.setAttribute('data-track', 'chat-whatsapp')
+      wh.appendChild(svg(WA_PATH)); head.appendChild(wh)
+    }
     head.appendChild(ext)
     var x = el('button', 'lcochat-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close chat'); x.setAttribute('data-track', 'chat-close')
     head.appendChild(x)
@@ -337,6 +388,11 @@
 
     panel.appendChild(head); panel.appendChild(log); panel.appendChild(err); panel.appendChild(box)
     document.body.appendChild(btn); document.body.appendChild(panel)
+    if (WA_URL) {
+      wa = el('a', 'lcochat-wa'); wa.href = WA_URL; wa.target = '_blank'; wa.rel = 'noopener'; wa.title = 'Message us on WhatsApp'
+      wa.setAttribute('aria-label', 'Message us on WhatsApp'); wa.setAttribute('data-track', 'whatsapp-open'); wa.appendChild(svg(WA_PATH))
+      document.body.appendChild(wa)
+    }
     greet()
 
     btn.addEventListener('click', function () { state.open ? close() : open() })
