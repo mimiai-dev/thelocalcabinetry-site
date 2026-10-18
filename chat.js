@@ -51,6 +51,7 @@
     var p = v.split('@'); if (p.length !== 2 || !p[0] || !p[1]) return false
     var d = p[1]; var dot = d.indexOf('.'); return dot > 0 && dot < d.length - 1 && d.charAt(d.length - 1) !== '.'
   }
+  function visitorTz() { try { var z = Intl.DateTimeFormat().resolvedOptions().timeZone; return typeof z === 'string' && /^[A-Za-z_]+(\/[A-Za-z0-9_+-]+){0,2}$|^UTC$/.test(z) ? z : '' } catch (e) { return '' } }
   function loadEmail() { try { var v = (localStorage.getItem(EMAIL_LS) || '').trim().toLowerCase(); return validEmail(v) ? v : '' } catch (e) { return '' } }
   function storeEmail(v) { try { if (v) localStorage.setItem(EMAIL_LS, v); else localStorage.removeItem(EMAIL_LS) } catch (e) { /* memory only */ } }
   state.email = loadEmail()
@@ -326,7 +327,9 @@
       fetch(API + 'email', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify({ email: v }), cache: 'no-store' })
         .then(function (res) {
           if (res.ok) { state.email = v; storeEmail(v); state.needEmail = false; b.textContent = "Thanks, we'll write to " + v; b.classList.remove('lcochat-ask'); b.classList.remove('lcochat-ask-need'); setChipsDisabled(false); poll(); return }
-          go.disabled = false; msg.textContent = res.status === 429 ? 'Please try again later.' : 'That did not save. Please try again.'
+          go.disabled = false
+          if (res.status === 429) { msg.textContent = 'Please try again in a minute.'; return }
+          return res.json().catch(function () { return {} }).then(function (jj) { msg.textContent = (jj && jj.message) || 'That did not save. Please try again.' })
         }).catch(function () { go.disabled = false; msg.textContent = 'That did not save. Please try again.' })
     })
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
@@ -385,6 +388,7 @@
     var body = { text: o.text }
     var firstOfConversation = !state.id
     if (firstOfConversation && state.email) body.email = state.email
+    if (firstOfConversation) { var tz = visitorTz(); if (tz) body.tz = tz }   // sets the quiet hours of the reminder
     if (o.files && o.files.length) body.file_ids = o.files
     if (o.chip) { body.chip = o.chip; body.client_id = 'chip-' + rid() }
     fetch(API + 'message', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify(body), cache: 'no-store' }).then(function (r) {
@@ -406,7 +410,7 @@
       if (x.s === 404 && state.id) { state.id = null; state.last = 0; state.seen = {}; state.lastFrom = ''; remember(); resetLog(); showErr('That chat had ended. Please send your message again.'); return }
       if (x.s === 429) return showErr('Please slow down a little and try again in a minute.')
       if (x.s === 413) return showErr('That message is too long.')
-      if (x.s === 400 && x.j && /email/i.test(String(x.j.message || ''))) { state.email = ''; storeEmail(''); applyGate(String(x.j.message)); return }
+      if (x.s === 400 && x.j && (x.j.error === 'email_required' || /email/i.test(String(x.j.message || '')))) { state.email = ''; storeEmail(''); applyGate(String(x.j.message)); return }
       if (x.s === 503 || x.s === 403 || x.s === 404) return fallback()
       showErr((x.j && x.j.message) || 'Sorry, that did not send. Please try again.')
     }).catch(function () { state.busy = false; sendB.disabled = false; setChipsDisabled(false); fallback('We could not reach the server. Please try again, or open the full design tool.') })
@@ -477,6 +481,27 @@
     cat.addEventListener('click', function (e) { if (e.target === cat) catClose() })
     cat.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); catClose() } else if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === go ? x : go).focus() } })
     go.focus()
+  }
+  // The reminder mail links to /#chat=<token> (a FRAGMENT: it never reaches a server log or a Referer). On load: clear the hash first so no token stays in the
+  // address bar or the history, then send the token ONCE to the redeem endpoint, store the conversation id it returns, and open the panel on that chat.
+  function resumeFromLink() {
+    var m = /^#chat=([0-9a-f]{32})$/.exec(location.hash || '')
+    if (!m) return
+    var hadChat = !!state.id   // this device already has a conversation: a used or expired link just reopens it
+    try { history.replaceState(null, '', location.pathname + location.search) } catch (e) { /* the hash may stay; the token is still sent only once */ }
+    fetch(API + 'redeem', { method: 'POST', headers: { 'content-type': 'application/json', 'x-lco-design': '1' }, body: JSON.stringify({ token: m[1] }), cache: 'no-store' })
+      .then(function (r) { return r.json().catch(function () { return {} }).then(function (j) { return { s: r.status, j: j } }) })
+      .then(function (x) {
+        if (x.s === 200 && x.j && x.j.ok && /^[0-9a-f]{32}$/.test(String(x.j.conversation || ''))) {
+          state.id = x.j.conversation; state.last = 0; state.seen = {}; state.lastFrom = ''; state.maxUs = 0; state.seenSent = 0; remember()
+          clearChips(); setPhoto(); applyGate(); open(); return
+        }
+        if (x.s === 429) return   // slow down: leave everything as it is
+        open()
+        if (hadChat) return
+        var msg = (x.j && typeof x.j.message === 'string' && x.j.message) || 'This link can no longer be used. Please ask us for a new one.'
+        if (panel.classList.contains('gating')) gateMsg.textContent = msg; else showErr(msg)
+      }).catch(function () { /* offline: the normal flow stays */ })
   }
   function open() {
     catClose()
@@ -554,6 +579,8 @@
     panel.appendChild(head); panel.appendChild(gate); panel.appendChild(log); panel.appendChild(err); panel.appendChild(box)
     document.body.appendChild(btn); document.body.appendChild(panel)
     applyGate()
+    resumeFromLink()
+    window.addEventListener('hashchange', resumeFromLink)   // the link pasted into a tab that is already on the site
     if (WA_URL) {
       wa = el('a', 'lcochat-wa'); wa.href = WA_URL; wa.target = '_blank'; wa.rel = 'noopener'; wa.title = 'Message us on WhatsApp'
       wa.setAttribute('aria-label', 'Message us on WhatsApp'); wa.setAttribute('data-track', 'whatsapp-open'); wa.appendChild(svg(WA_PATH))
