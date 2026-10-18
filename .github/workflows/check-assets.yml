@@ -1,0 +1,9 @@
+name: check-assets
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: sh scripts/check-assets.sh origin/${{ github.base_ref }}

@@ -1,0 +1,8 @@
+# Example only: put inside the server block of thelocalcabinetry.com.
+location ^~ /_astro/ {
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+}
+location / {
+    # html and every unhashed file: revalidate each time (ETag keeps it cheap)
+    add_header Cache-Control "no-cache" always;
+}
