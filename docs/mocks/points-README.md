@@ -2,6 +2,9 @@
 
 Screenshots: `shots/` (390 and 1280). Files: `points.html` (form), `points-found.html` (result), `points-missing.html` (not found / same text for a bad id), `points.css`. The mock links the CSS and the logo for review; in production the CSS goes in ONE inline `<style>` and the logo is a `data:` URI.
 
+## Builder step 1: self-host the site fonts (owner/lead approved)
+The live site loads Fraunces (headings) and Hanken Grotesk (text) from Google Fonts; this page cannot (CSP `default-src 'none'`, privacy: no third party). Both are OFL, so: download the variable woff2 files (Fraunces and Hanken Grotesk, latin subset, from Google Fonts or fontsource), serve them from the design host (e.g. `/points-assets/fraunces-var.woff2`, `/points-assets/hanken-grotesk-var.woff2`, long cache, correct `font/woff2`), and change the CSP to `default-src 'none'; style-src 'unsafe-inline'; font-src 'self'; img-src data:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`. The `@font-face` rules are at the top of `points.css`. These woff2 files are NOT in the site repo today (the site uses Google Fonts); tell me if you want me to add them under `fonts/` with the OFL texts.
+
 ## What stays exactly as ops has it (`lib/design-site/points.ts`, route `app/(design)/points/route.ts`)
 - `GET /points` = the form; `POST /points` with field **`card`** (form-encoded or JSON `{card}`); same status codes, limits, 350 ms floor, no cookie, no script.
 - Input `id="card"` `name="card"`, `autocapitalize="characters"`, `maxlength`, label "Card ID", hint line. Submit button "Check points".
@@ -16,7 +19,7 @@ Screenshots: `shots/` (390 and 1280). Files: `points.html` (form), `points-found
 ## Deliberately NOT done (ops privacy design; the owner/lead must change it if wanted)
 - No progress bar or "points to the next tier": the current page is static on purpose ("it would let an id holder infer lifetime spend"). A progress bar needs a policy decision.
 - Lookup by card ID only. Email lookup would let anyone test whether an email is a customer.
-- Fonts: the page's CSP has no `font-src`, so Fraunces/Hanken cannot load; the mock uses the same serif and system stacks as today. To use the site fonts, add `font-src https://fonts.gstatic.com; style-src ... https://fonts.googleapis.com` (third party contact: not recommended on this page).
+- Fonts: see builder step 1 (self-hosted, `font-src 'self'`; no third party).
 - No script: the FAQ uses `<details>`.
 
 ## Accessibility and layout

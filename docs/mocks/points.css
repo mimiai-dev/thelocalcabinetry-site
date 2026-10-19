@@ -1,7 +1,10 @@
+/* Self-hosted fonts (builder step 1, see README): files go next to the page or in a data route on the design host, font-src 'self'. Until they exist the stacks fall back to Georgia and the system font. */
+@font-face{font-family:"Fraunces";font-weight:500 600;font-display:swap;src:url(/points-assets/fraunces-var.woff2) format("woff2")}
+@font-face{font-family:"Hanken Grotesk";font-weight:400 700;font-display:swap;src:url(/points-assets/hanken-grotesk-var.woff2) format("woff2")}
 /* /points redesign: one inline <style> (CSP: style-src 'unsafe-inline', default-src 'none': no script, no web fonts, images only as data: URIs).
-   Same tokens as the live site: navy #0e2740, gold #b4862f, panel #f3f0ea. Fonts: the serif/system stacks the page already uses (the site's Fraunces/Hanken need a CSP change). */
+   Same tokens as the live site: navy #0e2740, gold #b4862f, panel #f3f0ea. Fonts: Fraunces + Hanken Grotesk, self-hosted. */
 :root{color-scheme:light;--bg:#f3f0ea;--card:#fff;--ink:#14273f;--mute:#51606f;--line:#e7e5df;--navy:#0e2740;--navy2:#14365a;--gold:#b4862f;--goldtxt:#7a5a14;--gold2:#d8b25c;--err:#b42318;
---serif:"Hoefler Text",Georgia,"Times New Roman",serif;--sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+--serif:"Fraunces","Hoefler Text",Georgia,"Times New Roman",serif;--sans:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);min-height:100vh;display:flex;flex-direction:column}
 a{color:var(--navy)}a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
