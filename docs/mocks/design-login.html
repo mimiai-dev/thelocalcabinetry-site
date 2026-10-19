@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow, noarchive"><meta name="referrer" content="no-referrer"><title>Sign in to design | The Local Cabinetry</title>
+<!-- MOCK. Production: inline design-login.css in one <style>, logo as data: URI, script from a same-origin file (CSP script-src 'self') or a nonce. See ../ops-contract-design-login-code.md -->
+<link rel="stylesheet" href="design-login.css"></head>
+<body><header class="top"><a href="/" aria-label="The Local Cabinetry, home"><img src="../../logo-tlc.svg" alt="The Local Cabinetry" width="130" height="40"></a><a class="back" href="https://thelocalcabinetry.com/">&larr; Back to thelocalcabinetry.com</a></header>
+<main class="lg"><p class="eyebrow">Design your cabinets</p><h1 id="h">Sign in with your email</h1><p class="lead" id="lead">We will email you a 6-digit code. No password.</p>
+<section class="panel">
+<form id="f1" novalidate><label for="em">Email</label><input id="em" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" required aria-describedby="m1"><p class="msg" id="m1" role="status" aria-live="polite"></p><button class="btn" id="send" type="submit">Send me a code</button></form>
+<form id="f2" hidden novalidate><p class="sent">We sent a 6-digit code to <b id="to"></b>. It works for 10 minutes.</p>
+<label for="c0" id="cl">Code</label><div class="codes" id="codes" role="group" aria-labelledby="cl"><input id="c0" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="1" aria-label="Digit 1"><input inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 2"><input inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 3"><input inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 4"><input inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 5"><input inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 6"></div>
+<p class="msg" id="m2" role="status" aria-live="polite"></p><button class="btn" id="verify" type="submit">Continue</button>
+<button class="linkbtn" id="resend" type="button" disabled>Send a new code</button><button class="linkbtn" id="other" type="button">Use a different email</button></form>
+</section><p class="hint" style="margin-top:14px">Trouble signing in? Write to <a href="mailto:info@thelocalcabinetry.com">info@thelocalcabinetry.com</a>.</p></main>
+<footer class="foot"><span>&copy; 2026 The Local Cabinetry, a brand of Luxlive Home LLC, Houston, TX</span><a href="mailto:info@thelocalcabinetry.com">info@thelocalcabinetry.com</a></footer>
+<script src="design-login.js"></script></body></html>
