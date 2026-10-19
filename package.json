@@ -1,0 +1,10 @@
+{
+  "name": "thelocalcabinetry-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "new-post": "node scripts/news/new-post.mjs",
+    "news:build": "node scripts/news/build.mjs",
+    "news:check": "node scripts/news/check.mjs"
+  }
+}

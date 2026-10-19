@@ -7,3 +7,4 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - run: sh scripts/check-assets.sh origin/${{ github.base_ref }}
+      - run: node scripts/news/check.mjs
