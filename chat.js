@@ -144,6 +144,7 @@
     '.lcochat-gate-msg{min-height:18px;font-size:13px;color:#8a1c12}',
     '.lcochat-gate-note{margin:0;font-size:13px;color:#51606f}',
     '.lcochat-gate-note a{color:#0e2740;font-weight:600}',
+    '.lcochat-seenl{align-self:flex-end;font-size:12px;color:#51606f;margin:2px 4px 0}',
     '.lcochat-still{font-size:12px;color:#7a7468;margin:2px 4px 0}',
     '.lcochat-typing .lcochat-m{display:flex;gap:4px;align-items:center;padding:13px 14px}',
     '.lcochat-typing i{width:7px;height:7px;border-radius:50%;background:#9aa3ad;animation:lcochat-b 1.2s infinite ease-in-out}',
@@ -295,7 +296,7 @@
     // The server never sends the first set: the widget offers the rooms itself, but only for a NEW conversation (a returning visitor sees the thread instead).
     if (!state.id) renderChips(q, [{ label: 'Kitchen', value: 'room:kitchen' }, { label: 'Vanity', value: 'room:vanity' }, { label: 'Closet', value: 'room:closet' }, { label: 'Not sure', value: 'room:unsure' }])
   }
-  function resetLog() { setTimeout(applyGate, 0); hideTyping(); state.maxUs = 0; state.seenSent = 0; state.needEmail = false; state.emailCard = null; clearChips(); hotUpload(false); state.owedSince = 0; state.ackSeen = false; clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
+  function resetLog() { state.seenRow = null; state.seenLabel = null; setTimeout(applyGate, 0); hideTyping(); state.maxUs = 0; state.seenSent = 0; state.needEmail = false; state.emailCard = null; clearChips(); hotUpload(false); state.owedSince = 0; state.ackSeen = false; clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
   function setPhoto() { photoB.setAttribute('aria-disabled', state.id ? 'false' : 'true'); photoB.title = state.id ? 'Add a photo' : 'Send a message first, then add photos' }
   // Quick replies: optional `chips: [{label, value, swatch?}]` on OUR lines. Shown only under the LAST 'us' line; any newer line or a tap removes them.
   function clearChips() { if (state.chipsEl && state.chipsEl.parentNode) state.chipsEl.parentNode.removeChild(state.chipsEl); state.chipsEl = null }
@@ -333,11 +334,23 @@
     var at = m.at || m.ts || m.time || m.created_at || m.created
     daySep(toDate(at))
     var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human', m.name)
+    if (from === 'you') r.setAttribute('data-seq', String(m.seq))
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.last = Math.max(state.last, m.seq)
     if (from === 'us') state.maxUs = Math.max(state.maxUs, m.seq)
     state.lastFrom = from
     if (from === 'us' && !isAck) { if (Array.isArray(m.chips) && m.chips.length) renderChips(r, m.chips); if (m.upload === true) hotUpload(true) }
+  }
+  // Human mode: GET visit/messages carries read_seq = the highest VISITOR seq a person on our side has read. Under that line (the last one read) a small 'Seen'.
+  function applyRead(n) {
+    n = Number(n) || 0
+    if (!n || !humanMode()) return
+    var best = null
+    Array.prototype.forEach.call(log.querySelectorAll('.lcochat-r.you[data-seq]'), function (r) { if (Number(r.getAttribute('data-seq')) <= n) best = r })
+    if (!best || state.seenRow === best) return
+    if (state.seenLabel && state.seenLabel.parentNode) state.seenLabel.parentNode.removeChild(state.seenLabel)
+    var c = best.querySelector('.lcochat-c'); if (!c) return
+    state.seenLabel = el('span', 'lcochat-seenl', 'Seen'); state.seenRow = best; c.appendChild(state.seenLabel)
   }
   function scrollDown() { log.scrollTop = log.scrollHeight }
   function grow() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px' }
@@ -403,6 +416,7 @@
       if (j.mode === 'human' || j.mode === 'ai') applyMode(j.mode)
       var fresh = (j.messages || []).length
       ;(j.messages || []).forEach(addMsg)
+      applyRead(j.read_seq)
       if (j.typing === true && !state.humanTyping) showTyping(((j.typing_name || 'Hannah') + ' is typing').slice(0, 40), true)
       else if (j.typing === false && state.humanTyping) hideTyping()
       maybeSeen()
