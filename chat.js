@@ -208,17 +208,16 @@
     if (!state.typing) return
     if (!state.ackSeen) { hideTyping(); return }
     if (state.still) return
-    state.still = el('div', 'lcochat-still', 'Still here, a designer is on it')
-    var c = state.typing.querySelector('.lcochat-c'); if (c) c.appendChild(state.still)
+    state.still = state.typing.querySelector('.lcochat-tcap'); if (state.still) state.still.textContent = 'Still here, a designer is on it'
     scrollDown()
   }
   function showTyping() {
     hideTyping()
-    var r = el('div', 'lcochat-r us lcochat-typing'); r.setAttribute('aria-label', 'Muse is typing')
+    var r = el('div', 'lcochat-r us lcochat-typing'); r.setAttribute('aria-label', 'The Local Cabinetry is typing')
     r.appendChild(avatar(true, true))
     var c = el('div', 'lcochat-c')
     var b = el('div', 'lcochat-m'); b.appendChild(el('i')); b.appendChild(el('i')); b.appendChild(el('i'))
-    c.appendChild(b); r.appendChild(c); log.appendChild(r); state.typing = r; scrollDown()
+    c.appendChild(b); c.appendChild(el('div', 'lcochat-still lcochat-tcap', 'The Local Cabinetry is typing')); r.appendChild(c); log.appendChild(r); state.typing = r; scrollDown()
     var left = Math.max(0, 60000 - (Date.now() - (state.owedSince || Date.now())))
     if (left === 0) stillOrHide(); else state.typingTimer = setTimeout(stillOrHide, left)
   }
@@ -255,16 +254,19 @@
     state.seen[m.seq] = 1
     var from = m.from === 'us' ? 'us' : 'you'
     var isAck = from === 'us' && m.ack === true
+    if (isAck) {   // owner: no canned 'got it / one moment' bubble. The line counts as received but is never drawn; the typing dots carry the wait.
+      state.ackSeen = true; state.last = Math.max(state.last, m.seq); state.maxUs = Math.max(state.maxUs || 0, m.seq)
+      if (!state.typing && state.owedSince) showTyping()
+      return
+    }
     clearChips(); hotUpload(false)
-    if (isAck) state.ackSeen = true
-    else if (from === 'us') { hideTyping(); state.owedSince = 0; state.ackSeen = false }
+    if (from === 'us') { hideTyping(); state.owedSince = 0; state.ackSeen = false }
     var at = m.at || m.ts || m.time || m.created_at || m.created
     daySep(toDate(at))
     var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human')
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.last = Math.max(state.last, m.seq)
     state.lastFrom = from
-    if (isAck && !state.typing && state.owedSince) showTyping()
     if (from === 'us' && !isAck) { if (Array.isArray(m.chips) && m.chips.length) renderChips(r, m.chips); if (m.upload === true) hotUpload(true) }
     if (from === 'us' && !isAck && state.sentOnce) setTimeout(promptEmail, 800)
   }
