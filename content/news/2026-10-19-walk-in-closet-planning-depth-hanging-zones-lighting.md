@@ -21,7 +21,7 @@ A good walk-in closet is planned in zones, not filled in order. Start with what 
 
 ## Start with depth
 
-Clothes on hangers need roughly 24 inches of depth from the wall, so plan for at least that on every hanging wall. Shelves and drawers can be shallower. If the closet is wide enough, a walk-in with units on two or three walls leaves a walking aisle in the middle, and the aisle should stay comfortable to move through with a laundry basket.
+Closets are commonly 22 to 24 inches deep, and we plan the depth with you for your room. Hanging walls need the most depth; shelves and drawers can be shallower. If the closet is wide enough, a walk-in with units on two or three walls leaves a walking aisle in the middle, and the aisle should stay comfortable to move through with a laundry basket.
 
 ## Divide the closet into zones
 
