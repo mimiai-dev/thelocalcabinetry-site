@@ -518,10 +518,12 @@
   }
 
   function mount() {
-    if (document.querySelector('[data-lco-chat]')) return
+    var ph = document.querySelector('button[data-lco-chat]')   // the button the page already shows (so a very early tap is not lost); adopted, not duplicated
+    if (!ph && document.querySelector('[data-lco-chat]')) return
     var css = el('style'); css.textContent = CSS; document.head.appendChild(css)
 
-    btn = el('button', 'lcochat-btn')
+    btn = ph || el('button', 'lcochat-btn')
+    if (ph) ph.textContent = ''
     btn.type = 'button'
     btn.setAttribute('data-lco-chat', '')
     btn.setAttribute('data-track', 'chat-open')
@@ -575,6 +577,7 @@
     setTimeout(catShow, 15000)
 
     btn.addEventListener('click', function () { if (state.open) close(); else routeAsk(openChoice) })
+    if (window.__lcoQ) { window.__lcoQ = 0; routeAsk(openChoice) }   // a tap that came before this file was ready
     // other doors into the chat or the design tool ask first, once per session
     document.addEventListener('click', function (e) {
       var a = e.target && e.target.closest ? e.target.closest('a[href="/design"],a[href^="/design?"],a[data-open-chat],.lcochat-wa') : null
