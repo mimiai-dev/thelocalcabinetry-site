@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow, noarchive"><meta name="referrer" content="no-referrer"><title>Check your points | The Local Cabinetry</title>
+<!-- MOCK: in production inline points.css in one <style>; the logo becomes a data: URI (CSP img-src data:). See points-README.md -->
+<link rel="stylesheet" href="points.css"></head>
+<body><header class="top"><a href="/" aria-label="The Local Cabinetry, home"><img src="../../logo-tlc.svg" alt="The Local Cabinetry" width="130" height="40"></a><a class="back" href="/">&larr; Back to thelocalcabinetry.com</a></header>
+<main>
+<section class="hero"><div class="art" aria-hidden="true"><div class="card-art"><span class="k">The Local Cabinetry</span><span class="n">Member card</span><div class="row"><span class="id">LC-XXXX-XXXX</span><span class="k">Points</span></div></div></div><div class="txt"><p class="eyebrow">Membership card</p><h1>Check your points</h1><p class="lead">Enter your card ID to see your points balance and your tier.</p>
+<form class="panel lookup" method="post" action="/points"><label for="card">Card ID</label><input id="card" name="card" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="40" placeholder="LC-XXXX-XXXX" aria-describedby="cardhint" required>
+<p class="hint" id="cardhint">Your card ID is on the membership card we sent you. Capitals, spaces and dashes do not matter.</p><button class="btn" type="submit">Check points</button></form>
+<section class="panel err" role="alert"><p>We couldn't find that card ID. Check it and try again.</p></section></div>
+</section>
+<section><h2>How points work</h2><ol class="steps"><li><span class="n">1</span><div><b>Shop with us</b><span>Your points are added to your card after your orders.</span></div></li><li><span class="n">2</span><div><b>Check any time</b><span>Type your card ID here to see your balance and tier.</span></div></li><li><span class="n">3</span><div><b>Use them</b><span>1 point is worth {{point value}} in store credit toward your next order. <span class="sample">sample</span></span></div></li></ol></section>
+<section><h2>Tiers</h2><table class="tiers"><thead><tr><th scope="col">Tier</th><th scope="col">How you reach it</th><th scope="col">Points earned</th></tr></thead><tbody>
+<tr><td>{{tier 1 name}} <span class="sample">sample</span></td><td>{{rule}}</td><td>{{rate}}</td></tr><tr><td>{{tier 2 name}}</td><td>{{rule}}</td><td>{{rate}}</td></tr><tr><td>{{tier 3 name}}</td><td>{{rule}}</td><td>{{rate}}</td></tr></tbody></table><p class="hint">Higher tiers earn more points.</p></section>
+<section class="faq"><h2>Questions</h2>
+<details><summary>Where do I find my card ID?</summary><p>It is printed on the membership card we sent you.</p></details>
+<details><summary>Why can I not see my name or my orders here?</summary><p>This page only shows points and tier, so nobody else can read your details with your card ID. For anything else, write to <a href="mailto:info@thelocalcabinetry.com">info@thelocalcabinetry.com</a>.</p></details>
+<details><summary>Do my points expire?</summary><p>{{expiry sentence from the program}} <span class="sample">sample</span></p></details></section>
+<section class="upsell"><div><h2>Not a member yet?</h2><p>Membership is $20 per month, billed yearly ($240 per year), and members get 10% off all orders, plus free 3D layouts and quotes, priority lead times and a dedicated rep.</p></div><a class="go" href="/member/">See membership</a></section>
+</main><footer class="foot"><span>&copy; 2026 The Local Cabinetry, a brand of Luxlive Home LLC, Houston, TX</span><a href="mailto:info@thelocalcabinetry.com">info@thelocalcabinetry.com</a></footer></body></html>
