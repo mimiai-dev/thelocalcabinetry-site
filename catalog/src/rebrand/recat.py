@@ -6,12 +6,12 @@ q=lambda t:'{%s}%s'%(SVG,t)
 NAVY='#0e2740'; NAVY2='#0a1d31'; INK='#14273f'; GOLD='#b4862f'; GOLDD='#8a6420'; CREAM='#f3f0ea'
 MERGE=True
 import re as _re
-_SRC=set(w.lower() for w in _re.findall(r"[A-Za-z][A-Za-z'\-]+",open('cot/src.txt').read()))|set(w.lower() for w in _re.findall(r"[A-Za-z]{3,}",open('cot/alltext.txt').read()))
+_DICT=set(w.strip().lower() for w in open('/usr/share/dict/words',errors='ignore'))|{'thelocalcabinetry','kcma','tsca','carb','ngbs','rta','pet','mdf','uv'}
 def rejoin(t):
     w=t.split(' ')
     out=[];i=0
     while i<len(w):
-        if i+1<len(w) and w[i] and w[i+1] and len(w[i])>=2 and len(w[i+1])>=2 and w[i].isalpha() and w[i+1].isalpha() and (w[i]+w[i+1]).lower() in _SRC and (w[i].lower() not in _SRC or w[i+1].lower() not in _SRC):
+        if i+1<len(w) and w[i].isalpha() and w[i+1].isalpha() and (w[i]+w[i+1]).lower() in _DICT and (w[i].lower() not in _DICT or w[i+1].lower() not in _DICT) and not (len(w[i])==1 and w[i].lower() in ('a','i') and w[i+1].lower() in _DICT):
             out.append(w[i]+w[i+1]); i+=2
         else: out.append(w[i]); i+=1
     return ' '.join(out)
@@ -31,6 +31,7 @@ def near(h,tbl):
     try: r,g,b=int(h[1:3],16),int(h[3:5],16),int(h[5:7],16)
     except: return h
     if max(r,g,b)<60: return tbl.get('#000000',h)
+    if tbl is TEXT and r>200 and 100<g<210 and b<110: return INK
     if r>170 and g<80 and b<80: return GOLDD
     return h
 def fixid(s,p): return re.sub(r'(id="|url\(#|href="#)([A-Za-z0-9_]+)',lambda m:m.group(1)+m.group(2)+'_p%d'%p,s)
@@ -260,7 +261,13 @@ def process(p,logo_b64):
     infos=[] if not MERGE else [i for i in (tinfo(tx) for tx in texts()) if i and i['txt'].strip() not in ('I T I','2026')]
     from collections import defaultdict
     rows=defaultdict(list)
-    for i in infos: rows[(i['y'],i['fs'],i['fill'],i['fw'],i['ff'])].append(i)
+    _g=defaultdict(list)
+    for i in infos: _g[(round(i['fs'],1),i['fill'],i['fw'],i['ff'])].append(i)
+    for gk,L0 in _g.items():
+        L0.sort(key=lambda i:i['y']); yb=None; n_=0
+        for i in L0:
+            if yb is None or i['y']-yb>0.7: n_+=1
+            yb=i['y']; rows[(n_,gk[0],gk[1],gk[2],gk[3],gk)].append(i)
     dead=[]
     for key,L in rows.items():
         if key[1]<8 and len(L)>1 and all((i['txt'].strip().isupper() or not i['txt'].strip()) for i in L): continue
@@ -287,9 +294,17 @@ def process(p,logo_b64):
             if '仟' in n: LOG.append((p,'o仟er (broken ff ligature)','offer','typo'))
             if '—' in n: LOG.append((p,'finishes—paint','finishes, paint','em dash avoided (house style)'))
             n=n.replace('仟','ff').replace('—',', ')
-            for a_,b_ in (('50,0 00','50,000'),('contracto rs','contractors'),('prem ier','premier'),('empowerin g','empowering')): n=n.replace(a_,b_)
+            for a_,b_ in (('50,0 00','50,000'),('contracto rs','contractors'),('prem ier','premier'),('empowerin g','empowering'),('mela mine','melamine'),('cabin et','cabinet'),('off er','offer'),('draw er','drawer'),('fro nts','fronts'),('Pro ducts','Products'),('construc tion','construction'),('constructio n','construction'),('stainle ss','stainless'),('sta inless','stainless'),('sid es','sides'),('bandin g','banding'),('overla y','overlay'),('distribuitors','distributors')): n=n.replace(a_,b_)
             if n!=o: LOG.append((p,o[:60],n[:60],'typo / spacing')); ts.text=n
     if p==15:
+        for tx in texts():
+            for ts in ts_of(tx):
+                if (ts.text or '').startswith('1 " plywood drawer') and abs(float(ts.get('y'))-239.0)<2:
+                    ts.text='1 1/2" plywood drawer box'; LOG.append((15,'1 1/2" plywood drawer box (small fraction piece overlapped the next word)','same text, set as one run','layout'))
+        for tx in list(texts()):
+            if any((ts.text or '')=='1/2' and abs(float(ts.get('y'))-236.997)<1 for ts in ts_of(tx)):
+                for par in root.iter():
+                    if tx in list(par): par.remove(tx); break
         for tx in texts():
             for ts in ts_of(tx):
                 if (ts.text or '').startswith('package:'): LOG.append((15,ts.text[:20],'P'+ts.text[1:20],'capitalization')); ts.text='P'+ts.text[1:]
