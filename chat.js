@@ -38,10 +38,16 @@
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
-  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0, emailAsked: false, emailTimer: 0, sentOnce: false, day: '', owedSince: 0, ackSeen: false, still: null, chipsEl: null }
+  var state = { id: null, last: 0, open: false, busy: false, timer: 0, idleSince: Date.now(), seen: {}, files: [], closed: false, lastFrom: '', typing: null, typingTimer: 0, emailAsked: false, emailTimer: 0, sentOnce: false, day: '', owedSince: 0, ackSeen: false, still: null, chipsEl: null, route: '', mode: '', humanTyping: false }
   try { var saved = localStorage.getItem(KEY); if (saved && /^[0-9a-f]{32}$/.test(saved)) state.id = saved } catch (e) { /* storage blocked: memory only */ }
   var EMAIL_KEY = 'lco_email_asked_v1'
   try { if (state.id && localStorage.getItem(EMAIL_KEY) === state.id) state.emailAsked = true } catch (e) { /* ignore */ }
+  // The visitor's route choice (AI assistant or a person), remembered for this browser session only.
+  var ROUTE_KEY = 'lco_route_v1'
+  try { var rr = sessionStorage.getItem(ROUTE_KEY); if (rr === 'ai' || rr === 'human') state.route = rr } catch (e) { /* memory only */ }
+  function setRoute(r) { state.route = r; try { sessionStorage.setItem(ROUTE_KEY, r) } catch (e) { /* memory only */ } syncRouteFields() }
+  function syncRouteFields() { try { Array.prototype.forEach.call(document.querySelectorAll('input[name=route][type=radio]'), function (i) { i.checked = i.value === state.route }) } catch (e) { /* ignore */ } }
+  function humanMode() { return state.mode === 'human' || (state.mode !== 'ai' && state.route === 'human') }
   function remember() { try { if (state.id) localStorage.setItem(KEY, state.id); else localStorage.removeItem(KEY) } catch (e) { /* ignore */ } }
 
   function el(tag, cls, text) {
@@ -99,6 +105,21 @@
     '.lcochat-chip:disabled{opacity:.55;cursor:default}',
     '.lcochat-sw{display:inline-block;width:16px;height:16px;border-radius:50%;border:1px solid rgba(14,39,64,.35);flex:0 0 16px}',
     '.lcochat-ic.hot{border-color:#b4862f;box-shadow:0 0 0 3px rgba(180,134,47,.28)}',
+    '.lcochat-nm{font-size:12px;font-weight:600;color:#51606f;margin:0 4px 2px}',
+    '.lcochat-mode{margin-top:1px}',
+    '.lcoroute{position:fixed;inset:0;z-index:2147483100;background:rgba(8,20,34,.55);display:flex;align-items:center;justify-content:center;padding:16px}',
+    '.lcoroute[hidden]{display:none}',
+    '.lcoroute-card{position:relative;width:min(420px,100%);background:#fff;border-radius:16px;padding:28px 24px 24px;box-shadow:0 18px 60px rgba(8,20,34,.4);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14273f}',
+    '.lcoroute-logo{display:block;height:40px;width:auto;margin:0 0 16px}',
+    '.lcoroute-card h2{margin:0 0 16px;font-size:22px;line-height:1.25;color:#0e2740}',
+    '.lcoroute-x{position:absolute;top:8px;right:8px;width:44px;height:44px;border:0;background:transparent;font-size:28px;line-height:1;color:#51606f;cursor:pointer;border-radius:8px}',
+    '.lcoroute-b{display:flex;align-items:center;gap:14px;width:100%;min-height:72px;margin:0 0 8px;padding:12px 16px;border:1px solid #0e2740;border-radius:12px;background:#fff;color:#0e2740;text-align:left;cursor:pointer;font:inherit}',
+    '.lcoroute-b.ai{background:#0e2740;color:#fff}',
+    '.lcoroute-b svg{width:28px;height:28px;flex:0 0 28px}',
+    '.lcoroute-t b{display:block;font-size:17px}',
+    '.lcoroute-t small{display:block;font-size:13px;margin-top:2px;opacity:.85}',
+    '.lcoroute-b:focus-visible,.lcoroute-x:focus-visible{outline:3px solid #b4862f;outline-offset:2px}',
+    '.route-pick{border:0;margin:6px 0 10px;padding:0}.route-pick legend{padding:0;font-weight:600;margin-bottom:6px}.route-pick label{display:flex;gap:8px;align-items:center;margin:4px 0;font-size:15px}',
     '.lcochat-still{font-size:12px;color:#7a7468;margin:2px 4px 0}',
     '.lcochat-typing .lcochat-m{display:flex;gap:4px;align-items:center;padding:13px 14px}',
     '.lcochat-typing i{width:7px;height:7px;border-radius:50%;background:#9aa3ad;animation:lcochat-b 1.2s infinite ease-in-out}',
@@ -144,6 +165,11 @@
     '@media print{.lcocat{display:none}.lcochat-btn,.lcochat-panel,.lcochat-wa{display:none}}'
   ].join('')
 
+  var modeLine
+  function applyMode(m) {
+    if (m) state.mode = m
+    if (modeLine) { modeLine.textContent = humanMode() ? 'You are talking with a person' : ''; modeLine.hidden = !humanMode() }
+  }
   var dot, stText, checked = 0, btn, wa, panel, log, err, ta, sendB, photoIn, photoB, chips
 
   function headers(extra) {
@@ -185,10 +211,11 @@
     else if (typeof v === 'string' && v) d = new Date(v)
     return d && !isNaN(d.getTime()) ? d : new Date()
   }
-  function row(from, textNode, time, photos, human) {
+  function row(from, textNode, time, photos, human, name) {
     var r = el('div', 'lcochat-r ' + from)
     if (from === 'us') r.appendChild(avatar(true, !human))
     var c = el('div', 'lcochat-c')
+    if (from === 'us' && human && name) c.appendChild(el('span', 'lcochat-nm', String(name).split(/\s+/)[0].slice(0, 24)))
     var b = el('div', 'lcochat-m')
     if (textNode != null) b.appendChild(document.createTextNode(String(textNode)))
     if (photos && photos.length) b.appendChild(el('small', '', 'Photo sent: ' + photos.map(function (p) { return String(p && p.name || 'photo') }).join(', ')))
@@ -200,7 +227,7 @@
   function hideTyping() {
     clearTimeout(state.typingTimer)
     if (state.typing && state.typing.parentNode) state.typing.parentNode.removeChild(state.typing)
-    state.typing = null; state.still = null
+    state.typing = null; state.still = null; state.humanTyping = false
   }
   // After 60 s: if the server acknowledged our line (ack: true) a designer really is on it, so the dots stay and a quiet line says so;
   // without an ack nothing promised an answer, so the dots go away as before.
@@ -211,18 +238,23 @@
     state.still = state.typing.querySelector('.lcochat-tcap'); if (state.still) state.still.textContent = 'Still here, a designer is on it'
     scrollDown()
   }
-  function showTyping() {
-    hideTyping()
+  function showTyping(caption, person) {
+    hideTyping(); state.humanTyping = !!person
     var r = el('div', 'lcochat-r us lcochat-typing'); r.setAttribute('aria-label', 'The Local Cabinetry is typing')
     r.appendChild(avatar(true, true))
     var c = el('div', 'lcochat-c')
     var b = el('div', 'lcochat-m'); b.appendChild(el('i')); b.appendChild(el('i')); b.appendChild(el('i'))
-    c.appendChild(b); c.appendChild(el('div', 'lcochat-still lcochat-tcap', 'The Local Cabinetry is typing')); r.appendChild(c); log.appendChild(r); state.typing = r; scrollDown()
+    c.appendChild(b); c.appendChild(el('div', 'lcochat-still lcochat-tcap', caption || 'The Local Cabinetry is typing')); r.appendChild(c); log.appendChild(r); state.typing = r; scrollDown()
+    if (person) return   // a person is typing: the server tells us when it stops
     var left = Math.max(0, 60000 - (Date.now() - (state.owedSince || Date.now())))
     if (left === 0) stillOrHide(); else state.typingTimer = setTimeout(stillOrHide, left)
   }
   // Our own local greeting, never sent to the server and never stored: the AI says so in its first words.
   function greet() {
+    if (humanMode()) {
+      log.appendChild(row('us', 'A person from our team will reply here. Tell us what you are planning.', '', null, true, 'Hannah'))
+      return
+    }
     log.appendChild(row('us', "Hi, I'm Muse, the AI assistant for The Local Cabinetry, here with Hannah's team to help with layouts and pricing.", ''))
     var q = row('us', 'What are you planning: kitchen, vanity or closet?', '')
     log.appendChild(q)
@@ -263,7 +295,7 @@
     if (from === 'us') { hideTyping(); state.owedSince = 0; state.ackSeen = false }
     var at = m.at || m.ts || m.time || m.created_at || m.created
     daySep(toDate(at))
-    var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human')
+    var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human', m.name)
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.last = Math.max(state.last, m.seq)
     state.lastFrom = from
@@ -275,7 +307,7 @@
 
   // One message-style prompt inside the conversation, once per conversation: after our first reply (or 20 s without one).
   function promptEmail() {
-    if (!state.id || state.emailAsked) return
+    if (!state.id || state.emailAsked || humanMode()) return   // not in a chat with a person: the assistant-voiced prompt would be wrong there
     if (state.chipsEl) { clearTimeout(state.emailTimer); state.emailTimer = setTimeout(promptEmail, 8000); return }   // not while quick replies are on offer
     state.emailAsked = true; clearTimeout(state.emailTimer)
     try { localStorage.setItem(EMAIL_KEY, state.id) } catch (e) { /* ignore */ }
@@ -307,6 +339,7 @@
 
   // While a reply is owed: every 2 s for 30 s after the visitor's line, then 4 s (to 2 min), then 10 s. Otherwise the calm idle schedule.
   function nextDelay() {
+    if (humanMode()) return 2000   // a person may answer at any moment: look every 2 s while the panel is open
     if (state.owedSince) { var age = Date.now() - state.owedSince; return age < 30000 ? 2000 : age < 120000 ? 4000 : 10000 }
     var idle = Date.now() - state.idleSince
     return idle < 120000 ? 4000 : idle < 600000 ? 8000 : 15000
@@ -326,8 +359,11 @@
     }).then(function (j) {
       if (!j) return
       showErr('')
+      if (j.mode === 'human' || j.mode === 'ai') applyMode(j.mode)
       var fresh = (j.messages || []).length
       ;(j.messages || []).forEach(addMsg)
+      if (j.typing === true && !state.humanTyping) showTyping(((j.typing_name || 'Hannah') + ' is typing').slice(0, 40), true)
+      else if (j.typing === false && state.humanTyping) hideTyping()
       if (fresh) { state.idleSince = Date.now(); scrollDown() }
       state.timer = setTimeout(poll, nextDelay())
     }).catch(function () { state.timer = setTimeout(poll, 15000) })
@@ -348,6 +384,8 @@
     var body = { text: o.text }
     if (o.files && o.files.length) body.file_ids = o.files
     if (o.chip) { body.chip = o.chip; body.client_id = 'chip-' + rid() }
+    var firstOfConversation = !state.id
+    if (firstOfConversation && state.route) body.route = state.route
     fetch(API + 'message', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify(body), cache: 'no-store' }).then(function (r) {
       return r.json().catch(function () { return {} }).then(function (j) { return { s: r.status, j: j } })
     }).then(function (x) {
@@ -357,8 +395,9 @@
         if (x.j.conversation) { state.id = x.j.conversation; remember(); setPhoto() }
         if (!o.chip) { ta.value = ''; grow(); state.files = []; paintChips() }
         clearChips(); hotUpload(false); state.idleSince = Date.now()
+        if (x.j.mode === 'human' || x.j.mode === 'ai') applyMode(x.j.mode)
         state.owedSince = Date.now(); state.ackSeen = x.j.ack === true
-        showTyping()
+        if (!humanMode()) showTyping()
         state.sentOnce = true
         if (!state.emailAsked) { clearTimeout(state.emailTimer); state.emailTimer = setTimeout(promptEmail, 20000) }
         poll()
@@ -431,6 +470,40 @@
     cat.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); catClose() } else if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === go ? x : go).focus() } })
     go.focus()
   }
+  // ---- The choice, asked before a chat starts: the AI assistant (5% off) or a person.
+  var sheet = null, sheetNext = null
+  function ico(d) { return svg(d) }
+  function routeAsk(next) {
+    if (state.id || state.route) { next(state.route || ''); return }
+    if (!sheet) {
+      sheet = el('div', 'lcoroute'); sheet.hidden = true; sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'How would you like to talk to us?')
+      var card = el('div', 'lcoroute-card')
+      var lg = el('img', 'lcoroute-logo'); lg.src = '/logo-tlc.svg'; lg.alt = 'The Local Cabinetry'; lg.width = 130; lg.height = 40
+      var xx = el('button', 'lcoroute-x', '\u00d7'); xx.type = 'button'; xx.setAttribute('aria-label', 'Close')
+      var h = el('h2', '', 'How would you like to talk to us?')
+      function opt(cls, icon, title, sub, val) {
+        var b = el('button', 'lcoroute-b ' + cls); b.type = 'button'; b.setAttribute('data-track', 'route-' + val)
+        b.appendChild(icon); var t = el('span', 'lcoroute-t'); t.appendChild(el('b', '', title)); if (sub) t.appendChild(el('small', '', sub)); b.appendChild(t)
+        b.addEventListener('click', function () { var n = sheetNext; routeClose(); setRoute(val); if (n) n(val) })
+        return b
+      }
+      card.appendChild(xx); card.appendChild(lg); card.appendChild(h)
+      card.appendChild(opt('ai', ico('M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1'), 'Talk to our AI assistant', '5% off when you continue with our AI assistant', 'ai'))
+      card.appendChild(opt('human', ico('M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'), 'Talk to a person', 'A person from our team replies', 'human'))
+      sheet.appendChild(card); document.body.appendChild(sheet)
+      xx.addEventListener('click', routeClose)
+      sheet.addEventListener('click', function (e) { if (e.target === sheet) routeClose() })
+      sheet.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); routeClose() } })
+    }
+    sheetNext = next; sheet.hidden = false
+    var f = sheet.querySelector('.lcoroute-b'); if (f) f.focus()
+  }
+  function routeClose() { if (sheet) sheet.hidden = true; sheetNext = null }
+  // chat opens in the mode that was chosen: a person gets a person's greeting, no AI wording
+  function openChoice(v) {
+    if (!state.id) { log.textContent = ''; state.day = ''; state.mode = ''; greet() }
+    applyMode(); open()
+  }
   function open() {
     catClose()
     state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); if (wa) wa.classList.add('open'); checkOnline()
@@ -461,7 +534,8 @@
     var who = el('div', 'lcochat-who')
     who.appendChild(el('h2', '', 'Hannah'))
     var st = el('div', 'lcochat-st'); dot = el('span', 'lcochat-dot'); stText = el('span', '', 'Online'); st.appendChild(dot); st.appendChild(stText)
-    who.appendChild(st); head.appendChild(who)
+    modeLine = el('div', 'lcochat-st lcochat-mode'); modeLine.hidden = true
+    who.appendChild(st); who.appendChild(modeLine); head.appendChild(who)
     var ext = el('a', 'lcochat-x lcochat-ext'); ext.href = DESIGN; ext.title = 'Open the full design tool'; ext.setAttribute('aria-label', 'Open the full design tool'); ext.setAttribute('data-track', 'chat-design-link')
     ext.appendChild(svg('M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3'))
     if (WA_URL) {
@@ -498,7 +572,21 @@
     greet()
     setTimeout(catShow, 15000)
 
-    btn.addEventListener('click', function () { state.open ? close() : open() })
+    btn.addEventListener('click', function () { if (state.open) close(); else routeAsk(openChoice) })
+    // other doors into the chat or the design tool ask first, once per session
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href="/design"],a[href^="/design?"],a[data-open-chat],.lcochat-wa') : null
+      if (!a || e.defaultPrevented || state.id || state.route || a.closest('.lcochat-panel')) return
+      if (e.button || e.metaKey || e.ctrlKey || e.shiftKey) return
+      e.preventDefault()
+      var href = a.getAttribute('href') || '', wa2 = a.classList.contains('lcochat-wa')
+      routeAsk(function (v) {
+        if (v === 'ai' || a.hasAttribute('data-open-chat')) openChoice(v)
+        else if (wa2) window.open(a.href, '_blank', 'noopener')
+        else if (href) location.href = href
+      })
+    }, true)
+    syncRouteFields()
     x.addEventListener('click', close)
     sendB.addEventListener('click', send)
     ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send() } })
