@@ -40,8 +40,7 @@ for (const p of posts) { if (!cat(p.fm.category)) throw new Error(`${p.file}: un
 const T = read('about/index.html')
 const headT = T.slice(0, T.indexOf('</head>'))
 const keepHead = [
-  /<meta http-equiv="Content-Security-Policy"[^>]*>/, /<link rel="icon"[^>]*>/g, /<link rel="apple-touch-icon"[^>]*>/, /<link rel="preconnect"[^>]*>/g,
-  /<link rel="preload" as="style"[^>]*>/, /<link href="https:\/\/fonts\.googleapis\.com[^>]*media="print"[^>]*>/, /<noscript><link href="https:\/\/fonts[^>]*><\/noscript>/,
+  /<meta http-equiv="Content-Security-Policy"[^>]*>/, /<link rel="icon"[^>]*>/g, /<link rel="apple-touch-icon"[^>]*>/, /<!--fonts:start-->.*?<!--fonts:end-->/s,
   /<link rel="stylesheet" href="\/_astro\/about\.[0-9a-f]{8}\.css">/, /<script src="\/t\.js" defer><\/script>/, /<script src="\/_astro\/hdr\.[0-9a-f]{8}\.js" defer><\/script>/, /<script src="\/chat\.js"[^>]*><\/script>/,
 ].map((re) => { const m = headT.match(re); if (!m) throw new Error('template head piece missing: ' + re); return m[0] }).join('')
 const bodyStart = T.indexOf('<body>') + 6

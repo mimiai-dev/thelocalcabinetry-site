@@ -1,0 +1,4 @@
+/* Self-hosted site fonts (OFL, see README.md). Same families and weights the site used from Google Fonts. */
+@font-face{font-family:"Fraunces";font-style:normal;font-weight:400 600;font-display:swap;src:url(/fonts/fraunces-latin-var.woff2) format("woff2")}
+@font-face{font-family:"Fraunces";font-style:italic;font-weight:400 600;font-display:swap;src:url(/fonts/fraunces-italic-latin-var.woff2) format("woff2")}
+@font-face{font-family:"Hanken Grotesk";font-style:normal;font-weight:400 700;font-display:swap;src:url(/fonts/hanken-grotesk-latin-var.woff2) format("woff2")}
