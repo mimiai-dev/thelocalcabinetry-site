@@ -1,6 +1,6 @@
 # /points redesign: mock for the ops builders
 
-Files: `points.html` (form), `points-found.html` (result), `points-missing.html` (not found / same text for a bad id), `points.css`. The mock links the CSS and the logo for review; in production the CSS goes in ONE inline `<style>` and the logo is a `data:` URI.
+Screenshots: `shots/` (390 and 1280). Files: `points.html` (form), `points-found.html` (result), `points-missing.html` (not found / same text for a bad id), `points.css`. The mock links the CSS and the logo for review; in production the CSS goes in ONE inline `<style>` and the logo is a `data:` URI.
 
 ## What stays exactly as ops has it (`lib/design-site/points.ts`, route `app/(design)/points/route.ts`)
 - `GET /points` = the form; `POST /points` with field **`card`** (form-encoded or JSON `{card}`); same status codes, limits, 350 ms floor, no cookie, no script.
