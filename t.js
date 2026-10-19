@@ -4,7 +4,12 @@
  * Each event carries ONLY: page path, element id (data-track or a CSS-path-like id), the element's visible text
  * (40 chars; never from inputs), link host + path (no query, no hash; mailto:/tel: only the scheme), mobile/desktop,
  * a random per-tab session id (sessionStorage, gone when the tab closes), and the seconds on page.
- * Never: input values, typed text, form data, query strings, cookies, localStorage ids, fingerprinting.
+ * Never: input values, typed text, form data, cookies, localStorage ids, fingerprinting, click ids (gclid, fbclid), full URLs.
+ * Query strings are never logged by the click events. The one exception is the first-touch source below: only the three campaign labels
+ * utm_source / utm_medium / utm_campaign (marketing labels, not personal data) are read from the landing URL.
+ * First-touch source (T-261019-2): the first page of the tab is kept in sessionStorage (tlc_src, never a cookie or localStorage) as
+ * {l landing path, r referrer HOST if not this site, us/um/uc utm labels, ck google|meta if the landing URL had an ad click id (the id itself is never read into src), f time, v m|d}; window.__tlcSrc() returns it plus p = the current path.
+ * It is attached ONLY when someone sends a form, opens a chat or goes to /design sign-in (see chat.js, the /design stubs). None with DNT/GPC.
  * Sends nothing at all when Do-Not-Track or Global Privacy Control is on.
  * CSP (meta tag, default-src 'self'): this file is script-src 'self'; the beacon is connect-src / img-src 'self'. No change needed. */
 (function () {
@@ -13,6 +18,39 @@
     var nav = navigator;
     if (nav.doNotTrack === "1" || window.doNotTrack === "1" || nav.msDoNotTrack === "1" || nav.globalPrivacyControl === true) return;
     if (!/(^|\.)thelocalcabinetry\.com$/.test(location.hostname)) return; // previews, file://, mirrors: silent
+
+    // ---- first-touch source (T-261019-2), see the header
+    function lab(v) { return String(v == null ? "" : v).toLowerCase().replace(/[^a-z0-9._+ -]/g, "").trim().slice(0, 60); }
+    try {
+      if (!sessionStorage.getItem("tlc_src")) {
+        var o = { l: location.pathname.slice(0, 120), v: window.innerWidth < 768 ? "m" : "d", f: new Date().toISOString() };
+        var rh = ""; try { rh = new URL(document.referrer).hostname; } catch (e) {}
+        if (rh && !/(^|\.)thelocalcabinetry\.com$/.test(rh)) o.r = rh.slice(0, 80);
+        var sp = new URLSearchParams(location.search);
+        [["us", "utm_source"], ["um", "utm_medium"], ["uc", "utm_campaign"]].forEach(function (k) { var v = lab(sp.get(k[1])); if (v) o[k[0]] = v; });
+        // ad click KIND only (never the click id itself): google (gclid) or meta (fbclid)
+        if (sp.has("gclid")) o.ck = "google"; else if (sp.has("fbclid")) o.ck = "meta";
+        sessionStorage.setItem("tlc_src", JSON.stringify(o));
+      }
+    } catch (e) {}
+    window.__tlcSrc = function () {
+      try {
+        var o = JSON.parse(sessionStorage.getItem("tlc_src") || "null");
+        if (!o || typeof o !== "object") return null;
+        if (!o.f || Date.now() - Date.parse(o.f) > 30 * 864e5) return null;
+        o.p = location.pathname.slice(0, 120);
+        return o;
+      } catch (e) { return null; }
+    };
+    // the existing page scripts build FormData on submit; this capture listener runs first and adds the hidden field
+    document.addEventListener("submit", function (e) {
+      var f = e.target;
+      if (!f || f.tagName !== "FORM" || !f.matches || !f.matches('form[data-lead],form[data-member],form[action="/api/inquiry"]')) return;
+      var s = window.__tlcSrc(); if (!s) return;
+      var i = f.querySelector('input[name="src"]');
+      if (!i) { i = document.createElement("input"); i.type = "hidden"; i.name = "src"; f.appendChild(i); }
+      i.value = JSON.stringify(s);
+    }, true);
 
     var ENDPOINT = "/_t";
     var MAX_EVENTS = 200; // per page load; pageleave is always allowed on top

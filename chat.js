@@ -388,6 +388,7 @@
     if (o.chip) { body.chip = o.chip; body.client_id = 'chip-' + rid() }
     var firstOfConversation = !state.id
     if (firstOfConversation && state.route) body.route = state.route
+    if (firstOfConversation) { try { var sv = window.__tlcSrc && window.__tlcSrc(); if (sv) body.src = sv } catch (e) {} }
     fetch(API + 'message', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify(body), cache: 'no-store' }).then(function (r) {
       return r.json().catch(function () { return {} }).then(function (j) { return { s: r.status, j: j } })
     }).then(function (x) {
