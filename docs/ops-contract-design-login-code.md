@@ -40,3 +40,6 @@ Today the design pages use `default-src 'none'` (no script). The boxes need scri
 
 ## Test codes in the mock only
 Any email; `123456` signs in, `000000` is wrong (400, 4 tries left), `999999` is expired (410), `888888` is superseded (410), `429429` is rate limited (429).
+
+## Lead source ("src", T-261019-2)
+The site's `/design` stub (site origin) redirects to the design host with the first-touch source in the URL FRAGMENT: `https://design.thelocalcabinetry.com/design#s=<base64url of JSON>` (JSON keys l, r, us, um, uc, f, v as in ops' contract; a fragment is never sent to a server or put in the Referer). `design-login.js` reads it once (`srcObj()`), keeps it in the design host's own sessionStorage (`tlc_src`), removes the fragment, and adds `src` (+ `p` = current path) to the `verify-code` JSON body. Nothing when DNT/GPC is on, nothing older than 30 days.

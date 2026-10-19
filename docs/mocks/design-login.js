@@ -2,6 +2,19 @@
    MOCK=true answers locally (any email; code 123456 works, 000000 = wrong, 999999 = expired, 888888 = superseded, 429429 = rate limited) so the page can be reviewed without a server. Set MOCK=false in production. */
 (function(){
 var MOCK=true, API={send:'/design/api/login/send-code',verify:'/design/api/login/verify-code'}, NEXT='/design', COOL=30;
+/* first-touch source (T-261019-2): the site's /design stub passes it in the URL fragment #s=<base64url JSON>. Keep it for this tab only, drop the fragment.
+   Never read it when Do-Not-Track / Global Privacy Control is on. Sent as "src" in the verify-code body, plus p = this page's path. */
+function srcObj(){
+  try{
+    var n=navigator; if(n.doNotTrack==='1'||window.doNotTrack==='1'||n.msDoNotTrack==='1'||n.globalPrivacyControl===true) return null;
+    var m=/^#s=([A-Za-z0-9_-]+)$/.exec(location.hash||'');
+    if(m){ try{sessionStorage.setItem('tlc_src',atob(m[1].replace(/-/g,'+').replace(/_/g,'/')))}catch(e){}; history.replaceState(null,'',location.pathname+location.search) }
+    var o=JSON.parse(sessionStorage.getItem('tlc_src')||'null');
+    if(!o||typeof o!=='object'||!o.f||Date.now()-Date.parse(o.f)>30*864e5) return null;
+    o.p=location.pathname.slice(0,120); return o;
+  }catch(e){return null}
+}
+srcObj();
 var $=function(i){return document.getElementById(i)}, f1=$('f1'),f2=$('f2'),em=$('em'),m1=$('m1'),m2=$('m2'),codes=$('codes'),resend=$('resend'),timer=null,busy=false;
 function post(url,body){
   if(MOCK) return new Promise(function(r){setTimeout(function(){
@@ -30,7 +43,7 @@ function send(again){
 function verify(){
   var c=code(); if(c.length<6){say(m2,'Enter all 6 digits.','err');inp.focus();return}
   if(busy)return;busy=true;$('verify').disabled=true;say(m2,'Checking...');
-  post(API.verify,{email:em.value.trim(),code:c}).then(function(r){busy=false;$('verify').disabled=false;
+  post(API.verify,(function(){var b={email:em.value.trim(),code:c},s=srcObj();if(s)b.src=s;return b})()).then(function(r){busy=false;$('verify').disabled=false;
     var e=(r.json&&r.json.error)||'';
     if(r.status===200){say(m2,'Signed in. Opening your design page...','ok'); if(!MOCK) location.href=NEXT}
     else if(r.status===410&&e==='superseded'){codes.classList.add('bad');say(m2,'A newer code was sent to you. Use the latest email.','err')}
