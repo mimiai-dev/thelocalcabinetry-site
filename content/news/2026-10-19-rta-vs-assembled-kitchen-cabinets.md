@@ -44,4 +44,4 @@ Orders ship within a week of purchase and arrive about a week after dispatch, of
 
 ## The short version
 
-RTA and assembled cabinets are the same product at different stages. RTA is easier to ship and handle; assembled saves the assembly time. Everyone pays the same price, and design help is free. When you are ready, [start your design](/design) and we will take it from there.
+RTA and assembled cabinets are the same product at different stages. RTA is easier to ship and handle; assembled saves the assembly time. The standard price list is the same for everyone, and design help is free. When you are ready, [start your design](/design) and we will take it from there.

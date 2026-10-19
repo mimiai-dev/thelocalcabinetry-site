@@ -43,7 +43,7 @@ Take one photo of each wall straight on, and one from the corner. Photos help us
 
 ## Step 5: send it to us
 
-Send the sketch, the measurements and the photos by chat, or [start your design](/design) and upload them there. We will draw the layout with you, show you door styles and finishes, and send an estimate. Design help is free, and everyone pays the same price.
+Send the sketch, the measurements and the photos by chat, or [start your design](/design) and upload them there. We will draw the layout with you, show you door styles and finishes, and send an estimate. Design help is free, and the standard price list is the same for everyone.
 
 ## Common mistakes to avoid
 

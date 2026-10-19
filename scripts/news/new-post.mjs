@@ -38,7 +38,7 @@ CHECKLIST (delete this comment when done; the checks in CI refuse to publish unt
 [ ] at least 2 internal links in the text and links: [kitchen, vanity, closet, doors, measure, design] chosen
 [ ] hero image: our own file under /accessories, /closets, /rooms ... with alt text, width and height (hero_w, hero_h); every image in the text has alt text
 [ ] facts verified against our approved facts (warranty text from /policies#warranty, shipping sentence, certifications, build details); facts_verified: true
-[ ] no prices unless from our saved price list (then prices_verified: true); nothing about member discounts, trade or distributor prices: one price for everyone
+[ ] no prices unless from our saved price list (then prices_verified: true); the standard price list is the same for everyone and members get 10% off all orders (nothing more about member discounts, nothing about trade or distributor prices)
 [ ] approved by the owner or the lead: reviewed_by: owner (or lead); then draft: false
 -->
 
