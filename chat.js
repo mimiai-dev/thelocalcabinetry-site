@@ -253,7 +253,9 @@
     if (state.seen[m.seq]) return
     state.seen[m.seq] = 1
     var from = m.from === 'us' ? 'us' : 'you'
-    var isAck = from === 'us' && m.ack === true
+    // Canned server lines are never drawn, flagged ack:true or not (stopgap by text until the server stops sending them).
+    var CANNED = /^\s*(Hi, thanks for writing\.|Got it, one moment|Thanks, one moment|On it, one moment|Still on it:)/i
+    var isAck = from === 'us' && (m.ack === true || CANNED.test(String(m.text || '')))
     if (isAck) {   // owner: no canned 'got it / one moment' bubble. The line counts as received but is never drawn; the typing dots carry the wait.
       state.ackSeen = true; state.last = Math.max(state.last, m.seq); state.maxUs = Math.max(state.maxUs || 0, m.seq)
       if (!state.typing && state.owedSince) showTyping()
