@@ -293,10 +293,7 @@
   }
   // Our own local greeting, never sent to the server and never stored: the AI says so in its first words.
   function greet() {
-    if (humanMode()) {
-      log.appendChild(row('us', 'A teammate will reply here. Tell us what you are planning.', '', null, true))
-      return
-    }
+    if (humanMode()) return   // the person path shows only the server's one ack line (owner 2026-10-20: no local line repeating it)
     log.appendChild(row('us', "Hi, I'm Muse, the AI assistant for The Local Cabinetry, here with Hannah's team to help with layouts and pricing.", ''))
     var q = row('us', 'What are you planning: kitchen, vanity or closet?', '')
     log.appendChild(q)
