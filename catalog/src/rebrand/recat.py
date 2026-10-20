@@ -217,6 +217,11 @@ def process(p,logo_b64):
         ne=ET.SubElement(root,q('text')); ne.set('font-family','Hanken Grotesk'); ne.set('font-size','12'); ne.set('fill',INK); ne.set('font-weight','400')
         sp=ET.SubElement(ne,q('tspan')); sp.set('x','441'); sp.set('y','397'); sp.text='info@thelocalcabinetry.com'
         logchg('(none)','info@thelocalcabinetry.com added under the website','contact block')
+        # phone and address (T-261018-11, 2026-10-21): three more lines under the email, same font and step (18.4 pt)
+        ne2=ET.SubElement(root,q('text')); ne2.set('font-family','Hanken Grotesk'); ne2.set('font-size','12'); ne2.set('fill',INK); ne2.set('font-weight','400')
+        for y,t in (('415.4','+1 (857) 930-8324'),('433.8','5802 Colfax St'),('452.2','Houston, TX 77020')):
+            sp=ET.SubElement(ne2,q('tspan')); sp.set('x','441.00'); sp.set('y',y); sp.text=t
+        logchg('(none)','+1 (857) 930-8324 / 5802 Colfax St / Houston, TX 77020 added under the email','contact block')
     if p==7:
         for tx in list(texts()):
             if any(ts.text in('Need to add','BSV, WSV,','USV for the expose part.     ') for ts in ts_of(tx)):

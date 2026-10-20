@@ -44,6 +44,7 @@ Source: the Cotowins catalog 2026 (20 pages, sha256 8431dbbeaeca32e9432b96ba54cd
 | 19 | life. (stray word from the page 18 sentence, cut by the spread) | (removed) | layout artifact |
 | 20 | https://towins.en.alibaba.com | thelocalcabinetry.com | brand |
 | 20 | (none) | info@thelocalcabinetry.com added under the website | contact block |
+| 20 | (none) | +1 (857) 930-8324, 5802 Colfax St, Houston, TX 77020 added under the email (2026-10-21) | contact block |
 
 Changed on every page: fonts (Fraunces for large titles, Hanken Grotesk for text), colors (red to dark gold, black and orange panels to navy), crop to the 8.5 x 11 in trim (crop marks and bleed removed), and text re-set as one run per line. Split-word gaps from the source (for example "desig ned", "mela mine", "cabin et", "North A merica", "sid es") are joined; a dictionary scan of the whole PDF text finds no unknown word apart from product names and codes. Photos, swatches, product codes, names, specifications and the certification line are unchanged. The orange highlight on the "Package:" lines is now normal text color; the orange bar behind the removed page 7 note is removed with it.
 
