@@ -198,7 +198,7 @@
   function applyMode(m) {
     if (m) state.mode = m
     var h = humanMode()
-    if (modeLine) { modeLine.textContent = h ? 'You are talking with a person' : 'AI assistant'; modeLine.hidden = !state.id && !state.route }
+    if (modeLine) { modeLine.textContent = h ? 'You are talking with a person' : 'AI assistant'; modeLine.hidden = !state.id && !state.route; modeLine.style.display = modeLine.hidden ? 'none' : '' }   // .lcochat-st is display:flex, which beats [hidden]
     if (headAv) { headAv.textContent = h ? 'H' : 'M'; headAv.classList.toggle('ai', !h) }
     paintRoute()
   }
