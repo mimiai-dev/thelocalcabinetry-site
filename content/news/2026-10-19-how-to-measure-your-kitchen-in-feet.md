@@ -13,9 +13,9 @@ hero_alt: Kitchen with light-wood cabinets, under-cabinet lighting and a window 
 hero_w: 1200
 hero_h: 899
 links: [measure, kitchen, design]
-draft: true
-facts_verified: false
-reviewed_by: 
+draft: false
+facts_verified: true
+reviewed_by: lead
 ---
 You do not need special tools to measure a kitchen. A tape measure, a pencil and a sheet of paper are enough. This guide takes about five minutes and gives you everything we need to draw a first layout with you. For the full walk-through with photos, see [how to measure your kitchen](/how-to-measure-your-kitchen).
 

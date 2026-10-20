@@ -38,4 +38,11 @@ The Local Cabinetry (Luxlive Home LLC) is a Houston, Texas-based cabinetry brand
 ## Sitemap
 https://thelocalcabinetry.com/sitemap-index.xml
 <!-- news:start -->
+
+## News
+
+- [News](https://thelocalcabinetry.com/news/): guides, projects and product news.
+- [How to measure your kitchen in feet: a 5-minute guide](https://thelocalcabinetry.com/news/how-to-measure-your-kitchen-in-feet/): Measure your kitchen wall by wall in feet and inches in about five minutes, with a simple checklist of what to note, so we can draw a layout with you.
+- [RTA vs assembled kitchen cabinets: what you actually get](https://thelocalcabinetry.com/news/rta-vs-assembled-kitchen-cabinets/): Ready-to-assemble and pre-assembled cabinets compared in plain terms: what arrives, who builds it, what it costs you in time, and when each one makes sense.
+- [Walk-in closet planning: depth, hanging zones and lighting](https://thelocalcabinetry.com/news/walk-in-closet-planning-depth-hanging-zones-lighting/): How to plan a walk-in closet: how deep to make it, how to split hanging, shelves and drawers into zones, and where lighting helps most.
 <!-- news:end -->

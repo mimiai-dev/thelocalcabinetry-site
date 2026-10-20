@@ -13,9 +13,9 @@ hero_alt: Drawer base cabinet box with a solid-wood dovetailed drawer, shown bef
 hero_w: 1000
 hero_h: 839
 links: [kitchen, doors, design]
-draft: true
-facts_verified: false
-reviewed_by: 
+draft: false
+facts_verified: true
+reviewed_by: lead
 ---
 If you are comparing kitchen cabinets, you will see two words again and again: **ready-to-assemble (RTA)** and **assembled**. They describe how the cabinet reaches you, not how good it is. This guide explains the difference in plain terms, so you can decide which one fits your project.
 
@@ -40,7 +40,7 @@ The best way to avoid surprises is to plan the whole room first. [Measure your k
 
 ## Delivery and warranty
 
-Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location. For custom work we confirm the production time when the order is placed. Our cabinets carry a 1-year limited warranty for the original purchaser against manufacturing defects in materials and workmanship under normal residential use; we repair or replace the affected part. Full terms: [thelocalcabinetry.com/policies#warranty](/policies#warranty).
+Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location. For custom work we confirm the production time when the order is placed. From our policies: "We offer a 1-year limited warranty to the original purchaser, covering manufacturing defects in materials and workmanship under normal residential use. The warranty is non-transferable." and "We will repair or replace the affected part at our discretion." Full terms: [thelocalcabinetry.com/policies#warranty](/policies#warranty).
 
 ## The short version
 

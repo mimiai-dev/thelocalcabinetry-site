@@ -13,9 +13,9 @@ hero_alt: Walk-in closet with floor-to-ceiling dark wood shelving, hanging rails
 hero_w: 1300
 hero_h: 867
 links: [closet, measure, design]
-draft: true
-facts_verified: false
-reviewed_by: 
+draft: false
+facts_verified: true
+reviewed_by: lead
 ---
 A good walk-in closet is planned in zones, not filled in order. Start with what you own, group it, and give each group the right kind of space. This guide covers the three things people ask us most: how deep a closet should be, how to split it into zones, and where light matters.
 
@@ -42,4 +42,4 @@ Sketch the room from above, measure each wall in feet and inches, and note the d
 
 ## Where we come in
 
-Design help is free, and the standard price list is the same for everyone. Send us your measurements and a photo, or [start your design](/design), and we will draw the layout with you. You can see what we offer on our [closets and wardrobes](/c/closets-wardrobes/) page. Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location. For custom work we confirm the production time when the order is placed. Our cabinets carry a 1-year limited warranty for the original purchaser against manufacturing defects in materials and workmanship under normal residential use; we repair or replace the affected part. Full terms: [thelocalcabinetry.com/policies#warranty](/policies#warranty).
+Design help is free, and the standard price list is the same for everyone. Send us your measurements and a photo, or [start your design](/design), and we will draw the layout with you. You can see what we offer on our [closets and wardrobes](/c/closets-wardrobes/) page. Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location. For custom work we confirm the production time when the order is placed. From our policies: "We offer a 1-year limited warranty to the original purchaser, covering manufacturing defects in materials and workmanship under normal residential use. The warranty is non-transferable." and "We will repair or replace the affected part at our discretion." Full terms: [thelocalcabinetry.com/policies#warranty](/policies#warranty).
