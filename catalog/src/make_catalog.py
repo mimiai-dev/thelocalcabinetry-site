@@ -165,7 +165,7 @@ pages.append(f'''<section class="page"><p class="eyebrow">How we work</p><h2>Fro
 <div class="step"><div class="n">1</div><div><b>Tell us about the room</b><span>Chat with us on thelocalcabinetry.com or send an email. A photo, a sketch or rough wall sizes is enough to start.</span></div></div>
 <div class="step"><div class="n">2</div><div><b>We design it with you</b><span>We draw the layout, choose door style and finish with you, and send door samples if you want to see a color in person.</span></div></div>
 <div class="step"><div class="n">3</div><div><b>You receive an estimate</b><span>An itemized estimate for your layout. Change what you like; we update the drawing and the estimate together.</span></div></div>
-<div class="step"><div class="n">4</div><div><b>We build and ship</b><span>We build to your order and deliver by freight. Stock orders ship within a week of purchase and arrive about a week after dispatch, often sooner; for custom items we confirm the production time when the order is placed.</span></div></div>
+<div class="step"><div class="n">4</div><div><b>We build and ship</b><span>We build to your order and deliver by freight. Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location. For custom work we confirm the production time when the order is placed.</span></div></div>
 </div>{foot(pn)}</section>'''); pn+=1
 pages.append(f'''<section class="page end"><p class="eyebrow">Contact</p><h2>Start your project</h2><p class="lead" style="margin-top:14pt">Tell us what you are planning. We reply with a layout and an estimate.</p>
 <p class="big">Design your cabinets online: <b>thelocalcabinetry.com/design</b></p>
