@@ -49,3 +49,15 @@ Source: the Cotowins catalog 2026 (20 pages, sha256 8431dbbeaeca32e9432b96ba54cd
 Changed on every page: fonts (Fraunces for large titles, Hanken Grotesk for text), colors (red to dark gold, black and orange panels to navy), crop to the 8.5 x 11 in trim (crop marks and bleed removed), and text re-set as one run per line. Split-word gaps from the source (for example "desig ned", "mela mine", "cabin et", "North A merica", "sid es") are joined; a dictionary scan of the whole PDF text finds no unknown word apart from product names and codes. Photos, swatches, product codes, names, specifications and the certification line are unchanged. The orange highlight on the "Package:" lines is now normal text color; the orange bar behind the removed page 7 note is removed with it.
 
 Kept as in the source, not verified by us (owner decision): wholesaler, Houston, 50,000 clients, 10M+ SQFT, 600,000 cabinets per month in Vietnam and Thailand, 18+ years / 2007, 6 locations, vision/mission, US map, DROP-SHIP tags, Factory Direct Orders, and the Builder Grade line "1 1/2" plywood drawer box" (page 15; manufacturing to confirm).
+## Alibaba / OneTalk variant (2026-10-21)
+
+`catalog/The-Local-Cabinetry-Catalog-Alibaba.pdf` is the catalog to send on Alibaba OneTalk, where an off-platform contact risks a penalty. Built from the same source with `python3 recat.py --alibaba` (writes `cot/catalog-alibaba.html`) and `node topdf.mjs catalog-alibaba.html cot/new-alibaba.pdf`. `The-Local-Cabinetry-Catalog.pdf` stays the full catalog for email and the web. The variant is not linked from any page.
+
+| Page | Full catalog | Alibaba variant | Why |
+|---|---|---|---|
+| 20 | info@thelocalcabinetry.com | (removed) | email: off-platform contact |
+| 20 | +1 (857) 930-8324 | (removed) | phone: off-platform contact |
+| 20 | 5802 Colfax St | (removed) | street address: off-platform contact |
+| 20 | Houston, TX 77020 | (removed) | street address (second line) |
+
+Kept: "Visit Our Website" and thelocalcabinetry.com on page 20 (the brand URL, also on the cover, page 1). Pages 1 to 19 render pixel-identical to the full catalog; the pdftotext diff is the 4 lines above; 20 pages, same images and embedded fonts.
