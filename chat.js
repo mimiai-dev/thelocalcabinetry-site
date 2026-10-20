@@ -2,7 +2,7 @@
  *
  *   <script src="/chat.js" defer data-label="Chat with us"></script>
  *
- * It replaces the old floating link (luxova-contact.js). The corner button looks and sits the same (bottom right, dark navy pill,
+ * It replaces the old floating contact link script. The corner button looks and sits the same (bottom right, dark navy pill,
  * chat-bubble icon) but opens a panel. Lines go to OUR server (same origin, /design/api/visit/*) and land with the team; the
  * replies come back into the panel (polling). The panel keeps a clear link to the full design tool (/design).
  *
