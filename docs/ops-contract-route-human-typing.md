@@ -20,6 +20,14 @@ Status: PROPOSAL from the site dev (2026-10-19), to be confirmed or corrected by
 - Human mode on: the server writes one line, once per thread, "Thanks, a teammate will reply here shortly. You can also reach us on WhatsApp." It is NOT flagged `ack` in `visit/messages`, so the widget draws it.
 - The header shows "The Local Cabinetry" (never the AI as a person); its status line says "AI assistant" or "You are talking with a person".
 
+## B3. Email first (owner order 2026-10-20, T-261018-1, ops PR "web email first")
+- Right after the AI-or-person choice the panel asks for the visitor's email: heading "Your email, so we can send your design and reply if you step away", the field, the line "We only use it for your project. No spam." under it, and "Start chat". Required and checked with the same rule as the server. Human mode is asked too.
+- `GET visit/config` answers `email_gate: "first"` by default now (ops `VISIT_EMAIL_GATE=off` is the kill switch). The email rides on the first `POST visit/message`; the server refuses a new conversation without one (400 `email_required`).
+- A returning visitor (an email kept in this browser, or a conversation already stored) is not asked again.
+- `POST visit/message` and `GET visit/messages` answer `need_email: true` on a conversation that has no email yet (begun before the step, or with the switch off). The widget then shows the same ask as a card in the thread (`POST visit/email`). The book holds AI replies on such a thread (gate 85 WEB_NO_EMAIL); a person may still answer.
+- The email links or creates the customer file (same address in any case = the same file).
+- Unseen reply: if our reply is not seen (`POST visit/seen`) within about 10 minutes, ONE email goes through the shop's email channel with the reply's text and the `#chat=<token>` link (redeemed by `POST visit/redeem`), at most one a day per conversation.
+
 ## C. Human mode (the owner answers live from Local Ops)
 1. **Lines**: lines typed by a person carry `by: "human"` and `name: "<first name>"` in `GET visit/messages`. The widget shows Hannah's "H" avatar and the first name for those lines, and the TLC/"M" avatar for assistant lines.
 2. **Mode**: `GET visit/messages` and the `POST visit/message` answer also carry `mode: "ai" | "human"` (conversation level). In human mode the widget says "You are talking with a person" and "A person from our team will reply here", shows no AI wording and no assistant typing dots. Absent means `ai`.
