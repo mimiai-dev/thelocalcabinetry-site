@@ -5,6 +5,7 @@ ET.register_namespace('',SVG); ET.register_namespace('xlink',XL); ET.register_na
 q=lambda t:'{%s}%s'%(SVG,t)
 NAVY='#0e2740'; NAVY2='#0a1d31'; INK='#14273f'; GOLD='#b4862f'; GOLDD='#8a6420'; CREAM='#f3f0ea'
 MERGE=True
+ALIBABA='--alibaba' in sys.argv   # Alibaba/OneTalk variant (2026-10-21): page 20 without email, phone and street address
 import re as _re
 _DICT=set(w.strip().lower() for w in open('/usr/share/dict/words',errors='ignore'))|{'thelocalcabinetry','kcma','tsca','carb','ngbs','rta','pet','mdf','uv'}
 def rejoin(t):
@@ -214,6 +215,7 @@ def process(p,logo_b64):
         for tx,ts in find('Cotowins',278): replace_text(ts,'The Local',tx=tx); logchg('Cotowins Cabinetry','The Local Cabinetry','brand name')
     if p==20:
         for tx,ts in find('https://towins.en.alibaba.com'): replace_text(ts,'thelocalcabinetry.com',tx=tx); logchg('https://towins.en.alibaba.com','thelocalcabinetry.com','brand')
+    if p==20 and not ALIBABA:   # Alibaba variant: no email, phone or street address (off-platform contact on OneTalk)
         ne=ET.SubElement(root,q('text')); ne.set('font-family','Hanken Grotesk'); ne.set('font-size','12'); ne.set('fill',INK); ne.set('font-weight','400')
         sp=ET.SubElement(ne,q('tspan')); sp.set('x','441'); sp.set('y','397'); sp.text='info@thelocalcabinetry.com'
         logchg('(none)','info@thelocalcabinetry.com added under the website','contact block')
@@ -326,5 +328,5 @@ if __name__=='__main__':
     css='''@font-face{font-family:"Fraunces";font-weight:400 600;src:url(tlc2/fonts/fraunces-latin-var.woff2) format("woff2")}
 @font-face{font-family:"Hanken Grotesk";font-weight:100 900;src:url(tlc2/fonts/hanken-grotesk-latin-var.woff2) format("woff2")}
 @page{size:612pt 792pt;margin:0}html,body{margin:0;background:#fff}.pg{width:612pt;height:792pt;page-break-after:always;overflow:hidden}.pg svg{display:block;width:612pt;height:792pt}'''
-    open('cot/catalog.html','w').write('<!doctype html><meta charset="utf-8"><title>The Local Cabinetry Catalog 2026</title><style>'+css+'</style>'+''.join('<section class="pg">'+s+'</section>' for s in out))
-    json.dump(LOG,open('cot/log.json','w'),indent=1); print(len(LOG),'log rows')
+    open('cot/catalog-alibaba.html' if ALIBABA else 'cot/catalog.html','w').write('<!doctype html><meta charset="utf-8"><title>The Local Cabinetry Catalog 2026</title><style>'+css+'</style>'+''.join('<section class="pg">'+s+'</section>' for s in out))
+    json.dump(LOG,open('cot/log-alibaba.json' if ALIBABA else 'cot/log.json','w'),indent=1); print(len(LOG),'log rows')
