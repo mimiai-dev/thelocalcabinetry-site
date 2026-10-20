@@ -40,7 +40,7 @@ The best way to avoid surprises is to plan the whole room first. [Measure your k
 
 ## Delivery and warranty
 
-Orders ship within a week of purchase and arrive about a week after dispatch, often sooner. For custom and own-build items, we confirm the production time when the order is placed. Our cabinets carry a 1-year limited warranty for the original purchaser against manufacturing defects in materials and workmanship under normal residential use; we repair or replace the affected part. Full terms: [thelocalcabinetry.com/policies#warranty](/policies#warranty).
+Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location. For custom work we confirm the production time when the order is placed. Our cabinets carry a 1-year limited warranty for the original purchaser against manufacturing defects in materials and workmanship under normal residential use; we repair or replace the affected part. Full terms: [thelocalcabinetry.com/policies#warranty](/policies#warranty).
 
 ## The short version
 
