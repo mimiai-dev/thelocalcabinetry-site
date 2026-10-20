@@ -16,6 +16,13 @@ Status: PROPOSAL from the site dev (2026-10-19), to be confirmed or corrected by
 
 ## B2. Choice in the panel and the switch (owner order 2026-10-20, ops PR "web chat human mode")
 - The corner button reads "Chat with us". The panel opens with two tap-first choices at the top: "Chat with our AI assistant" (instant answers, any time) or "Talk to a person" (a teammate replies here, or on WhatsApp). No 5% wording in the chat.
+
+## B3. One button, 5% on the AI path, three ways to a person (owner order 2026-10-21, task T-261020-5; replaces "No 5% wording in the chat")
+- One floating "Chat with us" button; the round WhatsApp corner bubble is gone (WhatsApp is inside the chat: header icon and the person path).
+- First screen: "AI assistant" ("Design and quotation, 5% off your order") or "Talk to a person" ("Email, WhatsApp or a call").
+- AI path: as before (email step, then the AI thread). The first `POST visit/message` carries `route: "ai"`; ops records the Muse choice on that line (ops PR "web chat: the AI path records the Muse 5% choice", `lib/muse.ts recordWebAiChoice`), so quotes carry "Muse 5% (AI sales rep)". That ops PR must merge before this widget goes live.
+- Person path: "Email us" (`route: "human"`: the email step, then this thread in human mode), "WhatsApp" (wa.me link, the existing number), "Call" (tel: link, the number from `site.config.json`). The two links send nothing from the chat.
+- Open: the contact form's `route=ai` radio ("AI assistant, 5% off your order") is posted to `/api/inquiry` but ops does not record a Muse choice from it today.
 - The first `POST visit/message` carries `route`. Afterwards a small link ("Talk to a person" / "Back to AI assistant") calls `POST visit/mode {mode: "ai" | "human"}` and the server answers `{ok, mode}`; the mode is stored on the thread (`buyer_threads.human_mode`) and the book refuses AI drafts and auto-sends on it in code (gate 83).
 - Human mode on: the server writes one line, once per thread, "Thanks, a teammate will reply here shortly. You can also reach us on WhatsApp." It is NOT flagged `ack` in `visit/messages`, so the widget draws it.
 - The header shows "The Local Cabinetry" (never the AI as a person); its status line says "AI assistant" or "You are talking with a person".
