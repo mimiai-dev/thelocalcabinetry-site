@@ -1,0 +1,7 @@
+{
+  "_comment": "The ONE place for the public phone number. Change it here, then run: node scripts/site-config.mjs (rewrites every page, llms.txt and chat.js). CI runs it with --check.",
+  "phone": {
+    "display": "(857) 930-8324",
+    "e164": "+18579308324"
+  }
+}

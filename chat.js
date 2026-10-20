@@ -17,13 +17,17 @@
  * Text only: every string from the server is put in with textContent, never as HTML.
  * CSP (meta tag): script-src 'self', connect-src 'self', style-src allows the one inline <style> this file adds. No change needed.
  *
- * CHOICE FIRST (owner 2026-10-20): the panel opens with two tap-first choices at the top, "Chat with our AI assistant" or "Talk to a person". The choice
+ * ONE BUTTON (owner 2026-10-21, T-261020-5): one floating "Chat with us" button and nothing else in the corner (the round WhatsApp bubble is gone; WhatsApp is
+ * inside the chat). First screen: "AI assistant: design and quotation, 5% off your order" or "Talk to a person". The person path offers three ways:
+ * Email us (the email step, then this thread in human mode), WhatsApp (a wa.me link) and Call (a tel: link; the number is PHONE below, written from
+ * site.config.json by scripts/site-config.mjs). Neither link sends anything from here.
+ * CHOICE FIRST (owner 2026-10-20): the panel opens with two tap-first choices at the top, the AI assistant or "Talk to a person". The choice
  * rides on the first message as `route`; later a small link switches it (POST visit/mode {mode: ai|human}) and the server stores it on the thread
  * (buyer_threads.human_mode): a human-mode thread gets no AI reply, one honest ack line from the server, and the WhatsApp button stays the instant alternative.
  * Honest wording: the AI side always says it is an AI assistant; the header never shows the AI as a person. The first bubble is a LOCAL greeting
  * (never sent, never stored on the server); every later line and every reply comes from the desk. While no reply has come a 'typing' indicator shows for at most 60 s.
  * If the server answers "closed" (kill switch), is unreachable, or an older server does not know the path, the panel says so and
- * points to the design tool. A WhatsApp link (header icon + a round corner button) only opens WhatsApp on the owner's phone: it sends nothing. Messenger-style window: avatar, name, Online dot, bubbles with time, typing dots, growing composer.
+ * points to the design tool. A WhatsApp link (header icon + the person path) only opens WhatsApp on the owner's phone: it sends nothing. Messenger-style window: avatar, name, Online dot, bubbles with time, typing dots, growing composer.
  */
 (function () {
   'use strict'
@@ -39,6 +43,9 @@
   var PLACEHOLDERS = [/^0+$/, /^(\d)\1+$/, /^1?234567890$/, /^1?5551?\d{4}$/, /^123456789\d*$/, /^(44)?0?7700900\d{3}$/, /^1?5550\d{3}$/]
   function waOk(n) { return /^[1-9]\d{7,14}$/.test(n) && !PLACEHOLDERS.some(function (re) { return re.test(n) }) }
   var WA_URL = waOk(WHATSAPP) ? 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(WA_TEXT) : ''
+  // The public phone number for the Call option. Do not edit here: site.config.json is the one place, scripts/site-config.mjs writes this line.
+  var PHONE = '+18579308324'
+  var PHONE_SHOW = '(' + PHONE.slice(2, 5) + ') ' + PHONE.slice(5, 8) + '-' + PHONE.slice(8)
   var WA_PATH = 'M3 21l1.6-5A8.5 8.5 0 1 1 8 19.4zM9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 .8c-1-.4-2-1.4-2.4-2.4l.8-1-1-2z'
   var API = '/design/api/visit/'
   var CATALOG = '/catalog/The-Local-Cabinetry-Catalog.pdf'
@@ -86,11 +93,6 @@
     '.lcochat-btn{position:fixed;right:16px;bottom:16px;z-index:2147483000;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 20px;border:0;border-radius:999px;background:#0e2740;color:#fff;cursor:pointer;',
     'font:600 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 6px 24px rgba(8,20,34,.25)}',
     '.lcochat-btn:hover{background:#14365a}',
-    '.lcochat-wa{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:calc(max(16px,env(safe-area-inset-bottom)) + 60px);z-index:2147483000;width:48px;height:48px;border-radius:50%;background:#1f9d55;color:#fff;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 6px 24px rgba(8,20,34,.25)}',
-    '.lcochat-wa:hover{background:#188548}',
-    '.lcochat-wa svg{width:24px;height:24px}',
-    '.lcochat-wa:focus-visible{outline:3px solid #b4862f;outline-offset:3px}',
-    '.lcochat-wa.open{display:none}',
     '.lcochat-btn svg{flex:0 0 18px}',
     '.lcochat-btn:focus-visible,.lcochat-panel button:focus-visible,.lcochat-panel a:focus-visible,.lcochat-panel textarea:focus-visible,.lcochat-panel input:focus-visible{outline:3px solid #b4862f;outline-offset:2px}',
     '.lcochat-panel{position:fixed;right:16px;bottom:76px;z-index:2147483001;width:380px;max-width:calc(100vw - 32px);height:min(600px,calc(100dvh - 100px));display:flex;flex-direction:column;background:#fff;color:#1b2733;',
@@ -131,6 +133,8 @@
     '.lcochat-route h3{margin:0 0 2px;font:600 16px/1.25 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0e2740}',
     '.lcoroute-b{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:10px 14px;border:1px solid #0e2740;border-radius:12px;background:#fff;color:#0e2740;text-align:left;cursor:pointer;font:inherit}',
     '.lcoroute-b.ai{background:#0e2740;color:#fff}',
+    'a.lcoroute-b{text-decoration:none;box-sizing:border-box}',
+    '.lcoroute-back{align-self:flex-start;min-height:36px;padding:0 2px;border:0;background:transparent;color:#0e2740;font:600 13.5px/1 system-ui,sans-serif;text-decoration:underline;cursor:pointer}',
     '.lcoroute-b svg{width:24px;height:24px;flex:0 0 24px}',
     '.lcoroute-t b{display:block;font-size:15.5px}',
     '.lcoroute-t small{display:block;font-size:12.5px;margin-top:2px;opacity:.85}',
@@ -194,7 +198,7 @@
     '.lcocat-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#0e2740;font-size:26px;line-height:1;cursor:pointer}',
     '.lcocat-go:focus-visible,.lcocat-x:focus-visible{outline:3px solid #0e2740;outline-offset:2px}',
     '@media (max-width:620px){.lcocat-card{flex-direction:column}.lcocat-img{flex:0 0 150px}.lcocat-tx{padding:22px 20px 24px}.lcocat-tx h2{font-size:22px}}',
-    '@media print{.lcocat{display:none}.lcochat-btn,.lcochat-panel,.lcochat-wa{display:none}}'
+    '@media print{.lcocat{display:none}.lcochat-btn,.lcochat-panel{display:none}}'
   ].join('')
 
   var modeLine
@@ -215,7 +219,7 @@
     if (need && message) gateMsg.textContent = message
     if (state.open) setTimeout(function () { (need ? gateIn : ta).focus() }, 0)
   }
-  var dot, stText, checked = 0, btn, wa, panel, log, err, ta, sendB, photoIn, photoB, chips, headAv, routeBox
+  var dot, stText, checked = 0, btn, panel, log, err, ta, sendB, photoIn, photoB, chips, headAv, routeBox
 
   function headers(extra) {
     var h = { 'x-lco-design': '1' }
@@ -557,10 +561,23 @@
     var p = picking()
     panel.classList.toggle('picking', p)
     routeBox.className = 'lcochat-route' + (p ? '' : ' bar')
+    if (p && state.person) {   // "Talk to a person": three ways (owner 2026-10-21)
+      routeBox.appendChild(el('h3', '', 'Talk to a person'))
+      routeBox.appendChild(opt('human', ico('M4 4h16v16H4zM4 6l8 7 8-7'), 'Email us', 'A teammate replies here and by email'))
+      if (WA_URL) routeBox.appendChild(optLink(WA_URL, 'whatsapp', ico(WA_PATH), 'WhatsApp', 'Message us on WhatsApp', true))
+      routeBox.appendChild(optLink('tel:' + PHONE, 'call', ico('M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z'), 'Call', PHONE_SHOW))
+      var back = el('button', 'lcoroute-back', 'Back'); back.type = 'button'; back.setAttribute('data-track', 'route-person-back')
+      back.addEventListener('click', function () { state.person = false; paintRoute(); var f = routeBox.querySelector('.lcoroute-b'); if (f) f.focus() })
+      routeBox.appendChild(back)
+      return
+    }
     if (p) {
       routeBox.appendChild(el('h3', '', 'How would you like to chat?'))
-      routeBox.appendChild(opt('ai', ico('M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1'), 'Chat with our AI assistant', 'Instant answers, any time'))
-      routeBox.appendChild(opt('human', ico('M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'), 'Talk to a person', 'A teammate replies here, or on WhatsApp'))
+      routeBox.appendChild(opt('ai', ico('M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1'), 'AI assistant', 'Design and quotation, 5% off your order'))
+      var pb = el('button', 'lcoroute-b human'); pb.type = 'button'; pb.setAttribute('data-track', 'route-person')
+      pb.appendChild(ico('M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z')); var pt = el('span', 'lcoroute-t'); pt.appendChild(el('b', '', 'Talk to a person')); pt.appendChild(el('small', '', 'Email, WhatsApp or a call')); pb.appendChild(pt)
+      pb.addEventListener('click', function () { state.person = true; paintRoute(); var f = routeBox.querySelector('.lcoroute-b'); if (f) f.focus() })
+      routeBox.appendChild(pb)
       return
     }
     var h = humanMode()
@@ -574,6 +591,13 @@
     b.appendChild(icon); var t = el('span', 'lcoroute-t'); t.appendChild(el('b', '', title)); t.appendChild(el('small', '', sub)); b.appendChild(t)
     b.addEventListener('click', function () { setRoute(val); state.mode = ''; resetLog(); applyMode(); applyGate() })
     return b
+  }
+  // WhatsApp and Call on the person path: plain links (a new tab / the phone app); nothing is sent from the chat
+  function optLink(href, val, icon, title, sub, blank) {
+    var a = el('a', 'lcoroute-b ' + val); a.href = href; a.setAttribute('data-track', 'route-' + val)
+    if (blank) { a.target = '_blank'; a.rel = 'noopener' }
+    a.appendChild(icon); var t = el('span', 'lcoroute-t'); t.appendChild(el('b', '', title)); t.appendChild(el('small', '', sub)); a.appendChild(t)
+    return a
   }
   // No conversation yet: only the local choice changes. A conversation: the server stores the mode on the thread and answers the mode now in force.
   function switchRoute(to, b) {
@@ -611,13 +635,13 @@
   }
   function open() {
     catClose()
-    state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); if (wa) wa.classList.add('open'); checkOnline()
+    state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); checkOnline()
     if (state.id) poll()   // only re-reads a conversation this browser already has
     setTimeout(function () { var f = picking() && routeBox.querySelector('.lcoroute-b'); (f || (panel.classList.contains('gating') ? gateIn : ta)).focus() }, 0)
     maybeSeen()
   }
   function close() {
-    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); if (wa) wa.classList.remove('open'); clearTimeout(state.timer)
+    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer)
     btn.focus()
   }
 
@@ -691,11 +715,6 @@
     applyGate()
     resumeFromLink()
     window.addEventListener('hashchange', resumeFromLink)   // the link pasted into a tab that is already on the site
-    if (WA_URL) {
-      wa = el('a', 'lcochat-wa'); wa.href = WA_URL; wa.target = '_blank'; wa.rel = 'noopener'; wa.title = 'Message us on WhatsApp'
-      wa.setAttribute('aria-label', 'Message us on WhatsApp'); wa.setAttribute('data-track', 'whatsapp-open'); wa.appendChild(svg(WA_PATH))
-      document.body.appendChild(wa)
-    }
     greet(); applyMode()
     setTimeout(catShow, 15000)
 
