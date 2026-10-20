@@ -6,9 +6,11 @@
  * chat-bubble icon) but opens a panel. Lines go to OUR server (same origin, /design/api/visit/*) and land with the team; the
  * replies come back into the panel (polling). The panel keeps a clear link to the full design tool (/design).
  *
- * EMAIL STEP: before the first message the panel asks where to send the design and our replies (mode switched by the server config: email_gate first | after_chip | off,
- * or email_required). The address stays in this browser (localStorage, optional) and is sent ONCE, with the first message of a conversation. Someone who types it and
- * closes the chat sends us nothing. A 'seen' ping (POST visit/seen) tells the server which of our lines were really on screen, so a reminder is sent only for unseen replies.
+ * EMAIL STEP (owner 2026-10-20, mandatory): right after the AI-or-person choice, one small step asks for the visitor's email (field, one-line privacy note, Start chat). The server
+ * config switches it (email_gate first, the default | after_chip | off = the kill switch, or the older email_required). The address stays in this browser (localStorage, optional) and is
+ * sent ONCE, with the first message of a conversation; a returning visitor (stored email or an existing conversation) skips the step. Someone who types it and closes the chat sends us
+ * nothing. A conversation the server says has no email yet (need_email: true, e.g. begun before the step) gets the same ask as a card in the thread (POST visit/email).
+ * A 'seen' ping (POST visit/seen) tells the server which of our lines were really on screen, so the one reminder mail goes only for an unseen reply.
  * Sends NOTHING until the visitor presses Send on a first message: no request on page load, none when the panel opens
  * (the old conversation, if the browser kept one, is only re-read). The server mints the conversation id on the first message;
  * it is kept in this browser's localStorage under lco_visit_v1 and sent in the x-lco-visit header (never in a URL).
@@ -49,10 +51,11 @@
   // The visitor's email: asked before the first message, kept only in this browser (localStorage, try/catch: it works without it) and sent ONCE,
   // with the first message of a conversation. Someone who types it and closes the chat sends us nothing.
   var EMAIL_LS = 'lco_email_v1'
+  var ASK_EMAIL = 'Your email, so we can send your design and reply if you step away'
+  var EMAIL_NOTE = 'We only use it for your project. No spam.'
+  // the same rule as the server (ops lib/web-reminder.ts cleanEmail), on the lower-cased address: what passes here is never refused there
   function validEmail(v) {
-    if (typeof v !== 'string' || v.length > 254 || /[\s\u0000-\u001f\u007f]/.test(v)) return false
-    var p = v.split('@'); if (p.length !== 2 || !p[0] || !p[1]) return false
-    var d = p[1]; var dot = d.indexOf('.'); return dot > 0 && dot < d.length - 1 && d.charAt(d.length - 1) !== '.'
+    return typeof v === 'string' && v.length <= 254 && /^[^\s@<>,;:"()\[\]\\]+@[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}$/.test(v.toLowerCase())
   }
   function visitorTz() { try { var z = Intl.DateTimeFormat().resolvedOptions().timeZone; return typeof z === 'string' && /^[A-Za-z_]+(\/[A-Za-z0-9_+-]+){0,2}$|^UTC$/.test(z) ? z : '' } catch (e) { return '' } }
   function loadEmail() { try { var v = (localStorage.getItem(EMAIL_LS) || '').trim().toLowerCase(); return validEmail(v) ? v : '' } catch (e) { return '' } }
@@ -360,16 +363,16 @@
   function grow() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px' }
 
   // 'after_chip' mode only (switch in the server config): after the first chip step a mandatory email card sits in the thread; chips and the box wait for it.
-  function emailCard() {
-    if (!state.id || state.emailCard || state.email) return
+  function emailCard(force) {
+    if (!state.id || state.emailCard || (state.email && !force)) return
     var r = el('div', 'lcochat-r us'); r.appendChild(avatar(true, true))
     var c = el('div', 'lcochat-c'); var b = el('div', 'lcochat-m lcochat-ask lcochat-ask-need')
-    b.appendChild(el('span', '', 'Where should we send your design and our replies?'))
+    b.appendChild(el('span', '', ASK_EMAIL))
     var f = el('form', 'lcochat-ask-f'); f.noValidate = true
-    var inp = el('input'); inp.type = 'email'; inp.placeholder = 'you@example.com'; inp.autocomplete = 'email'; inp.setAttribute('aria-label', 'Your email')
+    var inp = el('input'); inp.type = 'email'; inp.placeholder = 'you@example.com'; inp.autocomplete = 'email'; inp.setAttribute('aria-label', 'Your email'); if (state.email) inp.value = state.email
     var go = el('button'); go.type = 'submit'; go.setAttribute('aria-label', 'Save email'); go.appendChild(svg('M5 12h14M13 6l6 6-6 6'))
     var msg = el('div', 'lcochat-ask-msg'); msg.setAttribute('role', 'status')
-    f.appendChild(inp); f.appendChild(go); b.appendChild(f); b.appendChild(msg)
+    f.appendChild(inp); f.appendChild(go); b.appendChild(f); b.appendChild(el('div', 'lcochat-gate-note', EMAIL_NOTE)); b.appendChild(msg)
     c.appendChild(b); r.appendChild(c)
     state.needEmail = true; state.emailCard = r; setChipsDisabled(true)
     f.addEventListener('submit', function (e) {
@@ -420,6 +423,7 @@
       if (j.mode === 'human' || j.mode === 'ai') applyMode(j.mode)
       var fresh = (j.messages || []).length
       ;(j.messages || []).forEach(addMsg)
+      if (j.need_email === true && state.emailMode !== 'off') emailCard(true)   // this conversation has no email yet (begun before the step): ask in the thread, under its lines
       applyRead(j.read_seq)
       if (j.typing === true && !state.humanTyping) showTyping(((j.typing_name || 'Hannah') + ' is typing').slice(0, 40), true)
       else if (j.typing === false && state.humanTyping) hideTyping()
@@ -465,6 +469,7 @@
         if (!humanMode()) showTyping()
         state.sentOnce = true
         if (firstOfConversation && state.emailMode === 'after_chip' && !state.email) emailCard()
+        else if (x.j.need_email === true && state.emailMode !== 'off') emailCard(true)
         poll()
         return
       }
@@ -666,13 +671,13 @@
     box.appendChild(chips); box.appendChild(rw)
 
     gate = el('div', 'lcochat-gate'); gate.hidden = true
-    gate.appendChild(el('h3', '', 'Where should we send your design and our replies?'))
+    gate.appendChild(el('h3', '', ASK_EMAIL))
     var gf = el('form', 'lcochat-gate-f'); gf.noValidate = true
     gateIn = el('input'); gateIn.type = 'email'; gateIn.placeholder = 'you@example.com'; gateIn.autocomplete = 'email'; gateIn.setAttribute('aria-label', 'Your email'); gateIn.maxLength = 254
     gateGo = el('button', 'lcochat-gate-go', 'Start chat'); gateGo.type = 'submit'
     gateMsg = el('div', 'lcochat-gate-msg'); gateMsg.setAttribute('role', 'status')
-    var gn = el('p', 'lcochat-gate-note', 'Only to send you our reply; no spam. '); var gl = el('a', '', 'How we use it'); gl.href = '/policies/#privacy'; gl.target = '_blank'; gl.rel = 'noopener'; gn.appendChild(gl)
-    gf.appendChild(gateIn); gf.appendChild(gateGo); gf.appendChild(gateMsg); gate.appendChild(gf); gate.appendChild(gn)
+    var gn = el('p', 'lcochat-gate-note', EMAIL_NOTE)
+    gf.appendChild(gateIn); gf.appendChild(gn); gf.appendChild(gateGo); gf.appendChild(gateMsg); gate.appendChild(gf)
     gateIn.addEventListener('input', function () { if (validEmail(gateIn.value.trim())) gateGo.setAttribute('data-track', 'gate-start'); else gateGo.removeAttribute('data-track') })
     gf.addEventListener('submit', function (e) {
       e.preventDefault()
