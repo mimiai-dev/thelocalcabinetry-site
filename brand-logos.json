@@ -1,0 +1,70 @@
+{
+ "_comment": "Logo files the site may serve. Each is the licensed brand kit (brand-kit-a5649501d5a1feec/brand-kit.zip, logos/) or made from it as described. scripts/check-brand.mjs fails on any other logo file.",
+ "files": {
+  "logo-tlc.svg": {
+   "from": "logos/tlc-wordmark-light-bg.svg",
+   "how": "byte copy",
+   "sha256": "f63def997a2409db47f0372119271f7743cbcfadc94bda3a830859d0b257af03"
+  },
+  "logo-tlc-dark.svg": {
+   "from": "logos/tlc-wordmark-dark-bg.svg",
+   "how": "byte copy",
+   "sha256": "2138d02d50e704d749816a069c0ae7c3452094d73482dc4a635f9066b8a91d12"
+  },
+  "logo-white.svg": {
+   "from": "logos/tlc-wordmark-light-bg.svg",
+   "how": "byte copy",
+   "sha256": "f63def997a2409db47f0372119271f7743cbcfadc94bda3a830859d0b257af03"
+  },
+  "brand-kit-a5649501d5a1feec/logos/tlc-wordmark-light-bg-2000.png": {
+   "from": "logos/tlc-wordmark-light-bg-2000.png",
+   "how": "byte copy",
+   "sha256": "b283c85f9a0467acdc1a8da86da658a805631c1734cb5513b0cb9fdd064ad5c0"
+  },
+  "brand-kit-a5649501d5a1feec/logos/tlc-wordmark-dark-bg-2000.png": {
+   "from": "logos/tlc-wordmark-dark-bg-2000.png",
+   "how": "byte copy",
+   "sha256": "6bbdb521107d5a75af750808f42023b6af27768ee0e0b7cedcbad33d4aadac0f"
+  },
+  "logo.png": {
+   "from": "logos/tlc-wordmark-light-bg-2000.png",
+   "how": "byte copy",
+   "sha256": "b283c85f9a0467acdc1a8da86da658a805631c1734cb5513b0cb9fdd064ad5c0"
+  },
+  "logo-light.png": {
+   "from": "logos/tlc-wordmark-light-bg-2000.png",
+   "how": "byte copy",
+   "sha256": "b283c85f9a0467acdc1a8da86da658a805631c1734cb5513b0cb9fdd064ad5c0"
+  },
+  "logo-white.png": {
+   "from": "logos/tlc-wordmark-light-bg-2000.png",
+   "how": "byte copy",
+   "sha256": "b283c85f9a0467acdc1a8da86da658a805631c1734cb5513b0cb9fdd064ad5c0"
+  },
+  "logo.webp": {
+   "from": "logos/tlc-wordmark-light-bg-2000.png",
+   "how": "lossless WebP",
+   "sha256": "71d1ed69f5015f611029a25f39c8e5f008513cd555a0532bce16a0eea9d057c8"
+  },
+  "logo-light.webp": {
+   "from": "logos/tlc-wordmark-light-bg-2000.png",
+   "how": "lossless WebP",
+   "sha256": "71d1ed69f5015f611029a25f39c8e5f008513cd555a0532bce16a0eea9d057c8"
+  },
+  "logo.jpg": {
+   "from": "logos/tlc-wordmark-light-bg-2000.png",
+   "how": "on white, 120 px padding, JPEG q90",
+   "sha256": "b59344ee83e4e2dbcd8d13724b3af62e88b203ae4bbeb59b3493d90330f198ec"
+  },
+  "logo-navy.png": {
+   "from": "logos/tlc-wordmark-dark-bg-2000.png",
+   "how": "on navy #0e2740, 120 px padding, PNG",
+   "sha256": "bbc4d2c32e94db81a5ab6f9d7d7c3903692f2f654bef231e70c142fc7f6a9ddb"
+  },
+  "logo-navy.webp": {
+   "from": "logos/tlc-wordmark-dark-bg-2000.png",
+   "how": "on navy #0e2740, 120 px padding, WebP q90",
+   "sha256": "501ab275603b23fc705bc75745163966adee152527d8c27272050e6cb9be2f93"
+  }
+ }
+}
