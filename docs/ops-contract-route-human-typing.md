@@ -14,6 +14,12 @@ Status: PROPOSAL from the site dev (2026-10-19), to be confirmed or corrected by
   2. Does ops really apply the discount? The widget says "5% off when you continue with our AI assistant" only as the owner specified. If it is not recorded and honoured, a visitor is promised something nobody applies.
   3. `route=human` marks the thread `wants_human`: no AI drafts, a person answers.
 
+## B2. Choice in the panel and the switch (owner order 2026-10-20, ops PR "web chat human mode")
+- The corner button reads "Chat with us". The panel opens with two tap-first choices at the top: "Chat with our AI assistant" (instant answers, any time) or "Talk to a person" (a teammate replies here, or on WhatsApp). No 5% wording in the chat.
+- The first `POST visit/message` carries `route`. Afterwards a small link ("Talk to a person" / "Back to AI assistant") calls `POST visit/mode {mode: "ai" | "human"}` and the server answers `{ok, mode}`; the mode is stored on the thread (`buyer_threads.human_mode`) and the book refuses AI drafts and auto-sends on it in code (gate 83).
+- Human mode on: the server writes one line, once per thread, "Thanks, a teammate will reply here shortly. You can also reach us on WhatsApp." It is NOT flagged `ack` in `visit/messages`, so the widget draws it.
+- The header shows "The Local Cabinetry" (never the AI as a person); its status line says "AI assistant" or "You are talking with a person".
+
 ## C. Human mode (the owner answers live from Local Ops)
 1. **Lines**: lines typed by a person carry `by: "human"` and `name: "<first name>"` in `GET visit/messages`. The widget shows Hannah's "H" avatar and the first name for those lines, and the TLC/"M" avatar for assistant lines.
 2. **Mode**: `GET visit/messages` and the `POST visit/message` answer also carry `mode: "ai" | "human"` (conversation level). In human mode the widget says "You are talking with a person" and "A person from our team will reply here", shows no AI wording and no assistant typing dots. Absent means `ai`.

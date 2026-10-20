@@ -1,6 +1,6 @@
 /* Chat bubble for thelocalcabinetry.com. One same-origin file: no third party, no cookie, no account.
  *
- *   <script src="/chat.js" defer data-label="Chat with Hannah"></script>
+ *   <script src="/chat.js" defer data-label="Chat with us"></script>
  *
  * It replaces the old floating link (luxova-contact.js). The corner button looks and sits the same (bottom right, dark navy pill,
  * chat-bubble icon) but opens a panel. Lines go to OUR server (same origin, /design/api/visit/*) and land with the team; the
@@ -15,8 +15,11 @@
  * Text only: every string from the server is put in with textContent, never as HTML.
  * CSP (meta tag): script-src 'self', connect-src 'self', style-src allows the one inline <style> this file adds. No change needed.
  *
- * Honest wording: the first bubble is a LOCAL greeting (never sent, never stored on the server) that says the assistant is an AI helping
- * Hannah's team; every later line and every reply comes from the desk. While no reply has come a 'typing' indicator shows for at most 60 s.
+ * CHOICE FIRST (owner 2026-10-20): the panel opens with two tap-first choices at the top, "Chat with our AI assistant" or "Talk to a person". The choice
+ * rides on the first message as `route`; later a small link switches it (POST visit/mode {mode: ai|human}) and the server stores it on the thread
+ * (buyer_threads.human_mode): a human-mode thread gets no AI reply, one honest ack line from the server, and the WhatsApp button stays the instant alternative.
+ * Honest wording: the AI side always says it is an AI assistant; the header never shows the AI as a person. The first bubble is a LOCAL greeting
+ * (never sent, never stored on the server); every later line and every reply comes from the desk. While no reply has come a 'typing' indicator shows for at most 60 s.
  * If the server answers "closed" (kill switch), is unreachable, or an older server does not know the path, the panel says so and
  * points to the design tool. A WhatsApp link (header icon + a round corner button) only opens WhatsApp on the owner's phone: it sends nothing. Messenger-style window: avatar, name, Online dot, bubbles with time, typing dots, growing composer.
  */
@@ -25,7 +28,7 @@
   if (window.__lcoChat) return
   window.__lcoChat = true
   var s = document.currentScript
-  var label = ((s && s.dataset && s.dataset.label) || 'Chat with Hannah').trim().slice(0, 40)
+  var label = ((s && s.dataset && s.dataset.label) || 'Chat with us').trim().slice(0, 40)
   var DESIGN = '/design'
   // The owner's WhatsApp number: the ONE place to change it (country code, digits only, no + and no leading 0).
   // A placeholder-looking number renders no WhatsApp button at all: a button that dials a stranger is worse than none.
@@ -120,18 +123,19 @@
     '.lcochat-ic.hot{border-color:#b4862f;box-shadow:0 0 0 3px rgba(180,134,47,.28)}',
     '.lcochat-nm{font-size:12px;font-weight:600;color:#51606f;margin:0 4px 2px}',
     '.lcochat-mode{margin-top:1px}',
-    '.lcoroute{position:fixed;inset:0;z-index:2147483100;background:rgba(8,20,34,.55);display:flex;align-items:center;justify-content:center;padding:16px}',
-    '.lcoroute[hidden]{display:none}',
-    '.lcoroute-card{position:relative;width:min(420px,100%);background:#fff;border-radius:16px;padding:28px 24px 24px;box-shadow:0 18px 60px rgba(8,20,34,.4);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14273f}',
-    '.lcoroute-logo{display:block;height:40px;width:auto;margin:0 0 16px}',
-    '.lcoroute-card h2{margin:0 0 16px;font-size:22px;line-height:1.25;color:#0e2740}',
-    '.lcoroute-x{position:absolute;top:8px;right:8px;width:44px;height:44px;border:0;background:transparent;font-size:28px;line-height:1;color:#51606f;cursor:pointer;border-radius:8px}',
-    '.lcoroute-b{display:flex;align-items:center;gap:14px;width:100%;min-height:72px;margin:0 0 8px;padding:12px 16px;border:1px solid #0e2740;border-radius:12px;background:#fff;color:#0e2740;text-align:left;cursor:pointer;font:inherit}',
+    '.lcochat-route{padding:12px 14px;background:#fff;border-bottom:1px solid #e3ded4;display:flex;flex-direction:column;gap:8px}',
+    '.lcochat-route[hidden]{display:none}',
+    '.lcochat-route h3{margin:0 0 2px;font:600 16px/1.25 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0e2740}',
+    '.lcoroute-b{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:10px 14px;border:1px solid #0e2740;border-radius:12px;background:#fff;color:#0e2740;text-align:left;cursor:pointer;font:inherit}',
     '.lcoroute-b.ai{background:#0e2740;color:#fff}',
-    '.lcoroute-b svg{width:28px;height:28px;flex:0 0 28px}',
-    '.lcoroute-t b{display:block;font-size:17px}',
-    '.lcoroute-t small{display:block;font-size:13px;margin-top:2px;opacity:.85}',
-    '.lcoroute-b:focus-visible,.lcoroute-x:focus-visible{outline:3px solid #b4862f;outline-offset:2px}',
+    '.lcoroute-b svg{width:24px;height:24px;flex:0 0 24px}',
+    '.lcoroute-t b{display:block;font-size:15.5px}',
+    '.lcoroute-t small{display:block;font-size:12.5px;margin-top:2px;opacity:.85}',
+    '.lcochat-route.bar{flex-direction:row;align-items:center;justify-content:space-between;padding:6px 14px;font-size:12.5px;color:#51606f}',
+    '.lcochat-switch{min-height:32px;padding:0 4px;border:0;background:transparent;color:#0e2740;font:600 12.5px/1 system-ui,sans-serif;text-decoration:underline;cursor:pointer}',
+    '.lcochat-switch:disabled{opacity:.5;cursor:default}',
+    '.lcochat-panel.picking .lcochat-log,.lcochat-panel.picking .lcochat-err,.lcochat-panel.picking .lcochat-box,.lcochat-panel.picking .lcochat-gate{display:none}',
+    '.lcochat-panel.picking .lcochat-route{flex:1;justify-content:flex-start;background:#f6f4ef}',
     '.route-pick{border:0;margin:6px 0 10px;padding:0}.route-pick legend{padding:0;font-weight:600;margin-bottom:6px}.route-pick label{display:flex;gap:8px;align-items:center;margin:4px 0;font-size:15px}',
     '.lcochat-panel.gating .lcochat-log,.lcochat-panel.gating .lcochat-err,.lcochat-panel.gating .lcochat-box{display:none}',
     '.lcochat-gate{flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:24px 20px;background:#f6f4ef;overflow-y:auto}',
@@ -193,19 +197,22 @@
   var modeLine
   function applyMode(m) {
     if (m) state.mode = m
-    if (modeLine) { modeLine.textContent = humanMode() ? 'You are talking with a person' : ''; modeLine.hidden = !humanMode() }
+    var h = humanMode()
+    if (modeLine) { modeLine.textContent = h ? 'You are talking with a person' : 'AI assistant'; modeLine.hidden = !state.id && !state.route; modeLine.style.display = modeLine.hidden ? 'none' : '' }   // .lcochat-st is display:flex, which beats [hidden]
+    if (headAv) { headAv.textContent = h ? 'H' : 'M'; headAv.classList.toggle('ai', !h) }
+    paintRoute()
   }
   var gate, gateIn, gateGo, gateMsg
   // Before the first message: the email step (mode 'first', no stored email, no conversation yet). Returning visitors skip it.
   function applyGate(message) {
     if (!panel) return
-    var need = state.emailMode === 'first' && !state.email && !state.id
+    var need = state.emailMode === 'first' && !state.email && !state.id && !picking()
     panel.classList.toggle('gating', need); gate.hidden = !need
     btn.setAttribute('data-track', need ? 'chat-open-gate' : 'chat-open')
     if (need && message) gateMsg.textContent = message
     if (state.open) setTimeout(function () { (need ? gateIn : ta).focus() }, 0)
   }
-  var dot, stText, checked = 0, btn, wa, panel, log, err, ta, sendB, photoIn, photoB, chips
+  var dot, stText, checked = 0, btn, wa, panel, log, err, ta, sendB, photoIn, photoB, chips, headAv, routeBox
 
   function headers(extra) {
     var h = { 'x-lco-design': '1' }
@@ -286,10 +293,7 @@
   }
   // Our own local greeting, never sent to the server and never stored: the AI says so in its first words.
   function greet() {
-    if (humanMode()) {
-      log.appendChild(row('us', 'A person from our team will reply here. Tell us what you are planning.', '', null, true, 'Hannah'))
-      return
-    }
+    if (humanMode()) return   // the person path shows only the server's one ack line (owner 2026-10-20: no local line repeating it)
     log.appendChild(row('us', "Hi, I'm Muse, the AI assistant for The Local Cabinetry, here with Hannah's team to help with layouts and pricing.", ''))
     var q = row('us', 'What are you planning: kitchen, vanity or closet?', '')
     log.appendChild(q)
@@ -333,7 +337,7 @@
     if (from === 'us') { hideTyping(); state.owedSince = 0; state.ackSeen = false }
     var at = m.at || m.ts || m.time || m.created_at || m.created
     daySep(toDate(at))
-    var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human', m.name)
+    var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human' || m.team === true, m.name)   // team: the server's human-mode line, the team's avatar (never the AI's)
     if (from === 'you') r.setAttribute('data-seq', String(m.seq))
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.last = Math.max(state.last, m.seq)
@@ -539,39 +543,45 @@
     cat.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); catClose() } else if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === go ? x : go).focus() } })
     go.focus()
   }
-  // ---- The choice, asked before a chat starts: the AI assistant (5% off) or a person.
-  var sheet = null, sheetNext = null
+  // ---- The choice, at the top of the panel before a chat starts: the AI assistant or a person. Afterwards a small link switches it.
   function ico(d) { return svg(d) }
-  function routeAsk(next) {
-    if (state.id || state.route) { next(state.route || ''); return }
-    if (!sheet) {
-      sheet = el('div', 'lcoroute'); sheet.hidden = true; sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'How would you like to talk to us?')
-      var card = el('div', 'lcoroute-card')
-      var lg = el('img', 'lcoroute-logo'); lg.src = '/logo-tlc.svg'; lg.alt = 'The Local Cabinetry'; lg.width = 130; lg.height = 40
-      var xx = el('button', 'lcoroute-x', '\u00d7'); xx.type = 'button'; xx.setAttribute('aria-label', 'Close')
-      var h = el('h2', '', 'How would you like to talk to us?')
-      function opt(cls, icon, title, sub, val) {
-        var b = el('button', 'lcoroute-b ' + cls); b.type = 'button'; b.setAttribute('data-track', 'route-' + val)
-        b.appendChild(icon); var t = el('span', 'lcoroute-t'); t.appendChild(el('b', '', title)); if (sub) t.appendChild(el('small', '', sub)); b.appendChild(t)
-        b.addEventListener('click', function () { var n = sheetNext; routeClose(); setRoute(val); if (n) n(val) })
-        return b
-      }
-      card.appendChild(xx); card.appendChild(lg); card.appendChild(h)
-      card.appendChild(opt('ai', ico('M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1'), 'Talk to our AI assistant', '5% off when you continue with our AI assistant', 'ai'))
-      card.appendChild(opt('human', ico('M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'), 'Talk to a person', 'A person from our team replies', 'human'))
-      sheet.appendChild(card); document.body.appendChild(sheet)
-      xx.addEventListener('click', routeClose)
-      sheet.addEventListener('click', function (e) { if (e.target === sheet) routeClose() })
-      sheet.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); routeClose() } })
+  function picking() { return !state.id && !state.route }
+  function paintRoute() {
+    if (!routeBox) return
+    routeBox.textContent = ''
+    var p = picking()
+    panel.classList.toggle('picking', p)
+    routeBox.className = 'lcochat-route' + (p ? '' : ' bar')
+    if (p) {
+      routeBox.appendChild(el('h3', '', 'How would you like to chat?'))
+      routeBox.appendChild(opt('ai', ico('M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1'), 'Chat with our AI assistant', 'Instant answers, any time'))
+      routeBox.appendChild(opt('human', ico('M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'), 'Talk to a person', 'A teammate replies here, or on WhatsApp'))
+      return
     }
-    sheetNext = next; sheet.hidden = false
-    var f = sheet.querySelector('.lcoroute-b'); if (f) f.focus()
+    var h = humanMode()
+    routeBox.appendChild(el('span', '', h ? 'A teammate replies here' : 'You are chatting with our AI assistant'))
+    var sw = el('button', 'lcochat-switch', h ? 'Back to AI assistant' : 'Talk to a person'); sw.type = 'button'; sw.setAttribute('data-track', h ? 'route-switch-ai' : 'route-switch-human')
+    sw.addEventListener('click', function () { switchRoute(h ? 'ai' : 'human', sw) })
+    routeBox.appendChild(sw)
   }
-  function routeClose() { if (sheet) sheet.hidden = true; sheetNext = null }
-  // chat opens in the mode that was chosen: a person gets a person's greeting, no AI wording
-  function openChoice(v) {
-    if (!state.id) { log.textContent = ''; state.day = ''; state.mode = ''; greet() }
-    applyMode(); open()
+  function opt(val, icon, title, sub) {
+    var b = el('button', 'lcoroute-b ' + val); b.type = 'button'; b.setAttribute('data-track', 'route-' + val)
+    b.appendChild(icon); var t = el('span', 'lcoroute-t'); t.appendChild(el('b', '', title)); t.appendChild(el('small', '', sub)); b.appendChild(t)
+    b.addEventListener('click', function () { setRoute(val); state.mode = ''; resetLog(); applyMode(); applyGate() })
+    return b
+  }
+  // No conversation yet: only the local choice changes. A conversation: the server stores the mode on the thread and answers the mode now in force.
+  function switchRoute(to, b) {
+    if (!state.id) { setRoute(to); state.mode = ''; resetLog(); applyMode(); return }
+    if (b) b.disabled = true
+    fetch(API + 'mode', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify({ mode: to }), cache: 'no-store' })
+      .then(function (r) { return r.json().catch(function () { return {} }).then(function (j) { return { s: r.status, j: j } }) })
+      .then(function (x) {
+        if (b) b.disabled = false
+        if (x.s === 200 && x.j && (x.j.mode === 'ai' || x.j.mode === 'human')) { setRoute(x.j.mode); applyMode(x.j.mode); if (x.j.mode === 'human') hideTyping(); poll(); return }
+        if (x.s === 429) return showErr('Please slow down a little and try again in a minute.')
+        showErr('Sorry, that did not switch. Please try again.')
+      }).catch(function () { if (b) b.disabled = false; showErr('Sorry, that did not switch. Please try again.') })
   }
   // The reminder mail links to /#chat=<token> (a FRAGMENT: it never reaches a server log or a Referer). On load: clear the hash first so no token stays in the
   // address bar or the history, then send the token ONCE to the redeem endpoint, store the conversation id it returns, and open the panel on that chat.
@@ -598,7 +608,7 @@
     catClose()
     state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); if (wa) wa.classList.add('open'); checkOnline()
     if (state.id) poll()   // only re-reads a conversation this browser already has
-    setTimeout(function () { (panel.classList.contains('gating') ? gateIn : ta).focus() }, 0)
+    setTimeout(function () { var f = picking() && routeBox.querySelector('.lcoroute-b'); (f || (panel.classList.contains('gating') ? gateIn : ta)).focus() }, 0)
     maybeSeen()
   }
   function close() {
@@ -621,11 +631,11 @@
     btn.appendChild(el('span', '', label))
 
     panel = el('div', 'lcochat-panel'); panel.hidden = true
-    panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Chat with Hannah at The Local Cabinetry')
+    panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Chat with The Local Cabinetry')
     var head = el('div', 'lcochat-head')
-    head.appendChild(avatar(false))
+    headAv = avatar(false, true); head.appendChild(headAv)
     var who = el('div', 'lcochat-who')
-    who.appendChild(el('h2', '', 'Hannah'))
+    who.appendChild(el('h2', '', 'The Local Cabinetry'))
     var st = el('div', 'lcochat-st'); dot = el('span', 'lcochat-dot'); stText = el('span', '', 'Online'); st.appendChild(dot); st.appendChild(stText)
     modeLine = el('div', 'lcochat-st lcochat-mode'); modeLine.hidden = true
     who.appendChild(st); who.appendChild(modeLine); head.appendChild(who)
@@ -670,7 +680,8 @@
       if (!validEmail(v)) { gateMsg.textContent = 'Please enter a valid email address.'; return }
       state.email = v; storeEmail(v); gateMsg.textContent = ''; applyGate()
     })
-    panel.appendChild(head); panel.appendChild(gate); panel.appendChild(log); panel.appendChild(err); panel.appendChild(box)
+    routeBox = el('div', 'lcochat-route')
+    panel.appendChild(head); panel.appendChild(routeBox); panel.appendChild(gate); panel.appendChild(log); panel.appendChild(err); panel.appendChild(box)
     document.body.appendChild(btn); document.body.appendChild(panel)
     applyGate()
     resumeFromLink()
@@ -680,23 +691,15 @@
       wa.setAttribute('aria-label', 'Message us on WhatsApp'); wa.setAttribute('data-track', 'whatsapp-open'); wa.appendChild(svg(WA_PATH))
       document.body.appendChild(wa)
     }
-    greet()
+    greet(); applyMode()
     setTimeout(catShow, 15000)
 
-    btn.addEventListener('click', function () { if (state.open) close(); else routeAsk(openChoice) })
-    if (window.__lcoQ) { window.__lcoQ = 0; routeAsk(openChoice) }   // a tap that came before this file was ready
-    // other doors into the chat or the design tool ask first, once per session
-    document.addEventListener('click', function (e) {
-      var a = e.target && e.target.closest ? e.target.closest('a[href="/design"],a[href^="/design?"],a[data-open-chat],.lcochat-wa') : null
-      if (!a || e.defaultPrevented || state.id || state.route || a.closest('.lcochat-panel')) return
-      if (e.button || e.metaKey || e.ctrlKey || e.shiftKey) return
-      e.preventDefault()
-      var href = a.getAttribute('href') || '', wa2 = a.classList.contains('lcochat-wa')
-      routeAsk(function (v) {
-        if (v === 'ai' || a.hasAttribute('data-open-chat')) openChoice(v)
-        else if (wa2) window.open(a.href, '_blank', 'noopener')
-        else if (href) location.href = href
-      })
+    btn.addEventListener('click', function () { if (state.open) close(); else open() })
+    if (window.__lcoQ) { window.__lcoQ = 0; open() }   // a tap that came before this file was ready
+    document.addEventListener('click', function (e) {   // a link marked data-open-chat opens the panel (the choice is at its top)
+      var a = e.target && e.target.closest ? e.target.closest('a[data-open-chat]') : null
+      if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey) return
+      e.preventDefault(); if (!state.open) open()
     }, true)
     syncRouteFields()
     x.addEventListener('click', close)
