@@ -13,9 +13,9 @@ hero_alt: Drawer base cabinet box with a solid-wood dovetailed drawer, shown bef
 hero_w: 1000
 hero_h: 839
 links: [kitchen, doors, design]
-draft: true
-facts_verified: false
-reviewed_by: 
+draft: false
+facts_verified: true
+reviewed_by: lead
 ---
 If you are comparing kitchen cabinets, you will see two words again and again: **ready-to-assemble (RTA)** and **assembled**. They describe how the cabinet reaches you, not how good it is. This guide explains the difference in plain terms, so you can decide which one fits your project.
 

@@ -13,9 +13,9 @@ hero_alt: Walk-in closet with floor-to-ceiling dark wood shelving, hanging rails
 hero_w: 1300
 hero_h: 867
 links: [closet, measure, design]
-draft: true
-facts_verified: false
-reviewed_by: 
+draft: false
+facts_verified: true
+reviewed_by: lead
 ---
 A good walk-in closet is planned in zones, not filled in order. Start with what you own, group it, and give each group the right kind of space. This guide covers the three things people ask us most: how deep a closet should be, how to split it into zones, and where light matters.
 

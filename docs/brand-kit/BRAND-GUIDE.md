@@ -90,4 +90,4 @@ Use only: our finish sheets and catalog pages (see ASSETS.md), the product photo
 5. Houston customers: local service and local installation partners (thelocalcabinetry.com/houston/).
 
 ## 9. Channels
-Instagram and LinkedIn links on our site still point to an older account (instagram.com/luxovahome). The owner is setting up the official Instagram access; do not post from or link to any account until the owner confirms the handle.
+Instagram: https://www.instagram.com/thelocalcabinetry (owner order, task T-261020-17; the site footer and page data link to it). The old LinkedIn link was removed from the site. Ask the owner before posting from or linking to any other account.
