@@ -60,7 +60,7 @@ const NEWS_CSS = `
 .nw-cats a[aria-current=page],.nw-cats a:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
 .nw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;padding:36px 0 20px}
 .nw-card{display:flex;flex-direction:column;border:1px solid var(--line);background:#fff;color:inherit;text-decoration:none}
-.nw-card img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;background:var(--panel)}
+.nw-card img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain;background:var(--panel)}
 .nw-card div{padding:18px 20px 22px}
 .nw-card .nw-meta{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:700}
 .nw-card h2,.nw-card h3{font-family:var(--serif);font-weight:400;font-size:22px;line-height:1.2;margin:8px 0 8px;color:var(--navy)}

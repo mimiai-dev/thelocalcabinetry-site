@@ -107,6 +107,12 @@
     'button.lcochat-btn{bottom:calc(16px + env(safe-area-inset-bottom))}',
     'button.lcochat-btn.lcochat-sm{width:52px;min-height:52px;height:52px;padding:0;gap:0;justify-content:center}',
     'button.lcochat-btn.lcochat-sm span{display:none}',
+    // hidden while the page scrolls down (back on scroll up, ~600 ms after scrolling stops, and at the page end); transform + opacity only, so it stays
+    // in the tab order, and keyboard focus shows it again
+    'button.lcochat-btn{transition:transform .2s ease,opacity .2s ease}',
+    'button.lcochat-btn.lcochat-hide{transform:translateY(calc(100% + 32px));opacity:0;pointer-events:none}',
+    'button.lcochat-btn.lcochat-hide:focus-visible{transform:none;opacity:1;pointer-events:auto}',
+    '@media (prefers-reduced-motion:reduce){button.lcochat-btn{transition:none}}',
     'body .site-footer .copy{padding-bottom:calc(100px + env(safe-area-inset-bottom))}',
     '.lcochat-btn:focus-visible,.lcochat-panel button:focus-visible,.lcochat-panel a:focus-visible,.lcochat-panel input:focus-visible{outline:3px solid #b4862f;outline-offset:2px}',
     '.lcochat-panel{position:fixed;right:16px;bottom:80px;z-index:2147483001;width:400px;max-width:calc(100vw - 32px);height:min(640px,calc(100dvh - 104px));display:flex;flex-direction:column;background:#fff;color:#14273f;',
@@ -731,7 +737,7 @@
   }
   function open() {
     catClose()
-    state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); checkOnline(); fitViewport()
+    state.open = true; panel.hidden = false; showBtn(); btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); checkOnline(); fitViewport()
     if (state.id) poll()   // only re-reads a conversation this browser already has
     if (lastPtr !== 'touch') setTimeout(function () { var f = picking() && routeBox.querySelector('.lcoroute-b'); (f || (panel.classList.contains('gating') ? gateIn : ta)).focus() }, 0)
     maybeSeen()
@@ -843,16 +849,32 @@
     if (window.visualViewport) { window.visualViewport.addEventListener('resize', fitViewport); window.visualViewport.addEventListener('scroll', fitViewport) }
     var fitQ = 0
     function fitQueue() { if (!fitQ) fitQ = requestAnimationFrame(function () { fitQ = 0; fitBtn() }) }
-    window.addEventListener('scroll', fitQueue, { passive: true }); window.addEventListener('resize', fitQueue)
+    window.addEventListener('scroll', function () { fitQueue(); hideOnScroll() }, { passive: true }); window.addEventListener('resize', fitQueue)
     window.addEventListener('load', function () { fitQueue(); setTimeout(fitQueue, 1200) }); fitBtn(); setTimeout(fitQueue, 1200)   // again after the page's 0.7 s rise-in
+  }
+
+  // Hide while scrolling down; back on scroll up, after ~600 ms of no scrolling, and at the page end. Never while the chat is open.
+  var lastY = window.scrollY || 0, idleT = 0
+  function atEnd() { var d = document.documentElement; return window.innerHeight + window.scrollY >= d.scrollHeight - 4 }
+  function showBtn() { clearTimeout(idleT); if (btn && btn.classList.contains('lcochat-hide')) { btn.classList.remove('lcochat-hide'); fitBtn() } }
+  function hideOnScroll() {
+    if (!btn) return
+    var y = Math.max(0, window.scrollY || 0), dy = y - lastY
+    if (Math.abs(dy) < 8 && !atEnd()) return   // iOS bounce and toolbar collapse: ignore small moves
+    lastY = y
+    clearTimeout(idleT)
+    if (state.open || dy < 0 || atEnd() || document.activeElement === btn) { showBtn(); return }
+    btn.classList.add('lcochat-hide')
+    idleT = setTimeout(showBtn, 600)
   }
 
   // Round icon button while any text or link sits under the full pill; the full "Chat with us" pill where the page is clear
   var fullW = 0
   function fitBtn() {
     if (!btn || state.open) return
-    var r = btn.getBoundingClientRect()
-    if (!r.width) return
+    // layout box, not getBoundingClientRect: the hide transform may still be sliding it back in
+    var r = { width: btn.offsetWidth, right: btn.offsetLeft + btn.offsetWidth, bottom: btn.offsetTop + btn.offsetHeight }
+    if (!r.width || btn.classList.contains('lcochat-hide')) return
     if (!btn.classList.contains('lcochat-sm')) fullW = r.width
     var box = { left: r.right - (fullW || r.width), right: r.right, top: r.bottom - 48, bottom: r.bottom }
     var seen = [], hit = false
