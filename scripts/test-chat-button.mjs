@@ -5,6 +5,9 @@
 // 2. the owner's sequence with a running conversation: open, type and send a message, close with the x, then
 //    scroll down (button hidden the whole time, no flicker between the pill and the round icon), stop (back within ~1 s and stays),
 //    scroll up (shown), page end (shown); while the chat is open it is never hidden.
+// 3. honest states (stubbed server state, no page timers): no typing dots after sending until the server says typing: true;
+//    "Seen" from read_seq; a holding line is drawn and the answer stays owed; with the panel closed the page keeps asking while
+//    a reply is owed and shows an unread dot (label says so); opening clears it.
 // Serves the repo root itself without --base. Exits 1 on any failed check.
 import { spawn } from 'node:child_process'
 import http from 'node:http'
@@ -36,12 +39,18 @@ function serve() {
 }
 
 // canned API answers (the page only needs ok shapes)
+// `api` is the scripted server state the test moves through (section 3)
+const api = { typing: false, read: 0, lines: [] }
 function stub(url, method) {
   const u = new URL(url)
   const p = u.pathname.replace('/design/api/visit/', '')
   if (p === 'config') return { enabled: true, email_gate: 'off' }
   if (p === 'message' && method === 'POST') return { ok: true, conversation: VISIT, seq: 1, mode: 'ai' }
-  if (p.startsWith('messages')) return { messages: [], last_seq: 0, mode: 'ai' }
+  if (p.startsWith('messages')) {
+    const after = Number(u.searchParams.get('after') || 0)
+    const msgs = api.lines.filter((m) => m.seq > after)
+    return { messages: msgs, last_seq: Math.max(0, ...api.lines.map((m) => m.seq)), mode: 'ai', typing: api.typing, read_seq: api.read }
+  }
   return { ok: true }
 }
 
@@ -58,12 +67,14 @@ async function main() {
   const fails = [], log = (ok, vp, what, extra = '') => { console.log(`${ok ? 'ok  ' : 'FAIL'} @${vp} ${what}${extra ? ' ' + extra : ''}`); if (!ok) fails.push(`${vp} ${what}`) }
   try {
     let targets
-    for (let i = 0; i < 60; i++) { try { targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); break } catch { await sleep(250) } }
+    for (let i = 0; i < 160; i++) { try { targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); break } catch { await sleep(250) } }
     ws = new WebSocket(targets.find((t) => t.type === 'page').webSocketDebuggerUrl)
     await new Promise((r) => ws.addEventListener('open', r))
     ws.addEventListener('message', (e) => {
       const m = JSON.parse(e.data)
       if (m.id && pending.has(m.id)) { pending.get(m.id)(m.result || {}); pending.delete(m.id) }
+      if (process.env.DEBUG && m.method === 'Runtime.exceptionThrown') console.log('page error:', m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text)
+      if (process.env.DEBUG && m.method === 'Fetch.requestPaused') console.log('api', m.params.request.method, m.params.request.url.replace(/^.*visit\//, ''))
       if (m.method === 'Fetch.requestPaused') {
         const body = Buffer.from(JSON.stringify(stub(m.params.request.url, m.params.request.method))).toString('base64')
         send('Fetch.fulfillRequest', { requestId: m.params.requestId, responseCode: 200, responseHeaders: [{ name: 'content-type', value: 'application/json' }], body })
@@ -140,6 +151,34 @@ async function main() {
       await tap(s.x, s.y); await sleep(500)
       s = await ev(btnState)
       log(s.open, vp.name, 'one tap after scrolling opens the chat again')
+
+      // 3. honest states
+      Object.assign(api, { typing: false, read: 0, lines: [] })
+      await send('Page.navigate', { url: base + PAGE }); await sleep(2500)
+      s = await ev(btnState); await tap(s.x, s.y); await sleep(500)
+      await ev(`(() => { const t = document.querySelector('.lcochat-panel textarea'); t.value = 'Do you ship to Ohio?'; t.dispatchEvent(new Event('input', { bubbles: true })) })()`)
+      await clickSel('.lcochat-send'); await sleep(3000)
+      const dots = `!!document.querySelector('.lcochat-typing')`
+      log(!(await ev(dots)), vp.name, 'after sending, no typing dots while the server says nothing is being written')
+      api.lines.push({ seq: 1, from: 'you', text: 'Do you ship to Ohio?', at: new Date().toISOString() })
+      api.read = 1; await sleep(2600)
+      log(await ev(`[...document.querySelectorAll('.lcochat-seenl')].some(e => /Seen|已读/.test(e.textContent))`), vp.name, '"Seen" once the server has read the line (read_seq)')
+      api.typing = true; await sleep(2600)
+      log(await ev(dots), vp.name, 'typing dots while the server says a reply is being written (typing: true)')
+      api.lines.push({ seq: 2, from: 'us', holding: true, text: 'Thanks, let me check that for you, one moment.', at: new Date().toISOString() })
+      await sleep(2600)
+      log(await ev(`document.querySelector('.lcochat-log').textContent.includes('let me check that')`), vp.name, 'holding line drawn')
+      // close while the real answer is still owed: the page keeps asking and shows a dot when it lands
+      await clickSel('.lcochat-panel .lcochat-hb button.lcochat-x'); await sleep(400)
+      api.typing = false
+      api.lines.push({ seq: 3, from: 'us', text: 'Yes, we ship to Ohio from our Ohio warehouse.', at: new Date().toISOString() })
+      await sleep(6500)
+      const un = await ev(`(() => { const b = document.querySelector('button[data-lco-chat]'); return { dot: !!b.querySelector('.lcochat-unread'), label: b.getAttribute('aria-label') } })()`)
+      log(un.dot && /new message|新消息/.test(un.label), vp.name, 'panel closed: the owed answer still arrives, unread dot + label', `(${un.label})`)
+      s = await ev(btnState); await tap(s.x, s.y); await sleep(600)
+      const after = await ev(`(() => { const b = document.querySelector('button[data-lco-chat]'); return { dot: !!b.querySelector('.lcochat-unread'), dots: !!document.querySelector('.lcochat-typing'), answer: document.querySelector('.lcochat-log').textContent.includes('Ohio warehouse') } })()`)
+      log(!after.dot && !after.dots && after.answer, vp.name, 'opening shows the answer, clears the dot, no dots left')
+      await clickSel('.lcochat-panel .lcochat-hb button.lcochat-x'); await sleep(300)
     }
   } finally { try { ws && ws.close() } catch {} proc.kill('SIGTERM'); if (srv) srv.close() }
   console.log(fails.length ? `test-chat-button: ${fails.length} FAILED` : 'test-chat-button: OK')

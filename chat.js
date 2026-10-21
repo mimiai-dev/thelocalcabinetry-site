@@ -54,6 +54,10 @@
   var PHONE_SHOW = '(' + PHONE.slice(2, 5) + ') ' + PHONE.slice(5, 8) + '-' + PHONE.slice(8)
   var WA_PATH = 'M3 21l1.6-5A8.5 8.5 0 1 1 8 19.4zM9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 .8c-1-.4-2-1.4-2.4-2.4l.8-1-1-2z'
   var API = '/design/api/visit/'
+  // the few words the page itself writes, in the visitor's language (English or Chinese); every reply text comes from the server
+  var ZH = /^zh/i.test(String((navigator.languages && navigator.languages[0]) || navigator.language || ''))
+  var T = ZH ? { seen: '已读', typing: '正在输入', typingUs: 'The Local Cabinetry 正在输入', unread: '有新消息' }
+             : { seen: 'Seen', typing: 'is typing', typingUs: 'The Local Cabinetry is typing', unread: 'new message' }
   var CATALOG = '/catalog/The-Local-Cabinetry-Catalog.pdf'
   var CAT_KEY = 'lco_catalog_pop_v1'   // set once the popup was shown: it never comes back for this browser
   var KEY = 'lco_visit_v1'
@@ -107,6 +111,7 @@
     'button.lcochat-btn{bottom:calc(16px + env(safe-area-inset-bottom))}',
     'button.lcochat-btn.lcochat-sm{width:52px;min-height:52px;height:52px;padding:0;gap:0;justify-content:center}',
     'button.lcochat-btn.lcochat-sm span{display:none}',
+    'button.lcochat-btn .lcochat-unread{position:absolute;top:-3px;right:-3px;width:14px;height:14px;border-radius:50%;background:#d8b25c;border:2px solid #fff}',
     // hidden while the page scrolls down (back on scroll up, ~600 ms after scrolling stops, and at the page end); transform + opacity only, so it stays
     // in the tab order, and keyboard focus shows it again
     'button.lcochat-btn{transition:transform .2s ease,opacity .2s ease}',
@@ -331,25 +336,15 @@
     if (state.typing && state.typing.parentNode) state.typing.parentNode.removeChild(state.typing)
     state.typing = null; state.still = null; state.humanTyping = false
   }
-  // After 60 s: if the server acknowledged our line (ack: true) a designer really is on it, so the dots stay and a quiet line says so;
-  // without an ack nothing promised an answer, so the dots go away as before.
-  function stillOrHide() {
-    if (!state.typing) return
-    if (!state.ackSeen) { hideTyping(); return }
-    if (state.still) return
-    state.still = state.typing.querySelector('.lcochat-tcap'); if (state.still) state.still.textContent = 'Still here, a designer is on it'
-    scrollDown()
-  }
-  function showTyping(caption, person) {
-    hideTyping(); state.humanTyping = !!person
-    var r = el('div', 'lcochat-r us lcochat-typing'); r.setAttribute('aria-label', 'The Local Cabinetry is typing')
+  // Honest typing (owner 2026-10-21): the dots show ONLY while the server says a reply is really being written (typing: true on
+  // GET visit/messages), and go when it says typing: false or the reply lands. No timer ever starts or keeps them.
+  function showTyping(caption) {
+    hideTyping(); state.humanTyping = true
+    var r = el('div', 'lcochat-r us lcochat-typing'); r.setAttribute('aria-label', caption || T.typingUs)
     r.appendChild(avatar(true, true))
     var c = el('div', 'lcochat-c')
     var b = el('div', 'lcochat-m'); b.appendChild(el('i')); b.appendChild(el('i')); b.appendChild(el('i'))
-    c.appendChild(b); c.appendChild(el('div', 'lcochat-still lcochat-tcap', caption || 'The Local Cabinetry is typing')); r.appendChild(c); log.appendChild(r); state.typing = r; scrollDown()
-    if (person) return   // a person is typing: the server tells us when it stops
-    var left = Math.max(0, 60000 - (Date.now() - (state.owedSince || Date.now())))
-    if (left === 0) stillOrHide(); else state.typingTimer = setTimeout(stillOrHide, left)
+    c.appendChild(b); c.appendChild(el('div', 'lcochat-still lcochat-tcap', caption || T.typingUs)); r.appendChild(c); log.appendChild(r); state.typing = r; scrollDown()
   }
   // Our own local greeting, never sent to the server and never stored: the AI says so in its first words.
   function greet() {
@@ -389,12 +384,11 @@
     var CANNED = /^\s*(Hi, thanks for writing\.|Got it, one moment|Thanks, one moment|On it, one moment|Still on it:)/i
     var isAck = from === 'us' && (m.ack === true || CANNED.test(String(m.text || '')))
     if (isAck) {   // owner: no canned 'got it / one moment' bubble. The line counts as received but is never drawn; the typing dots carry the wait.
-      state.ackSeen = true; state.last = Math.max(state.last, m.seq); state.maxUs = Math.max(state.maxUs || 0, m.seq)
-      if (!state.typing && state.owedSince) showTyping()
+      state.last = Math.max(state.last, m.seq); state.maxUs = Math.max(state.maxUs || 0, m.seq)
       return
     }
     clearChips(); hotUpload(false)
-    if (from === 'us') { hideTyping(); state.owedSince = 0; state.ackSeen = false }
+    if (from === 'us' && m.holding !== true) { hideTyping(); state.owedSince = 0 }
     var at = m.at || m.ts || m.time || m.created_at || m.created
     daySep(toDate(at))
     var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human' || m.team === true, m.name)   // team: the server's human-mode line, the team's avatar (never the AI's)
@@ -405,16 +399,25 @@
     state.lastFrom = from
     if (from === 'us' && !isAck) { if (Array.isArray(m.chips) && m.chips.length) renderChips(r, m.chips); if (m.upload === true) hotUpload(true) }
   }
-  // Human mode: GET visit/messages carries read_seq = the highest VISITOR seq a person on our side has read. Under that line (the last one read) a small 'Seen'.
+  // GET visit/messages carries read_seq = the highest VISITOR seq our side has read (the system picked it up, or a person did). Under that line a small 'Seen'.
   function applyRead(n) {
     n = Number(n) || 0
-    if (!n || !humanMode()) return
+    if (!n) return
     var best = null
     Array.prototype.forEach.call(log.querySelectorAll('.lcochat-r.you[data-seq]'), function (r) { if (Number(r.getAttribute('data-seq')) <= n) best = r })
     if (!best || state.seenRow === best) return
     if (state.seenLabel && state.seenLabel.parentNode) state.seenLabel.parentNode.removeChild(state.seenLabel)
     var c = best.querySelector('.lcochat-c'); if (!c) return
-    state.seenLabel = el('span', 'lcochat-seenl', 'Seen'); state.seenRow = best; c.appendChild(state.seenLabel)
+    state.seenLabel = el('span', 'lcochat-seenl', T.seen); state.seenRow = best; c.appendChild(state.seenLabel)
+  }
+  // A reply that arrived while the panel was closed: a gold dot on the button, and the label says so (screen readers)
+  function setUnread(on) {
+    if (!btn) return
+    var d = btn.querySelector('.lcochat-unread')
+    if (on && !d) { d = el('i', 'lcochat-unread'); d.setAttribute('aria-hidden', 'true'); btn.appendChild(d) }
+    if (!on && d) d.parentNode.removeChild(d)
+    btn.setAttribute('aria-label', on ? label + ', ' + T.unread : label)
+    if (on) showBtn()
   }
   function scrollDown() { log.scrollTop = log.scrollHeight; if (downB) downB.hidden = true }
   function grow() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 140) + 'px' }
@@ -457,6 +460,8 @@
   }
   // While a reply is owed: every 2 s for 30 s after the visitor's line, then 4 s (to 2 min), then 10 s. Otherwise the calm idle schedule.
   function nextDelay() {
+    if (state.longPoll) return 250   // the server holds the request until something changes (wait=25): ask again right away
+    if (!state.open) return document.hidden ? 15000 : 5000   // panel closed: only while a reply is owed (see poll)
     if (humanMode()) return 2000   // a person may answer at any moment: look every 2 s while the panel is open
     if (state.owedSince) { var age = Date.now() - state.owedSince; return age < 30000 ? 2000 : age < 120000 ? 4000 : 10000 }
     var idle = Date.now() - state.idleSince
@@ -464,9 +469,10 @@
   }
   function poll() {
     clearTimeout(state.timer)
-    if (!state.id || !state.open) return
-    if (document.hidden) return   // stop while the tab is hidden; the visibilitychange handler resumes it
-    fetch(API + 'messages?after=' + state.last, { headers: headers(), cache: 'no-store' }).then(function (r) {
+    if (!state.id) return
+    // panel open: always; panel closed or tab hidden: only while a reply is owed, slower, so the answer still arrives (and shows a dot)
+    if ((!state.open || document.hidden) && !state.owedSince) return
+    fetch(API + 'messages?after=' + state.last + (state.longPoll ? '&wait=25' : ''), { headers: headers(), cache: 'no-store' }).then(function (r) {
       if (r.status === 404 || r.status === 400) { // the server does not know this conversation (any more): start clean on the next message
         state.id = null; state.last = 0; state.seen = {}; state.lastFrom = ''; remember(); resetLog(); return null
       }
@@ -479,13 +485,16 @@
       showErr('')
       if (j.mode === 'human' || j.mode === 'ai') applyMode(j.mode)
       var fresh = (j.messages || []).length
+      var usBefore = state.maxUs || 0
       ;(j.messages || []).forEach(addMsg)
+      if (!state.open && (state.maxUs || 0) > usBefore) setUnread(true)
       if (j.need_email === true && state.emailMode !== 'off') emailCard(true)   // this conversation has no email yet (begun before the step): ask in the thread, under its lines
       applyRead(j.read_seq)
-      if (j.typing === true && !state.humanTyping) showTyping(((j.typing_name || 'Hannah') + ' is typing').slice(0, 40), true)
-      else if (j.typing === false && state.humanTyping) hideTyping()
+      if (j.typing === true && !state.humanTyping) showTyping(j.typing_name ? String(j.typing_name).slice(0, 30) + ' ' + T.typing : T.typingUs)
+      else if (j.typing !== true && state.humanTyping) hideTyping()
       maybeSeen()
       if (fresh) { state.idleSince = Date.now(); scrollDown() }
+      if (!state.open && !state.owedSince) return   // the answer is in (dot shown): stop until the panel opens
       state.timer = setTimeout(poll, nextDelay())
     }).catch(function () { state.timer = setTimeout(poll, 15000) })
   }
@@ -522,8 +531,7 @@
         if (!o.chip) { ta.value = ''; grow(); state.files = []; paintChips() }
         clearChips(); hotUpload(false); state.idleSince = Date.now()
         if (x.j.mode === 'human' || x.j.mode === 'ai') applyMode(x.j.mode)
-        state.owedSince = Date.now(); state.ackSeen = x.j.ack === true
-        if (!humanMode()) showTyping()
+        state.owedSince = Date.now()   // no dots here: they come only when the server says a reply is being written
         state.sentOnce = true
         if (firstOfConversation && state.emailMode === 'after_chip' && !state.email) emailCard()
         else if (x.j.need_email === true && state.emailMode !== 'off') emailCard(true)
@@ -573,6 +581,7 @@
     fetch(API + 'config', { headers: { 'x-lco-design': '1' }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null }).then(function (j) {
       if (j) {   // the email step is switched from the server: email_gate 'first' | 'after_chip' | 'off', or the older email_required true | false
         var g = j.email_gate
+        state.longPoll = j.long_poll === true   // the server holds GET visit/messages?wait=25 until a new line or state change
         if (g === 'first' || g === 'after_chip' || g === 'off') state.emailMode = g
         else if (j.email_required === false) state.emailMode = 'off'
         else if (j.email_required === true) state.emailMode = 'first'
@@ -737,13 +746,13 @@
   }
   function open() {
     catClose()
-    state.open = true; panel.hidden = false; showBtn(); btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); checkOnline(); fitViewport()
+    state.open = true; panel.hidden = false; showBtn(); setUnread(false); btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); checkOnline(); fitViewport()
     if (state.id) poll()   // only re-reads a conversation this browser already has
     if (lastPtr !== 'touch') setTimeout(function () { var f = picking() && routeBox.querySelector('.lcoroute-b'); (f || (panel.classList.contains('gating') ? gateIn : ta)).focus() }, 0)
     maybeSeen()
   }
   function close() {
-    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer); fitViewport(); fitBtn()
+    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer); if (state.owedSince) state.timer = setTimeout(poll, nextDelay()); fitViewport(); fitBtn()
     lastY = Math.max(0, window.scrollY || 0); closedAt = Date.now()   // the phone keyboard closing moves the page: not a scroll by the visitor
     if (lastPtr !== 'touch') btn.focus()
   }
@@ -846,7 +855,7 @@
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
     })
-    document.addEventListener('visibilitychange', function () { if (!document.hidden && state.open && state.id) { poll(); maybeSeen() } })
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && state.id && (state.open || state.owedSince)) { poll(); maybeSeen() } })
     if (window.visualViewport) { window.visualViewport.addEventListener('resize', fitViewport); window.visualViewport.addEventListener('scroll', fitViewport) }
     var fitQ = 0
     function fitQueue() { if (!fitQ) fitQ = requestAnimationFrame(function () { fitQ = 0; fitBtn() }) }
