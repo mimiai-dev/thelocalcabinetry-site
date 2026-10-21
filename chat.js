@@ -230,6 +230,16 @@
     '.lcocat-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#0e2740;font-size:26px;line-height:1;cursor:pointer}',
     '.lcocat-go:focus-visible,.lcocat-x:focus-visible{outline:3px solid #0e2740;outline-offset:2px}',
     '@media (max-width:620px){.lcocat-card{flex-direction:column}.lcocat-img{flex:0 0 150px}.lcocat-tx{padding:22px 20px 24px}.lcocat-tx h2{font-size:22px}}',
+    // Phones: a small banner above the chat button, no dimmed overlay; the whole cover shows (contain) and the x has its own corner.
+    '.lcocat.lcocat-bar{top:auto;padding:0 8px calc(76px + env(safe-area-inset-bottom));background:none;pointer-events:none}',
+    '.lcocat-bar .lcocat-card{pointer-events:auto;flex-direction:row;align-items:center;gap:12px;width:100%;max-height:none;overflow:visible;padding:10px 46px 10px 10px;border-radius:12px;box-shadow:0 6px 24px rgba(8,20,34,.3)}',
+    '.lcocat-bar .lcocat-img{flex:0 0 60px;height:78px;background:none}',
+    '.lcocat-bar .lcocat-img img{object-fit:contain}',
+    '.lcocat-bar .lcocat-tx{padding:0}',
+    '.lcocat-bar .lcocat-tx h2{margin:0 0 6px;font-size:17px}',
+    '.lcocat-bar .lcocat-tx p{display:none}',
+    '.lcocat-bar .lcocat-go{min-height:40px;padding:0 14px;font-size:14px}',
+    '.lcocat-bar .lcocat-x{top:0;right:0;background:none}',
     '@media print{.lcocat{display:none}.lcochat-btn,.lcochat-panel{display:none}}'
   ].join('')
 
@@ -562,14 +572,23 @@
   }
   // Catalog popup: once per browser, about 15 s after the page loads, never while the chat panel is open. No email, no request:
   // it is a link to a file on this site. Closes with the x, Escape or a click outside; the 'seen' flag is set when it is shown.
-  var cat, catFrom
-  function catClose() { if (!cat || cat.hidden) return; cat.hidden = true; if (catFrom && catFrom.focus) { try { catFrom.focus() } catch (e) { /* ignore */ } } }
+  // Phones (620 px and under): never over the page on load; a small banner (no overlay, no focus move) after the visitor scrolls.
+  var cat, catFrom, catBar = false
+  function catArm() {
+    try { catBar = window.matchMedia('(max-width:620px)').matches } catch (e) { catBar = false }
+    if (!catBar) { setTimeout(catShow, 15000); return }
+    setTimeout(function () {
+      function onScroll() { if (window.scrollY < window.innerHeight / 2) return; window.removeEventListener('scroll', onScroll); catShow() }
+      window.addEventListener('scroll', onScroll, { passive: true })
+    }, 15000)
+  }
+  function catClose() { if (!cat || cat.hidden) return; cat.hidden = true; if (!catBar && catFrom && catFrom.focus) { try { catFrom.focus() } catch (e) { /* ignore */ } } }
   function catShow() {
     try { if (localStorage.getItem(CAT_KEY)) return } catch (e) { return }   // storage blocked: never nag
     if (state.open || cat) return
     try { localStorage.setItem(CAT_KEY, '1') } catch (e) { return }
     catFrom = document.activeElement
-    cat = el('div', 'lcocat'); cat.setAttribute('role', 'dialog'); cat.setAttribute('aria-modal', 'true'); cat.setAttribute('aria-label', 'Get our catalog')
+    cat = el('div', 'lcocat' + (catBar ? ' lcocat-bar' : '')); cat.setAttribute('role', 'dialog'); if (!catBar) cat.setAttribute('aria-modal', 'true'); cat.setAttribute('aria-label', 'Get our catalog')
     var card = el('div', 'lcocat-card'), im = el('div', 'lcocat-img'), pic = el('img'); pic.src = '/catalog/cover.jpg'; pic.alt = 'The Local Cabinetry catalog cover'; im.appendChild(pic)
     var tx = el('div', 'lcocat-tx')
     tx.appendChild(el('h2', '', 'See every door style and finish'))
@@ -580,8 +599,8 @@
     card.appendChild(im); card.appendChild(tx); card.appendChild(x); cat.appendChild(card); document.body.appendChild(cat)
     x.addEventListener('click', catClose); go.addEventListener('click', function () { setTimeout(catClose, 0) })
     cat.addEventListener('click', function (e) { if (e.target === cat) catClose() })
-    cat.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); catClose() } else if (e.key === 'Tab') { e.preventDefault(); (document.activeElement === go ? x : go).focus() } })
-    go.focus()
+    cat.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); catClose() } else if (e.key === 'Tab' && !catBar) { e.preventDefault(); (document.activeElement === go ? x : go).focus() } })
+    if (!catBar) go.focus()
   }
   // ---- The choice, at the top of the panel before a chat starts: the AI assistant or a person. Afterwards a small link switches it.
   function ico(d) { return svg(d) }
@@ -789,7 +808,7 @@
     resumeFromLink()
     window.addEventListener('hashchange', resumeFromLink)   // the link pasted into a tab that is already on the site
     greet(); applyMode()
-    setTimeout(catShow, 15000)
+    catArm()
 
     btn.addEventListener('click', function () { if (state.open) close(); else open() })
     if (window.__lcoQ) { window.__lcoQ = 0; open() }   // a tap that came before this file was ready
