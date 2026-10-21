@@ -4,7 +4,7 @@
  *
  * It replaces the old floating contact link script. The corner button looks and sits the same (bottom right, dark navy pill,
  * chat-bubble icon) but opens a panel. Lines go to OUR server (same origin, /design/api/visit/*) and land with the team; the
- * replies come back into the panel (polling). The panel keeps a clear link to the full design tool (/design).
+ * replies come back into the panel (polling). No link from the panel to the design page (/design): they are different things (owner 2026-10-21).
  *
  * EMAIL STEP (owner 2026-10-20, mandatory): right after the AI-or-person choice, one small step asks for the visitor's email (field, one-line privacy note, Start chat). The server
  * config switches it (email_gate first, the default | after_chip | off = the kill switch, or the older email_required). The address stays in this browser (localStorage, optional) and is
@@ -19,7 +19,7 @@
  *
  * ONE BUTTON (owner 2026-10-21, T-261020-5): one floating "Chat with us" button and nothing else in the corner (the round WhatsApp bubble is gone; WhatsApp is
  * inside the chat). First screen: "AI assistant: design and quotation, 5% off your order" or "Talk to a person". The person path offers three ways:
- * Email us (the email step, then this thread in human mode), WhatsApp (a wa.me link) and Call (a tel: link; the number is PHONE below, written from
+ * Email us (owner 2026-10-21: the /contact form, pre-filled from sessionStorage with what was typed, never with an email or phone, never via the URL), WhatsApp (a wa.me link) and Call (a tel: link; the number is PHONE below, written from
  * site.config.json by scripts/site-config.mjs). Neither link sends anything from here.
  * CHOICE FIRST (owner 2026-10-20): the panel opens with two tap-first choices at the top, the AI assistant or "Talk to a person". The choice
  * rides on the first message as `route`; later a small link switches it (POST visit/mode {mode: ai|human}) and the server stores it on the thread
@@ -27,7 +27,11 @@
  * Honest wording: the AI side always says it is an AI assistant; the header never shows the AI as a person. The first bubble is a LOCAL greeting
  * (never sent, never stored on the server); every later line and every reply comes from the desk. While no reply has come a 'typing' indicator shows for at most 60 s.
  * If the server answers "closed" (kill switch), is unreachable, or an older server does not know the path, the panel says so and
- * points to the design tool. A WhatsApp link (header icon + the person path) only opens WhatsApp on the owner's phone: it sends nothing. Messenger-style window: avatar, name, Online dot, bubbles with time, typing dots, growing composer.
+ * points to the design tool. A WhatsApp link (header icon + the person path) only opens WhatsApp on the owner's phone: it sends nothing.
+ * LOOK (owner 2026-10-21, T-261021-5): the AI Elements chat layout (as vendored for the design page in the ops repo, lib/design-site/vendor) redrawn in this plain
+ * file: brand-kit mark (no letter avatar), an "AI-powered design" label, bubbles, suggestion chips, shimmer typing line, jump-to-latest button and one rounded
+ * composer box. No in-chat "Talk to a person" in AI mode (the choice is the first screen). Every target is 48 px or more with 8 px gaps; inputs are 16 px
+ * (no iOS focus zoom); touch-action: manipulation on the page and the chat; on phones the panel follows visualViewport so the composer stays above the keyboard.
  */
 (function () {
   'use strict'
@@ -35,7 +39,9 @@
   window.__lcoChat = true
   var s = document.currentScript
   var label = ((s && s.dataset && s.dataset.label) || 'Chat with us').trim().slice(0, 40)
-  var DESIGN = '/design'
+  // the brand-kit mark (gold TLC on navy, made for a round crop): the avatar on our lines and in the header, never a letter
+  var MARK = '/brand-kit-a5649501d5a1feec/logos/tlc-avatar-navy-192.webp'
+  var CONTACT = '/contact/', PREFILL_KEY = 'lco_contact_prefill_v1'
   // The owner's WhatsApp number: the ONE place to change it (country code, digits only, no + and no leading 0).
   // A placeholder-looking number renders no WhatsApp button at all: a button that dials a stranger is worse than none.
   var WHATSAPP = '84976096632'
@@ -90,101 +96,127 @@
   }
 
   var CSS = [
-    '.lcochat-btn{position:fixed;right:16px;bottom:16px;z-index:2147483000;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 20px;border:0;border-radius:999px;background:#0e2740;color:#fff;cursor:pointer;',
+    // touch-action: manipulation on the page and the chat: no double-tap zoom, so no tap waits for a second one (pinch zoom stays; no user-scalable=no)
+    'html,body{touch-action:manipulation}',
+    '.lcochat-btn{position:fixed;right:16px;bottom:16px;z-index:2147483000;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 20px;border:0;border-radius:999px;background:#0e2740;color:#fff;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;',
     'font:600 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 6px 24px rgba(8,20,34,.25)}',
     '.lcochat-btn:hover{background:#14365a}',
     '.lcochat-btn svg{flex:0 0 18px}',
-    '.lcochat-btn:focus-visible,.lcochat-panel button:focus-visible,.lcochat-panel a:focus-visible,.lcochat-panel textarea:focus-visible,.lcochat-panel input:focus-visible{outline:3px solid #b4862f;outline-offset:2px}',
-    '.lcochat-panel{position:fixed;right:16px;bottom:76px;z-index:2147483001;width:380px;max-width:calc(100vw - 32px);height:min(600px,calc(100dvh - 100px));display:flex;flex-direction:column;background:#fff;color:#1b2733;',
-    'border-radius:14px;box-shadow:0 12px 40px rgba(8,20,34,.3);overflow:hidden;font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}',
+    '.lcochat-btn:focus-visible,.lcochat-panel button:focus-visible,.lcochat-panel a:focus-visible,.lcochat-panel input:focus-visible{outline:3px solid #b4862f;outline-offset:2px}',
+    '.lcochat-panel{position:fixed;right:16px;bottom:80px;z-index:2147483001;width:400px;max-width:calc(100vw - 32px);height:min(640px,calc(100dvh - 104px));display:flex;flex-direction:column;background:#fff;color:#14273f;',
+    'border-radius:16px;box-shadow:0 16px 48px rgba(8,20,34,.28);overflow:hidden;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}',
+    '.lcochat-panel *,.lcochat-panel *::before,.lcochat-panel *::after{box-sizing:border-box}',
     '.lcochat-panel[hidden]{display:none}',
-    '.lcochat-head{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#0e2740;color:#fff}',
-    '.lcochat-av{position:relative;flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#f3efe7;border:1px solid #b4862f;color:#0e2740;display:flex;align-items:center;justify-content:center;font:600 18px/1 Georgia,"Times New Roman",serif}',
-    '.lcochat-av.ai{background:#1d4a78;color:#e9c46a}',
-    '.lcochat-av.sm{flex:0 0 28px;width:28px;height:28px;font-size:13px}',
+    // header: brand mark, name, Online, the "AI-powered design" label; WhatsApp and close are 48 px with 8 px between them
+    '.lcochat-head{display:flex;align-items:center;gap:12px;padding:10px 8px 10px 16px;background:#0e2740;color:#fff}',
+    '.lcochat-av{flex:0 0 40px;width:40px;height:40px;border-radius:50%;display:block;background:#0e2740;object-fit:cover;box-shadow:0 0 0 1px rgba(216,178,92,.6)}',
+    '.lcochat-av.sm{flex-basis:32px;width:32px;height:32px}',
     '.lcochat-who{flex:1;min-width:0}',
-    '.lcochat-who h2{margin:0;font:600 16px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}',
-    '.lcochat-st{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:12.5px;color:#cfd8e3}',
+    '.lcochat-who h2{margin:0;font:600 16px/1.25 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff}',
+    '.lcochat-st{display:flex;align-items:center;gap:6px;margin-top:2px;font-size:13px;line-height:1.3;color:#cfd8e3}',
+    '.lcochat-mode.ai{display:inline-flex;margin-top:5px;padding:2px 9px;border:1px solid rgba(216,178,92,.65);border-radius:999px;color:#d8b25c;font-size:12px;font-weight:600;letter-spacing:.02em}',
     '.lcochat-dot.off{background:#9aa3ad;box-shadow:0 0 0 2px rgba(154,163,173,.25)}',
-    '.lcochat-day{align-self:center;padding:3px 12px;border-radius:999px;background:#e9e4d9;color:#5d574b;font-size:12px;font-weight:600}',
+    '.lcochat-day{align-self:center;margin:10px 0 2px;padding:2px 12px;color:#51606f;font-size:12px;font-weight:600}',
     '.lcochat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#2fb26a;box-shadow:0 0 0 2px rgba(47,178,106,.25)}',
-    '.lcochat-x{min-width:44px;min-height:44px;margin:-8px -8px -8px 0;border:0;background:transparent;color:#fff;font-size:26px;line-height:1;cursor:pointer;border-radius:8px}',
-    '.lcochat-log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#f6f4ef}',
-    '.lcochat-r{display:flex;gap:8px;align-items:flex-end;max-width:92%}',
+    '.lcochat-hb{display:flex;gap:8px;flex:0 0 auto}',
+    '.lcochat-x{flex:0 0 48px;width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:12px;background:transparent;color:#fff;font-size:28px;line-height:1;cursor:pointer;text-decoration:none}',
+    '@media (hover:hover){.lcochat-x:hover{background:rgba(255,255,255,.1)}}',
+    // the conversation: calm background, real bubbles, the brand mark once per group of our lines
+    '.lcochat-logw{position:relative;flex:1;min-height:0;display:flex;flex-direction:column}',
+    '.lcochat-log{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:20px 16px 16px;display:flex;flex-direction:column;gap:6px;background:#faf9f6}',
+    '.lcochat-r{display:flex;gap:10px;align-items:flex-end;max-width:88%;margin-top:8px}',
     '.lcochat-r.you{align-self:flex-end;flex-direction:row-reverse}',
     '.lcochat-r.us{align-self:flex-start}',
-    '.lcochat-c{display:flex;flex-direction:column;gap:3px;min-width:0}',
+    '.lcochat-r.us+.lcochat-r.us{margin-top:0}',
+    '.lcochat-r.us:has(+.lcochat-r.us) .lcochat-av{visibility:hidden}',
+    '.lcochat-c{display:flex;flex-direction:column;gap:4px;min-width:0}',
     '.lcochat-r.you .lcochat-c{align-items:flex-end}',
-    '.lcochat-m{padding:9px 13px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere}',
-    '.lcochat-r.you .lcochat-m{background:#0e2740;color:#fff;border-bottom-right-radius:4px}',
-    '.lcochat-r.us .lcochat-m{background:#fff;color:#1b2733;border:1px solid #e3ded4;border-bottom-left-radius:4px}',
+    '.lcochat-m{padding:10px 14px;border-radius:18px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:15.5px;line-height:1.5}',
+    '.lcochat-r.you .lcochat-m{background:#0e2740;color:#fff;border-bottom-right-radius:6px}',
+    '.lcochat-r.us .lcochat-m{background:#fff;color:#14273f;border:1px solid #e7e5df;border-bottom-left-radius:6px;box-shadow:0 1px 2px rgba(14,39,64,.05)}',
     '.lcochat-m small{display:block;margin-top:4px;opacity:.75;font-size:12px}',
-    '.lcochat-t{font-size:11px;color:#7a7468;padding:0 4px}',
-    '.lcochat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;max-width:100%}',
-    '.lcochat-chip{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:0 14px;border:1px solid #0e2740;border-radius:20px;background:#fff;color:#0e2740;font:600 14px/1.1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;cursor:pointer}',
-    '.lcochat-chip:hover:not(:disabled){background:#0e2740;color:#fff}',
+    '.lcochat-t{font-size:12px;color:#7a7468;padding:0 6px}',
+    // suggestion chips: 48 px tall, 8 px apart, whole chip is the button
+    '.lcochat-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;max-width:100%}',
+    '.lcochat-chip{display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;padding:0 18px;border:1px solid #d9d4c8;border-radius:999px;background:#fff;color:#0e2740;font:600 15px/1.1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}',
+    '.lcochat-chip:active:not(:disabled){background:#f3f0ea;border-color:#b4862f}',
+    '@media (hover:hover){.lcochat-chip:hover:not(:disabled){border-color:#0e2740;background:#f8f6f1}}',
     '.lcochat-chip:disabled{opacity:.55;cursor:default}',
-    '.lcochat-sw{display:inline-block;width:16px;height:16px;border-radius:50%;border:1px solid rgba(14,39,64,.35);flex:0 0 16px}',
-    '.lcochat-ic.hot{border-color:#b4862f;box-shadow:0 0 0 3px rgba(180,134,47,.28)}',
-    '.lcochat-nm{font-size:12px;font-weight:600;color:#51606f;margin:0 4px 2px}',
-    '.lcochat-mode{margin-top:1px}',
-    '.lcochat-route{padding:12px 14px;background:#fff;border-bottom:1px solid #e3ded4;display:flex;flex-direction:column;gap:8px}',
+    '.lcochat-sw{display:inline-block;width:18px;height:18px;border-radius:50%;border:1px solid rgba(14,39,64,.35);flex:0 0 18px}',
+    '.lcochat-nm{font-size:12px;font-weight:600;color:#51606f;margin:0 6px 2px}',
+    // first screen: two big cards (the whole card is the button), then the person options
+    '.lcochat-route{padding:20px 16px;background:#fff;display:flex;flex-direction:column;gap:12px}',
     '.lcochat-route[hidden]{display:none}',
-    '.lcochat-route h3{margin:0 0 2px;font:600 16px/1.25 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0e2740}',
-    '.lcoroute-b{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:10px 14px;border:1px solid #0e2740;border-radius:12px;background:#fff;color:#0e2740;text-align:left;cursor:pointer;font:inherit}',
-    '.lcoroute-b.ai{background:#0e2740;color:#fff}',
-    'a.lcoroute-b{text-decoration:none;box-sizing:border-box}',
-    '.lcoroute-back{align-self:flex-start;min-height:36px;padding:0 2px;border:0;background:transparent;color:#0e2740;font:600 13.5px/1 system-ui,sans-serif;text-decoration:underline;cursor:pointer}',
-    '.lcoroute-b svg{width:24px;height:24px;flex:0 0 24px}',
-    '.lcoroute-t b{display:block;font-size:15.5px}',
-    '.lcoroute-t small{display:block;font-size:12.5px;margin-top:2px;opacity:.85}',
-    '.lcochat-route.bar{flex-direction:row;align-items:center;justify-content:space-between;padding:6px 14px;font-size:12.5px;color:#51606f}',
-    '.lcochat-switch{min-height:32px;padding:0 4px;border:0;background:transparent;color:#0e2740;font:600 12.5px/1 system-ui,sans-serif;text-decoration:underline;cursor:pointer}',
+    '.lcochat-route h3{margin:0 0 4px;font:600 18px/1.3 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0e2740}',
+    '.lcoroute-b{display:flex;align-items:center;gap:14px;width:100%;min-height:72px;padding:14px 16px;border:1px solid #e7e5df;border-radius:14px;background:#fff;color:#14273f;text-align:left;cursor:pointer;font:inherit;text-decoration:none;',
+    'touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;transition:background-color .12s,border-color .12s}',
+    '.lcoroute-b *{pointer-events:none}',
+    '.lcoroute-b:active{background:#f3f0ea;border-color:#b4862f}',
+    '@media (hover:hover){.lcoroute-b:hover{border-color:#0e2740}}',
+    '.lcoroute-b.ai{background:#0e2740;border-color:#0e2740;color:#fff}',
+    '.lcoroute-b.ai:active{background:#14365a}',
+    '.lcoroute-ic{flex:0 0 40px;width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#f3f0ea;color:#0e2740}',
+    '.lcoroute-b.ai .lcoroute-ic{background:rgba(216,178,92,.16);color:#d8b25c}',
+    '.lcoroute-b svg{width:22px;height:22px}',
+    '.lcoroute-t{flex:1;min-width:0}',
+    '.lcoroute-t b{display:block;font-size:16px;font-weight:600}',
+    '.lcoroute-t small{display:block;font-size:14px;margin-top:2px;color:#51606f}',
+    '.lcoroute-b.ai .lcoroute-t small{color:#cfd8e3}',
+    '.lcoroute-back{align-self:flex-start;min-height:48px;min-width:48px;margin-left:-12px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:#0e2740;font:600 15px/1 system-ui,sans-serif;text-decoration:underline;cursor:pointer}',
+    '.lcochat-route.bar{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;padding:0 8px 0 16px;border-bottom:1px solid #e7e5df;font-size:14px;color:#51606f}',
+    '.lcochat-switch{min-height:48px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:#0e2740;font:600 14px/1 system-ui,sans-serif;text-decoration:underline;cursor:pointer}',
     '.lcochat-switch:disabled{opacity:.5;cursor:default}',
-    '.lcochat-panel.picking .lcochat-log,.lcochat-panel.picking .lcochat-err,.lcochat-panel.picking .lcochat-box,.lcochat-panel.picking .lcochat-gate{display:none}',
-    '.lcochat-panel.picking .lcochat-route{flex:1;justify-content:flex-start;background:#f6f4ef}',
+    '.lcochat-panel.picking .lcochat-logw,.lcochat-panel.picking .lcochat-err,.lcochat-panel.picking .lcochat-box,.lcochat-panel.picking .lcochat-gate{display:none}',
+    '.lcochat-panel.picking .lcochat-route{flex:1;justify-content:flex-start;overflow-y:auto}',
     '.route-pick{border:0;margin:6px 0 10px;padding:0}.route-pick legend{padding:0;font-weight:600;margin-bottom:6px}.route-pick label{display:flex;gap:8px;align-items:center;margin:4px 0;font-size:15px}',
-    '.lcochat-panel.gating .lcochat-log,.lcochat-panel.gating .lcochat-err,.lcochat-panel.gating .lcochat-box{display:none}',
-    '.lcochat-gate{flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:24px 20px;background:#f6f4ef;overflow-y:auto}',
+    '.lcochat-panel.gating .lcochat-logw,.lcochat-panel.gating .lcochat-err,.lcochat-panel.gating .lcochat-box{display:none}',
+    '.lcochat-gate{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:24px 20px;background:#fff;overflow-y:auto}',
     '.lcochat-gate[hidden]{display:none}',
-    '.lcochat-gate h3{margin:0;font:600 19px/1.25 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0e2740}',
-    '.lcochat-gate-f{display:flex;flex-direction:column;gap:10px}',
-    '.lcochat-gate-f input{min-height:48px;padding:0 14px;border:1px solid #bdb6a8;border-radius:10px;font:inherit;font-size:16px;color:#1b2733;background:#fff}',
-    '.lcochat-gate-go{min-height:48px;border:0;border-radius:10px;background:#0e2740;color:#fff;font:600 16px/1 system-ui,sans-serif;cursor:pointer}',
+    '.lcochat-gate h3{margin:0;font:600 18px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0e2740}',
+    '.lcochat-gate-f{display:flex;flex-direction:column;gap:12px}',
+    '.lcochat-gate-f input{min-height:52px;padding:0 16px;border:1px solid #cfc9bd;border-radius:12px;font:inherit;font-size:16px;color:#14273f;background:#fff}',
+    '.lcochat-gate-go{min-height:52px;border:0;border-radius:12px;background:#0e2740;color:#fff;font:600 16px/1 system-ui,sans-serif;cursor:pointer;touch-action:manipulation}',
     '.lcochat-gate-go:hover{background:#14365a}',
-    '.lcochat-gate-msg{min-height:18px;font-size:13px;color:#8a1c12}',
-    '.lcochat-gate-note{margin:0;font-size:13px;color:#51606f}',
+    '.lcochat-gate-msg{min-height:18px;font-size:14px;color:#8a1c12}',
+    '.lcochat-gate-note{margin:0;font-size:14px;color:#51606f}',
     '.lcochat-gate-note a{color:#0e2740;font-weight:600}',
-    '.lcochat-seenl{align-self:flex-end;font-size:12px;color:#51606f;margin:2px 4px 0}',
-    '.lcochat-still{font-size:12px;color:#7a7468;margin:2px 4px 0}',
-    '.lcochat-typing .lcochat-m{display:flex;gap:4px;align-items:center;padding:13px 14px}',
+    '.lcochat-seenl{align-self:flex-end;font-size:12px;color:#51606f;margin:2px 6px 0}',
+    '.lcochat-still{font-size:12px;color:#7a7468;margin:2px 6px 0}',
+    // typing: three dots in a bubble and a shimmering caption
+    '.lcochat-typing .lcochat-m{display:flex;gap:5px;align-items:center;padding:14px 16px}',
     '.lcochat-typing i{width:7px;height:7px;border-radius:50%;background:#9aa3ad;animation:lcochat-b 1.2s infinite ease-in-out}',
     '.lcochat-typing i:nth-child(2){animation-delay:.15s}.lcochat-typing i:nth-child(3){animation-delay:.3s}',
+    '.lcochat-tcap{background:linear-gradient(90deg,#7a7468 0%,#7a7468 35%,#d6cfc0 50%,#7a7468 65%,#7a7468 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:lcochat-sh 2.2s linear infinite}',
     '@keyframes lcochat-b{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}',
-    '@media (prefers-reduced-motion:reduce){.lcochat-typing i{animation:none;opacity:.7}}',
-    '.lcochat-err{padding:6px 14px;font-size:13px;background:#fdecea;color:#8a1c12}',
+    '@keyframes lcochat-sh{from{background-position:100% 0}to{background-position:0 0}}',
+    '@media (prefers-reduced-motion:reduce){.lcochat-typing i{animation:none;opacity:.7}.lcochat-tcap{animation:none;background:none;color:#7a7468}}',
+    '.lcochat-down{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:48px;height:48px;border:1px solid #e7e5df;border-radius:50%;background:#fff;color:#0e2740;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(8,20,34,.15);cursor:pointer}',
+    '.lcochat-down[hidden]{display:none}',
+    '.lcochat-err{padding:8px 16px;font-size:14px;background:#fdecea;color:#8a1c12}',
     '.lcochat-err[hidden]{display:none}',
-    '.lcochat-box{display:flex;flex-direction:column;gap:4px;padding:10px 14px 12px;border-top:1px solid #e3ded4;background:#fff}',
-    '.lcochat-row{display:flex;gap:8px;align-items:flex-end}',
-    '.lcochat-box textarea{flex:1;min-height:44px;max-height:120px;resize:none;overflow-y:auto;padding:11px 12px;border:1px solid #bdb6a8;border-radius:22px;font:inherit;line-height:1.35;color:inherit}',
-    '.lcochat-ic,.lcochat-send{flex:0 0 44px;width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}',
-    '.lcochat-ic{border:1px solid #bdb6a8;background:#fff;color:#0e2740}',
+    // the composer: one rounded box (photos, the message, then photo and send buttons), 16 px text so iOS does not zoom
+    '.lcochat-box{padding:8px 12px calc(12px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #efece5}',
+    '.lcochat-pi{display:flex;flex-direction:column;border:1px solid #d9d4c8;border-radius:20px;background:#fff;transition:border-color .12s,box-shadow .12s}',
+    '.lcochat-pi:focus-within{border-color:#0e2740;box-shadow:0 0 0 3px rgba(180,134,47,.22)}',
+    '.lcochat-pi textarea{display:block;width:100%;min-height:48px;max-height:140px;resize:none;overflow-y:auto;margin:0;padding:12px 16px 4px;border:0;outline:0;background:transparent;font:inherit;font-size:16px;line-height:1.45;color:#14273f}',
+    '.lcochat-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding:0 4px 4px}',
+    '.lcochat-ic,.lcochat-send{flex:0 0 48px;width:48px;height:48px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation}',
+    '.lcochat-ic{border:0;background:transparent;color:#51606f}',
+    '.lcochat-ic.hot{color:#0e2740;box-shadow:inset 0 0 0 2px #b4862f}',
     '.lcochat-send{border:0;background:#0e2740;color:#fff}',
     '.lcochat-send:hover{background:#14365a}',
-    '.lcochat-send:disabled,.lcochat-ic[aria-disabled=true]{opacity:.45;cursor:default}',
-    '.lcochat-ext{margin:-8px 0 -8px auto;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}',
-    '.lcochat-ext+.lcochat-x{margin-left:-6px}',
-    '.lcochat-ask{position:relative;min-width:230px;padding-right:34px}',
-    '.lcochat-ask-x{position:absolute;top:2px;right:2px;width:32px;height:32px;border:0;background:transparent;color:#7a7468;font-size:18px;line-height:1;cursor:pointer;border-radius:50%}',
-    '.lcochat-ask-f{display:flex;gap:6px;margin-top:8px;align-items:center}',
-    '.lcochat-ask-f input{flex:1;min-width:0;min-height:40px;padding:0 12px;border:1px solid #bdb6a8;border-radius:20px;font:inherit;font-size:14px}',
-    '.lcochat-ask-f button{flex:0 0 40px;width:40px;height:40px;border:0;border-radius:50%;background:#0e2740;color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}',
-    '.lcochat-ask-msg{margin-top:4px;font-size:12.5px;color:#8a1c12}',
-    '.lcochat-mini{min-height:44px;padding:0 16px;border:0;border-radius:10px;background:#0e2740;color:#fff;font:600 14px/1 system-ui,sans-serif;cursor:pointer}',
-    '.lcochat-mini.alt{background:#fff;color:#0e2740;border:1px solid #0e2740}',
-    '.lcochat-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}',
+    '.lcochat-send:disabled,.lcochat-ic[aria-disabled=true]{opacity:.4;cursor:default}',
+    '.lcochat-ask{position:relative;min-width:240px;padding-right:52px}',
+    '.lcochat-ask-x{position:absolute;top:0;right:0;width:48px;height:48px;border:0;background:transparent;color:#7a7468;font-size:18px;line-height:1;cursor:pointer;border-radius:50%}',
+    '.lcochat-ask-f{display:flex;gap:8px;margin-top:10px;align-items:center}',
+    '.lcochat-ask-f input{flex:1;min-width:0;min-height:48px;padding:0 14px;border:1px solid #cfc9bd;border-radius:24px;font:inherit;font-size:16px}',
+    '.lcochat-ask-f button{flex:0 0 48px;width:48px;height:48px;border:0;border-radius:50%;background:#0e2740;color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}',
+    '.lcochat-ask-msg{margin-top:4px;font-size:13px;color:#8a1c12}',
+    '.lcochat-mini{min-height:48px;padding:0 16px;border:0;border-radius:12px;background:#0e2740;color:#fff;font:600 14px/1 system-ui,sans-serif;cursor:pointer}',
+    '.lcochat-mini.alt{background:#f3f0ea;color:#0e2740;border:1px solid #e7e5df}',
+    '.lcochat-tools{display:flex;flex-wrap:wrap;gap:8px;padding:8px 8px 0;align-items:center;font-size:13px}',
     '.lcochat-tools:empty{display:none}',
-    '@media (max-width:520px){.lcochat-panel{inset:0;width:auto;max-width:none;height:auto;border-radius:0;box-shadow:none}.lcochat-head,.lcochat-log,.lcochat-box,.lcochat-err{padding-left:16px;padding-right:16px}.lcochat-btn.open{display:none}.lcochat-box textarea,.lcochat-ask-f input{font-size:16px}}',
+    '@media (max-width:520px){.lcochat-panel{inset:0;width:auto;max-width:none;height:auto;border-radius:0;box-shadow:none}.lcochat-head{padding-top:calc(10px + env(safe-area-inset-top))}.lcochat-btn.open{display:none}}',
     '.lcocat{position:fixed;inset:0;z-index:2147483002;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,20,34,.55)}',
     '.lcocat[hidden]{display:none}',
     '.lcocat-card{position:relative;display:flex;width:760px;max-width:100%;max-height:calc(100dvh - 32px);overflow:auto;background:#fff;color:#1b2733;border-radius:14px;box-shadow:0 12px 40px rgba(8,20,34,.35);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}',
@@ -205,8 +237,7 @@
   function applyMode(m) {
     if (m) state.mode = m
     var h = humanMode()
-    if (modeLine) { modeLine.textContent = h ? 'You are talking with a person' : 'AI assistant'; modeLine.hidden = !state.id && !state.route; modeLine.style.display = modeLine.hidden ? 'none' : '' }   // .lcochat-st is display:flex, which beats [hidden]
-    if (headAv) { headAv.textContent = h ? 'H' : 'M'; headAv.classList.toggle('ai', !h) }
+    if (modeLine) { modeLine.textContent = h ? 'You are talking with a person' : 'AI-powered design'; modeLine.classList.toggle('ai', !h); modeLine.hidden = !state.id && !state.route; modeLine.style.display = modeLine.hidden ? 'none' : '' }   // .lcochat-st is display:flex, which beats [hidden]
     paintRoute()
   }
   var gate, gateIn, gateGo, gateMsg
@@ -219,7 +250,7 @@
     if (need && message) gateMsg.textContent = message
     if (state.open) setTimeout(function () { (need ? gateIn : ta).focus() }, 0)
   }
-  var dot, stText, checked = 0, btn, panel, log, err, ta, sendB, photoIn, photoB, chips, headAv, routeBox
+  var dot, stText, checked = 0, btn, panel, log, err, ta, sendB, photoIn, photoB, chips, headAv, routeBox, downB
 
   function headers(extra) {
     var h = { 'x-lco-design': '1' }
@@ -232,7 +263,7 @@
     showErr(msg || 'Chat is not available right now. You can still open the full design tool and leave a message there.')
   }
 
-  function avatar(sm, ai) { return el('span', 'lcochat-av' + (sm ? ' sm' : '') + (ai ? ' ai' : ''), ai ? 'M' : 'H') }
+  function avatar(sm) { var i = el('img', 'lcochat-av' + (sm ? ' sm' : '')); i.src = MARK; i.alt = ''; i.width = i.height = sm ? 32 : 40; i.decoding = 'async'; i.setAttribute('aria-hidden', 'true'); return i }
   function stamp(v) {
     var d = toDate(v)
     var h = d.getHours(), m = d.getMinutes()
@@ -363,8 +394,8 @@
     var c = best.querySelector('.lcochat-c'); if (!c) return
     state.seenLabel = el('span', 'lcochat-seenl', 'Seen'); state.seenRow = best; c.appendChild(state.seenLabel)
   }
-  function scrollDown() { log.scrollTop = log.scrollHeight }
-  function grow() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 120) + 'px' }
+  function scrollDown() { log.scrollTop = log.scrollHeight; if (downB) downB.hidden = true }
+  function grow() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 140) + 'px' }
 
   // 'after_chip' mode only (switch in the server config): after the first chip step a mandatory email card sits in the thread; chips and the box wait for it.
   function emailCard(force) {
@@ -557,17 +588,17 @@
   function picking() { return !state.id && !state.route }
   function paintRoute() {
     if (!routeBox) return
-    routeBox.textContent = ''
+    routeBox.textContent = ''; routeBox.hidden = false
     var p = picking()
     panel.classList.toggle('picking', p)
     routeBox.className = 'lcochat-route' + (p ? '' : ' bar')
     if (p && state.person) {   // "Talk to a person": three ways (owner 2026-10-21)
       routeBox.appendChild(el('h3', '', 'Talk to a person'))
-      routeBox.appendChild(opt('human', ico('M4 4h16v16H4zM4 6l8 7 8-7'), 'Email us', 'A teammate replies here and by email'))
+      routeBox.appendChild(emailLink(ico('M4 4h16v16H4zM4 6l8 7 8-7')))
       if (WA_URL) routeBox.appendChild(optLink(WA_URL, 'whatsapp', ico(WA_PATH), 'WhatsApp', 'Message us on WhatsApp', true))
       routeBox.appendChild(optLink('tel:' + PHONE, 'call', ico('M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z'), 'Call', PHONE_SHOW))
       var back = el('button', 'lcoroute-back', 'Back'); back.type = 'button'; back.setAttribute('data-track', 'route-person-back')
-      back.addEventListener('click', function () { state.person = false; paintRoute(); var f = routeBox.querySelector('.lcoroute-b'); if (f) f.focus() })
+      back.addEventListener('click', function () { state.person = false; paintRoute(); var f = routeBox.querySelector('.lcoroute-b'); if (f && lastPtr !== 'touch') f.focus() })
       routeBox.appendChild(back)
       return
     }
@@ -575,20 +606,22 @@
       routeBox.appendChild(el('h3', '', 'How would you like to chat?'))
       routeBox.appendChild(opt('ai', ico('M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1'), 'AI assistant', 'Design and quotation, 5% off your order'))
       var pb = el('button', 'lcoroute-b human'); pb.type = 'button'; pb.setAttribute('data-track', 'route-person')
-      pb.appendChild(ico('M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z')); var pt = el('span', 'lcoroute-t'); pt.appendChild(el('b', '', 'Talk to a person')); pt.appendChild(el('small', '', 'Email, WhatsApp or a call')); pb.appendChild(pt)
-      pb.addEventListener('click', function () { state.person = true; paintRoute(); var f = routeBox.querySelector('.lcoroute-b'); if (f) f.focus() })
+      pb.appendChild(icoBox(ico('M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'))); var pt = el('span', 'lcoroute-t'); pt.appendChild(el('b', '', 'Talk to a person')); pt.appendChild(el('small', '', 'Email, WhatsApp or a call')); pb.appendChild(pt)
+      pb.addEventListener('click', function () { state.person = true; paintRoute(); var f = routeBox.querySelector('.lcoroute-b'); if (f && lastPtr !== 'touch') f.focus() })
       routeBox.appendChild(pb)
       return
     }
-    var h = humanMode()
-    routeBox.appendChild(el('span', '', h ? 'A teammate replies here' : 'You are chatting with our AI assistant'))
-    var sw = el('button', 'lcochat-switch', h ? 'Back to AI assistant' : 'Talk to a person'); sw.type = 'button'; sw.setAttribute('data-track', h ? 'route-switch-ai' : 'route-switch-human')
-    sw.addEventListener('click', function () { switchRoute(h ? 'ai' : 'human', sw) })
+    // AI chat: no in-chat "Talk to a person" (owner 2026-10-21: the choice is on the first screen; the header says AI-powered design).
+    // A conversation already in human mode keeps its line and the way back to the AI assistant.
+    if (!humanMode()) { routeBox.hidden = true; return }
+    routeBox.appendChild(el('span', '', 'A teammate replies here'))
+    var sw = el('button', 'lcochat-switch', 'Back to AI assistant'); sw.type = 'button'; sw.setAttribute('data-track', 'route-switch-ai')
+    sw.addEventListener('click', function () { switchRoute('ai', sw) })
     routeBox.appendChild(sw)
   }
   function opt(val, icon, title, sub) {
     var b = el('button', 'lcoroute-b ' + val); b.type = 'button'; b.setAttribute('data-track', 'route-' + val)
-    b.appendChild(icon); var t = el('span', 'lcoroute-t'); t.appendChild(el('b', '', title)); t.appendChild(el('small', '', sub)); b.appendChild(t)
+    b.appendChild(icoBox(icon)); var t = el('span', 'lcoroute-t'); t.appendChild(el('b', '', title)); t.appendChild(el('small', '', sub)); b.appendChild(t)
     b.addEventListener('click', function () { setRoute(val); state.mode = ''; resetLog(); applyMode(); applyGate() })
     return b
   }
@@ -596,8 +629,33 @@
   function optLink(href, val, icon, title, sub, blank) {
     var a = el('a', 'lcoroute-b ' + val); a.href = href; a.setAttribute('data-track', 'route-' + val)
     if (blank) { a.target = '_blank'; a.rel = 'noopener' }
-    a.appendChild(icon); var t = el('span', 'lcoroute-t'); t.appendChild(el('b', '', title)); t.appendChild(el('small', '', sub)); a.appendChild(t)
+    a.appendChild(icoBox(icon)); var t = el('span', 'lcoroute-t'); t.appendChild(el('b', '', title)); t.appendChild(el('small', '', sub)); a.appendChild(t)
     return a
+  }
+  function icoBox(icon) { var b = el('span', 'lcoroute-ic'); b.appendChild(icon); return b }
+  // Email on the person path (owner 2026-10-21): the /contact form, not a thread here. What the visitor already typed in the chat box goes along
+  // in this tab's sessionStorage (never in the URL), and only when it holds no email address or phone number; the form page fills it in once.
+  var EMAIL_RE = /[^\s@<>]+@[^\s@<>]+\.[a-z]{2,}/i, PHONE_RE = /(?:\+?\d[\s().\-\/]*){7,}/
+  function hasContact(t) { return EMAIL_RE.test(t) || PHONE_RE.test(t) }
+  function emailLink(icon) {
+    var a = optLink(CONTACT, 'email', icon, 'Email us', 'Send us a message, we reply by email')
+    a.addEventListener('click', function () {
+      var t = ta ? ta.value.trim().slice(0, MAX_TEXT) : ''
+      try { sessionStorage.setItem(PREFILL_KEY, JSON.stringify({ text: t && !hasContact(t) ? t : '' })) } catch (e) { /* the form just opens empty */ }
+    })
+    return a
+  }
+  // On the page with the contact form: fill the message (only an empty box) once, choose "a person", and bring the form into view.
+  function contactPrefill() {
+    var raw = null; try { raw = sessionStorage.getItem(PREFILL_KEY) } catch (e) { return }
+    if (raw == null) return
+    var f = document.querySelector('form[data-lead]'); if (!f) return
+    try { sessionStorage.removeItem(PREFILL_KEY) } catch (e) { /* ignore */ }
+    var o = {}; try { o = JSON.parse(raw) || {} } catch (e) { /* ignore */ }
+    var m = f.querySelector('textarea[name=message]'), t = typeof o.text === 'string' ? o.text.slice(0, MAX_TEXT) : ''
+    if (m && t && !m.value && !hasContact(t)) m.value = t
+    var hr = f.querySelector('input[name=route][value=human]'); if (hr) hr.checked = true
+    try { (f.closest('.enquire') || f).scrollIntoView({ block: 'start' }) } catch (e) { /* ignore */ }
   }
   // No conversation yet: only the local choice changes. A conversation: the server stores the mode on the thread and answers the mode now in force.
   function switchRoute(to, b) {
@@ -633,16 +691,29 @@
         if (panel.classList.contains('gating')) gateMsg.textContent = msg; else showErr(msg)
       }).catch(function () { /* offline: the normal flow stays */ })
   }
+  // Opened by a finger: no programmatic focus (on a phone it only scrolls or pops the keyboard before the visitor chose anything). Keyboard and mouse keep it.
+  var lastPtr = ''
+  document.addEventListener('pointerdown', function (e) { lastPtr = e.pointerType || '' }, true)
+  document.addEventListener('keydown', function () { lastPtr = 'key' }, true)
+  // Phones: the full-screen panel follows the visual viewport, so the composer sits right above the iOS keyboard instead of under it.
+  var PHONE_MQ = '(max-width:520px)'
+  function fitViewport() {
+    var v = window.visualViewport, on = state.open && v && window.matchMedia && window.matchMedia(PHONE_MQ).matches
+    if (!on) { panel.style.top = ''; panel.style.height = ''; panel.style.bottom = ''; return }
+    var atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 80
+    panel.style.top = Math.max(0, v.offsetTop) + 'px'; panel.style.height = v.height + 'px'; panel.style.bottom = 'auto'
+    if (atEnd) scrollDown()
+  }
   function open() {
     catClose()
-    state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); checkOnline()
+    state.open = true; panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); checkOnline(); fitViewport()
     if (state.id) poll()   // only re-reads a conversation this browser already has
-    setTimeout(function () { var f = picking() && routeBox.querySelector('.lcoroute-b'); (f || (panel.classList.contains('gating') ? gateIn : ta)).focus() }, 0)
+    if (lastPtr !== 'touch') setTimeout(function () { var f = picking() && routeBox.querySelector('.lcoroute-b'); (f || (panel.classList.contains('gating') ? gateIn : ta)).focus() }, 0)
     maybeSeen()
   }
   function close() {
-    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer)
-    btn.focus()
+    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer); fitViewport()
+    if (lastPtr !== 'touch') btn.focus()
   }
 
   function mount() {
@@ -668,20 +739,22 @@
     var st = el('div', 'lcochat-st'); dot = el('span', 'lcochat-dot'); stText = el('span', '', 'Online'); st.appendChild(dot); st.appendChild(stText)
     modeLine = el('div', 'lcochat-st lcochat-mode'); modeLine.hidden = true
     who.appendChild(st); who.appendChild(modeLine); head.appendChild(who)
-    var ext = el('a', 'lcochat-x lcochat-ext'); ext.href = DESIGN; ext.title = 'Open the full design tool'; ext.setAttribute('aria-label', 'Open the full design tool'); ext.setAttribute('data-track', 'chat-design-link')
-    ext.appendChild(svg('M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3'))
+    var hb = el('div', 'lcochat-hb')   // no 'open bigger' link to /design here (owner 2026-10-21: the chat and the design page are different things)
     if (WA_URL) {
-      var wh = el('a', 'lcochat-x lcochat-ext'); wh.href = WA_URL; wh.target = '_blank'; wh.rel = 'noopener'; wh.title = 'Message us on WhatsApp'
+      var wh = el('a', 'lcochat-x'); wh.href = WA_URL; wh.target = '_blank'; wh.rel = 'noopener'; wh.title = 'Message us on WhatsApp'
       wh.setAttribute('aria-label', 'Message us on WhatsApp'); wh.setAttribute('data-track', 'chat-whatsapp')
-      wh.appendChild(svg(WA_PATH)); head.appendChild(wh)
+      wh.appendChild(svg(WA_PATH)); hb.appendChild(wh)
     }
-    head.appendChild(ext)
     var x = el('button', 'lcochat-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close chat'); x.setAttribute('data-track', 'chat-close')
-    head.appendChild(x)
+    hb.appendChild(x); head.appendChild(hb)
     log = el('div', 'lcochat-log'); log.setAttribute('role', 'log'); log.setAttribute('aria-live', 'polite'); log.setAttribute('aria-label', 'Conversation')
+    var logw = el('div', 'lcochat-logw'); logw.appendChild(log)
+    downB = el('button', 'lcochat-down'); downB.type = 'button'; downB.hidden = true; downB.setAttribute('aria-label', 'Jump to the latest message'); downB.appendChild(svg('M12 5v14M6 13l6 6 6-6')); logw.appendChild(downB)
+    downB.addEventListener('click', scrollDown)
+    log.addEventListener('scroll', function () { downB.hidden = log.scrollHeight - log.scrollTop - log.clientHeight < 80 }, { passive: true })
     err = el('div', 'lcochat-err'); err.hidden = true; err.setAttribute('role', 'alert')
 
-    var box = el('div', 'lcochat-box')
+    var box = el('div', 'lcochat-box'), pi = el('div', 'lcochat-pi')
     chips = el('div', 'lcochat-tools')
     var rw = el('div', 'lcochat-row')
     photoIn = el('input'); photoIn.type = 'file'; photoIn.accept = 'image/jpeg,image/png,image/webp,image/heic'; photoIn.hidden = true
@@ -691,8 +764,8 @@
     ta = el('textarea'); ta.rows = 1; ta.maxLength = MAX_TEXT; ta.placeholder = 'Type your message'; ta.setAttribute('aria-label', 'Your message')
     sendB = el('button', 'lcochat-send'); sendB.type = 'button'; sendB.setAttribute('aria-label', 'Send'); sendB.setAttribute('data-track', 'chat-send')
     sendB.appendChild(svg('M22 2L11 13M22 2l-7 20-4-9-9-4z'))
-    rw.appendChild(photoB); rw.appendChild(ta); rw.appendChild(sendB); rw.appendChild(photoIn)
-    box.appendChild(chips); box.appendChild(rw)
+    rw.appendChild(photoB); rw.appendChild(sendB); rw.appendChild(photoIn)
+    pi.appendChild(chips); pi.appendChild(ta); pi.appendChild(rw); box.appendChild(pi)
 
     gate = el('div', 'lcochat-gate'); gate.hidden = true
     gate.appendChild(el('h3', '', ASK_EMAIL))
@@ -710,7 +783,7 @@
       state.email = v; storeEmail(v); gateMsg.textContent = ''; applyGate()
     })
     routeBox = el('div', 'lcochat-route')
-    panel.appendChild(head); panel.appendChild(routeBox); panel.appendChild(gate); panel.appendChild(log); panel.appendChild(err); panel.appendChild(box)
+    panel.appendChild(head); panel.appendChild(routeBox); panel.appendChild(gate); panel.appendChild(logw); panel.appendChild(err); panel.appendChild(box)
     document.body.appendChild(btn); document.body.appendChild(panel)
     applyGate()
     resumeFromLink()
@@ -726,6 +799,7 @@
       e.preventDefault(); if (!state.open) open()
     }, true)
     syncRouteFields()
+    contactPrefill()
     x.addEventListener('click', close)
     sendB.addEventListener('click', send)
     ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send() } })
@@ -741,6 +815,7 @@
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
     })
     document.addEventListener('visibilitychange', function () { if (!document.hidden && state.open && state.id) { poll(); maybeSeen() } })
+    if (window.visualViewport) { window.visualViewport.addEventListener('resize', fitViewport); window.visualViewport.addEventListener('scroll', fitViewport) }
   }
 
   if (document.body) mount()
