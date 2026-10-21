@@ -9,7 +9,7 @@ tags: [closet, kitchen, planning, windows]
 keyword: cabinets around a window
 intent: how-to planning
 hero: /accessories/drawers-run.jpg
-hero_alt: A run of wide drawers with slim pulls, the kind of low unit that fits under a window
+hero_alt: A run of wide handleless drawers, the kind of low unit that fits under a window
 hero_w: 1100
 hero_h: 826
 links: [closet, kitchen, measure, design]
