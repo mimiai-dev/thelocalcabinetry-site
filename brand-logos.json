@@ -65,6 +65,11 @@
    "from": "logos/tlc-wordmark-dark-bg-2000.png",
    "how": "on navy #0e2740, 120 px padding, WebP q90",
    "sha256": "501ab275603b23fc705bc75745163966adee152527d8c27272050e6cb9be2f93"
+  },
+  "brand-kit-a5649501d5a1feec/logos/tlc-avatar-navy-192.webp": {
+   "from": "logos/tlc-avatar-navy-2000.png",
+   "how": "resized to 192 px (ImageMagick), lossless WebP (cwebp -lossless); the chat avatar",
+   "sha256": "94fb1fa097e33847161d00a2db15eeff6ae11854a4daa3040d338003448352d0"
   }
  }
 }
