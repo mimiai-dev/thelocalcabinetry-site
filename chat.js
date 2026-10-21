@@ -636,7 +636,7 @@
       routeBox.appendChild(el('h3', '', 'Talk to a person'))
       routeBox.appendChild(emailLink(ico('M4 4h16v16H4zM4 6l8 7 8-7')))
       if (WA_URL) routeBox.appendChild(optLink(WA_URL, 'whatsapp', ico(WA_PATH), 'WhatsApp', 'Message us on WhatsApp', true))
-      routeBox.appendChild(optLink('tel:' + PHONE, 'call', ico('M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z'), 'Call', PHONE_SHOW))
+      routeBox.appendChild(optLink('tel:' + PHONE, 'call', ico('M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z'), 'Call ' + PHONE_SHOW, 'Tap to call, or dial it from your desk phone'))
       var back = el('button', 'lcoroute-back', 'Back'); back.type = 'button'; back.setAttribute('data-track', 'route-person-back')
       back.addEventListener('click', function () { state.person = false; paintRoute(); var f = routeBox.querySelector('.lcoroute-b'); if (f && lastPtr !== 'touch') f.focus() })
       routeBox.appendChild(back)
