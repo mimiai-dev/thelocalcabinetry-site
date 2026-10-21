@@ -4,7 +4,7 @@
 //   node scripts/site-config.mjs          rewrite the files from site.config.json
 //   node scripts/site-config.mjs --check  fail if any file disagrees with site.config.json (CI, via scripts/check-assets.sh)
 // Shapes it owns: tel:+1NNNNNNNNNN, (NNN) NNN-NNNN, "+1-NNN-NNN-NNNN" (JSON-LD), the chat's  var PHONE = '...'  line, and the header
-// "Call us" link (data-track="call-us"), which dials the number.
+// "Call (NNN) NNN-NNNN" link (data-track="call-us") and the footer/contact tel: links, whose text is "Call " plus the number.
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -29,7 +29,8 @@ const rules = [
   [/\(\d{3}\) \d{3}-\d{4}/g, phone.display],
   [/"\+1-\d{3}-\d{3}-\d{4}"/g, `"${ld}"`],
   [/var PHONE = '[^']*'/g, `var PHONE = '${phone.e164}'`],
-  [/<a href="[^"]*" data-track="call-us">Call us<\/a>/g, `<a href="tel:${phone.e164}" data-track="call-us">Call us</a>`],
+  [/<a href="[^"]*" data-track="call-us">Call[^<]*<\/a>/g, `<a href="tel:${phone.e164}" data-track="call-us">Call ${phone.display}</a>`],
+  [/(<a href="tel:[^"]*"(?: data-astro-cid-\w+)?>)(?:Call )?\(\d{3}\) \d{3}-\d{4}<\/a>/g, `$1Call ${phone.display}</a>`],
 ]
 const bad = []; let changed = 0
 for (const f of files) {
