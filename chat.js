@@ -744,6 +744,7 @@
   }
   function close() {
     state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer); fitViewport(); fitBtn()
+    lastY = Math.max(0, window.scrollY || 0); closedAt = Date.now()   // the phone keyboard closing moves the page: not a scroll by the visitor
     if (lastPtr !== 'touch') btn.focus()
   }
 
@@ -849,12 +850,14 @@
     if (window.visualViewport) { window.visualViewport.addEventListener('resize', fitViewport); window.visualViewport.addEventListener('scroll', fitViewport) }
     var fitQ = 0
     function fitQueue() { if (!fitQ) fitQ = requestAnimationFrame(function () { fitQ = 0; fitBtn() }) }
-    window.addEventListener('scroll', function () { fitQueue(); hideOnScroll() }, { passive: true }); window.addEventListener('resize', fitQueue)
+    // the pill/round choice is made when scrolling settles (150 ms), not on every frame, so the button never flickers mid-scroll
+    var fitT = 0
+    window.addEventListener('scroll', function () { clearTimeout(fitT); fitT = setTimeout(fitQueue, 150); hideOnScroll() }, { passive: true }); window.addEventListener('resize', fitQueue)
     window.addEventListener('load', function () { fitQueue(); setTimeout(fitQueue, 1200) }); fitBtn(); setTimeout(fitQueue, 1200)   // again after the page's 0.7 s rise-in
   }
 
   // Hide while scrolling down; back on scroll up, after ~600 ms of no scrolling, and at the page end. Never while the chat is open.
-  var lastY = window.scrollY || 0, idleT = 0
+  var lastY = window.scrollY || 0, idleT = 0, closedAt = 0
   function atEnd() { var d = document.documentElement; return window.innerHeight + window.scrollY >= d.scrollHeight - 4 }
   function showBtn() { clearTimeout(idleT); if (btn && btn.classList.contains('lcochat-hide')) { btn.classList.remove('lcochat-hide'); fitBtn() } }
   function hideOnScroll() {
@@ -862,8 +865,11 @@
     var y = Math.max(0, window.scrollY || 0), dy = y - lastY
     if (Math.abs(dy) < 8 && !atEnd()) return   // iOS bounce and toolbar collapse: ignore small moves
     lastY = y
+    if (Date.now() - closedAt < 400) return
     clearTimeout(idleT)
-    if (state.open || dy < 0 || atEnd() || document.activeElement === btn) { showBtn(); return }
+    // a keyboard user who is on the button keeps it; after a mouse close the button has focus too, but that must not pin it
+    var keyFocus = document.activeElement === btn && (function () { try { return btn.matches(':focus-visible') } catch (e) { return false } })()
+    if (state.open || dy < 0 || atEnd() || keyFocus) { showBtn(); return }
     btn.classList.add('lcochat-hide')
     idleT = setTimeout(showBtn, 600)
   }
