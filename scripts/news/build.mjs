@@ -75,7 +75,7 @@ const NEWS_CSS = `
 .nw-post header{padding:18px 0 22px}
 .nw-post h1{font-family:var(--serif);font-weight:400;font-size:clamp(32px,5vw,50px);line-height:1.08;margin:10px 0 14px}
 .nw-post .nw-meta{font-size:13px;color:var(--soft)}.nw-post .nw-meta a{color:var(--gold);font-weight:700;text-decoration:none;letter-spacing:.1em;text-transform:uppercase;font-size:12px}
-.nw-hero{margin:0 0 28px}.nw-hero img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover}
+.nw-hero{margin:0 0 28px}.nw-hero img{display:block;width:100%;height:auto}
 .nw-prose{font-size:18px;line-height:1.7;color:var(--ink)}
 .nw-prose h2{font-family:var(--serif);font-weight:400;font-size:clamp(25px,3vw,32px);line-height:1.2;margin:40px 0 12px;color:var(--navy);scroll-margin-top:120px}
 .nw-prose h3{font-size:20px;margin:28px 0 8px;color:var(--navy);scroll-margin-top:120px}
@@ -90,7 +90,7 @@ const NEWS_CSS = `
 .nw-rel{padding:10px 0 40px}.nw-rel h2{font-family:var(--serif);font-weight:400;font-size:28px;margin:0 0 6px}
 .nw-latest{padding:56px 0 20px}.nw-latest h2{font-family:var(--serif);font-weight:400;font-size:clamp(28px,3.4vw,40px);margin:0 0 6px}.nw-latest .nw-more{display:inline-block;margin-top:6px;color:var(--navy);font-weight:600}
 @media (max-width:1000px){.nw-grid{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:640px){.nw{padding:0 16px}.nw-post{padding:0 16px 30px}.nw-grid{grid-template-columns:1fr;gap:22px}.nw-prose{font-size:17px}}
+@media (max-width:640px){.nw{padding:0 16px}.nw-post{padding:0 16px 30px}.nw-grid{grid-template-columns:1fr;gap:22px}.nw-card img{aspect-ratio:auto}.nw-prose{font-size:17px}}
 `.trim() + '\n'
 const cssHash = crypto.createHash('sha256').update(NEWS_CSS).digest('hex').slice(0, 8)
 const cssPath = `_astro/news.${cssHash}.css`

@@ -1,0 +1,40 @@
+.nw{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+.nw-head{padding:clamp(40px,6vw,72px) 0 28px;border-bottom:1px solid var(--line)}
+.nw-head h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5vw,56px);line-height:1.05;margin:0}
+.nw-head p{color:var(--soft);max-width:60ch;margin:14px 0 0;font-size:18px}
+.nw-cats{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 0}
+.nw-cats a{padding:7px 14px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:14px;font-weight:600}
+.nw-cats a[aria-current=page],.nw-cats a:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.nw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;padding:36px 0 20px}
+.nw-card{display:flex;flex-direction:column;border:1px solid var(--line);background:#fff;color:inherit;text-decoration:none}
+.nw-card img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;background:var(--panel)}
+.nw-card div{padding:18px 20px 22px}
+.nw-card .nw-meta{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.nw-card h2,.nw-card h3{font-family:var(--serif);font-weight:400;font-size:22px;line-height:1.2;margin:8px 0 8px;color:var(--navy)}
+.nw-card p{color:var(--soft);font-size:15px;margin:0}
+.nw-card:hover h2,.nw-card:hover h3{text-decoration:underline}
+.nw-empty{padding:60px 0;color:var(--soft);font-size:18px}
+.nw-pager{display:flex;gap:10px;justify-content:center;padding:10px 0 60px}
+.nw-pager a,.nw-pager span{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 14px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font-weight:600}
+.nw-pager [aria-current=page]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.nw-crumbs{font-size:13px;color:var(--soft);padding:22px 0 0}.nw-crumbs a{color:var(--soft)}
+.nw-post{max-width:760px;margin:0 auto;padding:0 28px 40px}
+.nw-post header{padding:18px 0 22px}
+.nw-post h1{font-family:var(--serif);font-weight:400;font-size:clamp(32px,5vw,50px);line-height:1.08;margin:10px 0 14px}
+.nw-post .nw-meta{font-size:13px;color:var(--soft)}.nw-post .nw-meta a{color:var(--gold);font-weight:700;text-decoration:none;letter-spacing:.1em;text-transform:uppercase;font-size:12px}
+.nw-hero{margin:0 0 28px}.nw-hero img{display:block;width:100%;height:auto}
+.nw-prose{font-size:18px;line-height:1.7;color:var(--ink)}
+.nw-prose h2{font-family:var(--serif);font-weight:400;font-size:clamp(25px,3vw,32px);line-height:1.2;margin:40px 0 12px;color:var(--navy);scroll-margin-top:120px}
+.nw-prose h3{font-size:20px;margin:28px 0 8px;color:var(--navy);scroll-margin-top:120px}
+.nw-prose p{margin:0 0 18px;max-width:68ch}.nw-prose ul,.nw-prose ol{margin:0 0 20px;padding-left:24px;max-width:68ch}.nw-prose li{margin:6px 0}
+.nw-prose a{color:var(--navy);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--gold)}
+.nw-prose figure{margin:28px 0}.nw-prose figure img{display:block;width:100%;height:auto}.nw-prose figcaption{font-size:14px;color:var(--soft);margin-top:8px}
+.nw-prose blockquote{margin:24px 0;padding:6px 0 6px 20px;border-left:3px solid var(--gold);color:var(--soft)}
+.nw-prose hr{border:0;border-top:1px solid var(--line);margin:34px 0}
+.nw-toc{border:1px solid var(--line);background:var(--panel);padding:16px 20px;margin:0 0 28px;font-size:15px}.nw-toc b{display:block;margin-bottom:6px}.nw-toc ol{margin:0;padding-left:20px}
+.nw-cta{border:1px solid var(--line);background:var(--panel);padding:24px;margin:36px 0 10px}.nw-cta h2{margin:0 0 8px!important;font-size:24px!important}.nw-cta p{margin:0 0 14px}
+.nw-cta a.btn{display:inline-block;background:var(--navy);color:#fff!important;text-decoration:none!important;padding:13px 22px;font-weight:600}
+.nw-rel{padding:10px 0 40px}.nw-rel h2{font-family:var(--serif);font-weight:400;font-size:28px;margin:0 0 6px}
+.nw-latest{padding:56px 0 20px}.nw-latest h2{font-family:var(--serif);font-weight:400;font-size:clamp(28px,3.4vw,40px);margin:0 0 6px}.nw-latest .nw-more{display:inline-block;margin-top:6px;color:var(--navy);font-weight:600}
+@media (max-width:1000px){.nw-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:640px){.nw{padding:0 16px}.nw-post{padding:0 16px 30px}.nw-grid{grid-template-columns:1fr;gap:22px}.nw-card img{aspect-ratio:auto}.nw-prose{font-size:17px}}

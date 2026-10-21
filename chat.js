@@ -102,6 +102,12 @@
     'font:600 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 6px 24px rgba(8,20,34,.25)}',
     '.lcochat-btn:hover{background:#14365a}',
     '.lcochat-btn svg{flex:0 0 18px}',
+    // never over content: the pill sits above the iPhone home bar, the page ends with room for it, and it turns into a round
+    // icon button (same aria-label, same tap) while text or a link is under it. "button." beats the pages' inline placeholder style.
+    'button.lcochat-btn{bottom:calc(16px + env(safe-area-inset-bottom))}',
+    'button.lcochat-btn.lcochat-sm{width:52px;min-height:52px;height:52px;padding:0;gap:0;justify-content:center}',
+    'button.lcochat-btn.lcochat-sm span{display:none}',
+    'body .site-footer .copy{padding-bottom:calc(100px + env(safe-area-inset-bottom))}',
     '.lcochat-btn:focus-visible,.lcochat-panel button:focus-visible,.lcochat-panel a:focus-visible,.lcochat-panel input:focus-visible{outline:3px solid #b4862f;outline-offset:2px}',
     '.lcochat-panel{position:fixed;right:16px;bottom:80px;z-index:2147483001;width:400px;max-width:calc(100vw - 32px);height:min(640px,calc(100dvh - 104px));display:flex;flex-direction:column;background:#fff;color:#14273f;',
     'border-radius:16px;box-shadow:0 16px 48px rgba(8,20,34,.28);overflow:hidden;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}',
@@ -731,7 +737,7 @@
     maybeSeen()
   }
   function close() {
-    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer); fitViewport()
+    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer); fitViewport(); fitBtn()
     if (lastPtr !== 'touch') btn.focus()
   }
 
@@ -835,6 +841,49 @@
     })
     document.addEventListener('visibilitychange', function () { if (!document.hidden && state.open && state.id) { poll(); maybeSeen() } })
     if (window.visualViewport) { window.visualViewport.addEventListener('resize', fitViewport); window.visualViewport.addEventListener('scroll', fitViewport) }
+    var fitQ = 0
+    function fitQueue() { if (!fitQ) fitQ = requestAnimationFrame(function () { fitQ = 0; fitBtn() }) }
+    window.addEventListener('scroll', fitQueue, { passive: true }); window.addEventListener('resize', fitQueue)
+    window.addEventListener('load', function () { fitQueue(); setTimeout(fitQueue, 1200) }); fitBtn(); setTimeout(fitQueue, 1200)   // again after the page's 0.7 s rise-in
+  }
+
+  // Round icon button while any text or link sits under the full pill; the full "Chat with us" pill where the page is clear
+  var fullW = 0
+  function fitBtn() {
+    if (!btn || state.open) return
+    var r = btn.getBoundingClientRect()
+    if (!r.width) return
+    if (!btn.classList.contains('lcochat-sm')) fullW = r.width
+    var box = { left: r.right - (fullW || r.width), right: r.right, top: r.bottom - 48, bottom: r.bottom }
+    var seen = [], hit = false
+    for (var xi = 0; xi < 5 && !hit; xi++) {
+      for (var yi = 0; yi < 3 && !hit; yi++) {   // rows at the pill's top edge, middle and bottom edge
+        var px = box.left + (box.right - box.left) * (xi + 0.5) / 5, py = box.top + [2, 24, 46][yi]
+        var els = document.elementsFromPoint ? document.elementsFromPoint(px, py) : []
+        for (var i = 0; i < els.length && !hit; i++) {
+          var n = els[i]
+          if (n === btn || btn.contains(n) || n === document.body || n === document.documentElement || seen.indexOf(n) >= 0) continue
+          if (panel && panel.contains(n)) continue
+          seen.push(n)
+          // a small element (a line, a link, a card label): all its text; a big container: only its own text
+          var deep = n.getBoundingClientRect().height < 400
+          var texts = [], c
+          if (deep) { var tw = document.createTreeWalker(n, 4); while ((c = tw.nextNode())) texts.push(c) }
+          else { for (c = n.firstChild; c; c = c.nextSibling) if (c.nodeType === 3) texts.push(c) }
+          for (var t = 0; t < texts.length && !hit; t++) {
+            c = texts[t]
+            if (!c.nodeValue.trim()) continue
+            var rg = document.createRange(); rg.selectNodeContents(c)
+            var rs = rg.getClientRects()
+            for (var k = 0; k < rs.length; k++) {
+              var q = rs[k]
+              if (q.right > box.left && q.left < box.right && q.bottom > box.top && q.top < box.bottom) { hit = true; break }
+            }
+          }
+        }
+      }
+    }
+    btn.classList.toggle('lcochat-sm', hit)
   }
 
   if (document.body) mount()
