@@ -82,7 +82,8 @@
   var ROUTE_KEY = 'lco_route_v1'
   try { var rr = sessionStorage.getItem(ROUTE_KEY); if (rr === 'ai' || rr === 'human') state.route = rr } catch (e) { /* memory only */ }
   function setRoute(r) { state.route = r; try { sessionStorage.setItem(ROUTE_KEY, r) } catch (e) { /* memory only */ } syncRouteFields() }
-  function syncRouteFields() { try { Array.prototype.forEach.call(document.querySelectorAll('input[name=route][type=radio]'), function (i) { i.checked = i.value === state.route }) } catch (e) { /* ignore */ } }
+  // the contact forms post the choice as reply_with = ai | person (ops: Reply with line + human mode); the chat's own route stays ai | human
+  function syncRouteFields() { try { Array.prototype.forEach.call(document.querySelectorAll('input[name=reply_with][type=radio]'), function (i) { i.checked = i.value === (state.route === 'human' ? 'person' : state.route) }) } catch (e) { /* ignore */ } }
   function humanMode() { return state.mode === 'human' || (state.mode !== 'ai' && state.route === 'human') }
   function remember() { try { if (state.id) localStorage.setItem(KEY, state.id); else localStorage.removeItem(KEY) } catch (e) { /* ignore */ } }
 
@@ -694,7 +695,7 @@
     var o = {}; try { o = JSON.parse(raw) || {} } catch (e) { /* ignore */ }
     var m = f.querySelector('textarea[name=message]'), t = typeof o.text === 'string' ? o.text.slice(0, MAX_TEXT) : ''
     if (m && t && !m.value && !hasContact(t)) m.value = t
-    var hr = f.querySelector('input[name=route][value=human]'); if (hr) hr.checked = true
+    var hr = f.querySelector('input[name=reply_with][value=person]'); if (hr) hr.checked = true
     try { (f.closest('.enquire') || f).scrollIntoView({ block: 'start' }) } catch (e) { /* ignore */ }
   }
   // No conversation yet: only the local choice changes. A conversation: the server stores the mode on the thread and answers the mode now in force.

@@ -8,7 +8,7 @@ Status: PROPOSAL from the site dev (2026-10-19), to be confirmed or corrected by
 
 ## B. Route choice (AI assistant with 5% off, or a person)
 - The site has no `visit/start`. The widget sends `route: "ai" | "human"` on the FIRST `POST visit/message` of a conversation (next to `email` and `tz`, never later).
-- The contact form posts a hidden field `route` with the same values to `POST /api/inquiry`.
+- The contact form posts the radio as `reply_with` = `ai` | `person` to `POST /api/inquiry` (2026-10-23; it was `route` = `ai` | `human`, which ops still reads). Ops writes a `Reply with:` line on the form text, records the Muse choice for `ai` and human mode for `person`.
 - Questions for ops:
   1. What exactly is recorded for the 5%? Proposal: `route=ai` and `ai_comfort=ai_ok` on the thread, and the 5% applies only then.
   2. Does ops really apply the discount? The widget says "5% off when you continue with our AI assistant" only as the owner specified. If it is not recorded and honoured, a visitor is promised something nobody applies.
