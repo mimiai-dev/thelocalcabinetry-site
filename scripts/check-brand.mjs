@@ -3,6 +3,7 @@
 // 1. no "luxova" (any case) in any file the site serves: pages, scripts, styles, feeds, llms.txt, SVGs ... (repo tooling and docs are not served
 //    pages and are skipped). Five legacy files that no page loads are listed in LEGACY: they must stay unreferenced (a page that loads one fails);
 //    hashed _astro files cannot be edited or removed (scripts/check-assets.sh rule 2), so they are frozen, not fixed.
+// 1b. no served file names alidata.shop / luxovahome (the retired luxova app host), legacy files included.
 // 2. every logo file (an image whose name has "logo") and every JSON-LD "logo" URL is a brand-kit file listed in brand-logos.json with its sha256
 //    (apple-touch-icon.png, the TLC icon some pages give as their logo, is the one exception).
 import fs from 'node:fs'
@@ -26,6 +27,9 @@ const bad = []
 const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, f))).digest('hex')
 const texts = files.filter((f) => TEXT.test(f) && f !== 'brand-logos.json')
 for (const f of texts) {
+  // the old luxova app host (luxovahome.alidata.shop: visit beacon, chat widget, CSP) is gone for good (owner 2026-10-23): no served file may name it, legacy files included.
+  // Site traffic is the first-party /_t log (t.js); the chat is the design chat in the Ops core
+  if (/alidata\.shop|luxovahome/i.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) bad.push(`${f}: names the retired luxova host (alidata.shop)`)
   if (LEGACY.includes(f)) continue
   const s = fs.readFileSync(path.join(ROOT, f), 'utf8')
   if (/luxova/i.test(s)) bad.push(`${f}: says "luxova"`)
