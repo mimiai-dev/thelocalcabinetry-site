@@ -1,7 +1,4 @@
 {
-  "_comment": "The ONE place for the public phone number. Change it here, then run: node scripts/site-config.mjs (rewrites every page, llms.txt and chat.js). CI runs it with --check.",
-  "phone": {
-    "display": "(857) 930-8324",
-    "e164": "+18579308324"
-  }
+  "_comment": "The ONE place for the public phone number, kept as parts on purpose: the site never carries it as a plain digit string or a tel: link (owner 2026-10-23). Change it here, then run: node scripts/site-config.mjs (rewrites call.js and the parts line in chat.js). scripts/check-assets.sh runs it with --check.",
+  "phone": { "country": "1", "area": "857", "exchange": "930", "line": "8324" }
 }

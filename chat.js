@@ -49,9 +49,11 @@
   var PLACEHOLDERS = [/^0+$/, /^(\d)\1+$/, /^1?234567890$/, /^1?5551?\d{4}$/, /^123456789\d*$/, /^(44)?0?7700900\d{3}$/, /^1?5550\d{3}$/]
   function waOk(n) { return /^[1-9]\d{7,14}$/.test(n) && !PLACEHOLDERS.some(function (re) { return re.test(n) }) }
   var WA_URL = waOk(WHATSAPP) ? 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(WA_TEXT) : ''
-  // The public phone number for the Call option. Do not edit here: site.config.json is the one place, scripts/site-config.mjs writes this line.
-  var PHONE = '+18579308324'
-  var PHONE_SHOW = '(' + PHONE.slice(2, 5) + ') ' + PHONE.slice(5, 8) + '-' + PHONE.slice(8)
+  // The phone number is never written out in a page or in a tel: link (owner 2026-10-23): it is put together here from parts when the chat opens, and the
+  // tel: href is built only on click. Do not edit the parts: site.config.json is the one place, scripts/site-config.mjs writes this line.
+  var P = ['1', '85', '7', '93', '0', '83', '24']
+  function phoneNum() { return P.join('') }
+  function phoneShow() { var n = phoneNum(); return '(' + n.slice(1, 4) + ') ' + n.slice(4, 7) + '-' + n.slice(7) }
   var WA_PATH = 'M3 21l1.6-5A8.5 8.5 0 1 1 8 19.4zM9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 .8c-1-.4-2-1.4-2.4-2.4l.8-1-1-2z'
   var API = '/design/api/visit/'
   // the few words the page itself writes, in the visitor's language (English or Chinese); every reply text comes from the server
@@ -637,7 +639,7 @@
       routeBox.appendChild(el('h3', '', 'Talk to a person'))
       routeBox.appendChild(emailLink(ico('M4 4h16v16H4zM4 6l8 7 8-7')))
       if (WA_URL) routeBox.appendChild(optLink(WA_URL, 'whatsapp', ico(WA_PATH), 'WhatsApp', 'Message us on WhatsApp', true))
-      routeBox.appendChild(optLink('tel:' + PHONE, 'call', ico('M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z'), 'Call ' + PHONE_SHOW, 'Tap to call, or dial it from your desk phone'))
+      routeBox.appendChild(callOpt(ico('M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z'), 'Call ' + phoneShow(), 'Tap to call, or dial it from your desk phone'))
       var back = el('button', 'lcoroute-back', 'Back'); back.type = 'button'; back.setAttribute('data-track', 'route-person-back')
       back.addEventListener('click', function () { state.person = false; paintRoute(); var f = routeBox.querySelector('.lcoroute-b'); if (f && lastPtr !== 'touch') f.focus() })
       routeBox.appendChild(back)
@@ -671,6 +673,13 @@
     var a = el('a', 'lcoroute-b ' + val); a.href = href; a.setAttribute('data-track', 'route-' + val)
     if (blank) { a.target = '_blank'; a.rel = 'noopener' }
     a.appendChild(icoBox(icon)); var t = el('span', 'lcoroute-t'); t.appendChild(el('b', '', title)); t.appendChild(el('small', '', sub)); a.appendChild(t)
+    return a
+  }
+  // The Call option: points at /contact until clicked; the tel: href is built in the click handler only.
+  function callOpt(icon, title, sub) {
+    var a = optLink('/contact', 'call', icon, title, sub, false)
+    a.setAttribute('aria-label', 'Call us at ' + phoneNum().slice(1).split('').join(' '))
+    a.addEventListener('click', function () { a.setAttribute('href', 'tel:+' + phoneNum()); setTimeout(function () { a.setAttribute('href', '/contact') }, 600) })
     return a
   }
   function icoBox(icon) { var b = el('span', 'lcoroute-ic'); b.appendChild(icon); return b }
