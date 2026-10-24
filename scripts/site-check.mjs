@@ -202,7 +202,8 @@ async function checkForms() {
       row.result = 'static check OK, endpoint answers; NOT submitted: needs a server test flag (a POST creates a real thread and lead message)'
       row.needs_flag = true
     } else if (action === '/points') {
-      if (!row.fields.includes('card')) bad(row.pages[0], 'points form lost the field "card"')
+      // the card input is two fields since 2026-10-22 (fixed LC- prefix: card_a digits + card_b letters, ops #1442); the server still takes a single "card" too
+      if (!row.fields.includes('card') && !(row.fields.includes('card_a') && row.fields.includes('card_b'))) bad(row.pages[0], 'points form lost its card fields ("card", or "card_a" + "card_b")')
       const r = await get(BASE + '/points', { method: 'POST', body: 'card=TEST-SITE-CHECK', headers: { 'content-type': 'application/x-www-form-urlencoded' } })
       row.post_status = r.status
       // by design an unknown card answers HTTP 404 with the "couldn't find that card" page (lib/design-site/points.ts)
