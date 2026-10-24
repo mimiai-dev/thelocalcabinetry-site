@@ -83,7 +83,7 @@ async function main() {
     await send('Page.enable'); await send('Runtime.enable')
     await send('Fetch.enable', { patterns: [{ urlPattern: '*/design/api/visit/*' }] })
     // the catalog popup never appears during the test
-    await send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('lco_catalog_pop_v1', '1') } catch (e) {}` })
+    const preset = await send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('lco_welcome_v1', '1'); localStorage.setItem('lco_ann_v1', '1') } catch (e) {}` })
 
     const btnState = `(() => { const b = document.querySelector('button[data-lco-chat]'); const r = b.getBoundingClientRect(); return { hide: b.classList.contains('lcochat-hide'), sm: b.classList.contains('lcochat-sm'), open: b.getAttribute('aria-expanded') === 'true', x: r.x + r.width / 2, y: r.y + r.height / 2, w: Math.round(b.offsetWidth), end: innerHeight + scrollY >= document.documentElement.scrollHeight - 4 } })()`
     for (const vp of [{ name: '390', width: 390, height: 844, dpr: 2, mobile: true, touch: true }, { name: '1280', width: 1280, height: 900, dpr: 1, mobile: false, touch: false }]) {
@@ -201,6 +201,25 @@ async function main() {
       log(await ev(`!!document.querySelector('.lcochat-chips') && !document.querySelector('.lcochat-typing')`), vp.name, 'its chips are there and the typing line is gone')
       await clickSel('.lcochat-panel .lcochat-hb button.lcochat-x'); await sleep(300)
     }
+    // 5. a first visit (owner 2026-10-24, T-261024-23: "I don't see the first open up banner ever"; "a welcome banner on first visit and a top announcement bar"):
+    //    the top bar on the page, closable for good; the welcome card ~5 s in at 1280 (its "Design my room" opens the chat), once per browser
+    await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: preset.identifier })
+    await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false })
+    await send('Emulation.setTouchEmulationEnabled', { enabled: false, maxTouchPoints: 0 })
+    await send('Page.navigate', { url: base + PAGE }); await sleep(1500)
+    await ev(`localStorage.removeItem('lco_welcome_v1'); localStorage.removeItem('lco_ann_v1'); localStorage.removeItem('lco_visit_v1'); true`)
+    await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
+    const bar = `(() => { const b = document.querySelector('.lcoann'); return b && !b.hidden ? b.textContent : null })()`
+    log(/Start a design/.test(String(await ev(bar))) && (await ev(`document.body.firstElementChild.classList.contains('lcoann')`)), '1280', 'first visit: the announcement bar is at the top of the page')
+    log(!(await ev(`!!document.querySelector('.lcocat:not([hidden])')`)), '1280', 'no welcome card in the first seconds')
+    await sleep(4500)
+    const wc = await ev(`(() => { const c = document.querySelector('.lcocat:not([hidden])'); return c ? [...c.querySelectorAll('h2,button,a')].map((x) => x.textContent) : null })()`)
+    log(Array.isArray(wc) && wc[0] === 'Welcome to The Local Cabinetry' && wc.includes('Design my room') && wc.includes('Download the catalog'), '1280', 'the welcome card opens ~5 s in', `(${JSON.stringify(wc)})`)
+    await ev(`[...document.querySelectorAll('.lcocat button')].find((b) => b.textContent === 'Design my room').click(); true`); await sleep(500)
+    log((await ev(`!!document.querySelector('.lcocat[hidden]')`)) && (await ev(`document.querySelector('button[data-lco-chat]').getAttribute('aria-expanded')`)) === 'true', '1280', '"Design my room" closes the card and opens the chat')
+    await ev(`document.querySelector('.lcoann-x').click(); true`)
+    await send('Page.navigate', { url: base + PAGE }); await sleep(7000)
+    log(!(await ev(bar)) && !(await ev(`!!document.querySelector('.lcocat:not([hidden])')`)), '1280', 'next visit: the closed bar and the seen card stay away')
   } finally { try { ws && ws.close() } catch {} proc.kill('SIGTERM'); if (srv) srv.close() }
   console.log(fails.length ? `test-chat-button: ${fails.length} FAILED` : 'test-chat-button: OK')
   process.exit(fails.length ? 1 : 0)
