@@ -62,6 +62,7 @@
              : { seen: 'Seen', typing: 'is typing', typingUs: 'The Local Cabinetry is typing', unread: 'new message' }
   var CATALOG = '/catalog/The-Local-Cabinetry-Catalog.pdf'
   var CAT_KEY = 'lco_welcome_v1'   // set once the welcome card was shown: it never comes back for this browser (was lco_catalog_pop_v1, the catalog-only popup; owner 2026-10-24 T-261024-23)
+  var SALE_KEY = 'lco_ann_sale_v1'   // the red sale bar was closed (a new offer = a new key)
   var ANN_KEY = 'lco_ann_v1'       // the top bar was closed (a new announcement = a new key)
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
@@ -272,6 +273,8 @@
     '.lcoann a{color:#e9c983;font-weight:600;text-decoration:underline;text-underline-offset:3px}',
     '.lcoann-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:none;color:#fff;font-size:22px;line-height:1;cursor:pointer}.lcoann-x:hover{background:rgba(255,255,255,.12)}',
     '.lcoann[hidden]{display:none}',
+    '@media (max-width:620px){.lcoann{flex-wrap:wrap;gap:2px 10px;padding:8px 40px 8px 12px}}',
+    '.lcoann-sale{background:#b3261e}.lcoann-sale a{color:#fff;text-decoration-color:rgba(255,255,255,.7)}.lcoann-sale b{font-weight:700;letter-spacing:.02em}',
     '.lcocat-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#0e2740;font-size:26px;line-height:1;cursor:pointer}',
     '.lcocat-go:focus-visible,.lcocat-x:focus-visible{outline:3px solid #0e2740;outline-offset:2px}',
     '@media (max-width:620px){.lcocat-card{flex-direction:column}.lcocat-img{flex:0 0 150px}.lcocat-tx{padding:22px 20px 24px}.lcocat-tx h2{font-size:22px}}',
@@ -666,17 +669,28 @@
   // The top announcement bar (owner 2026-10-24, T-261024-23: "both a welcome banner on first visit and a top announcement bar"): on every page until closed (then never again in
   // this browser). Our own words and link only; the recent-sales strip (T-261024-22) joins it only with real orders, after the owner's yes.
   var ANN = { text: 'See your kitchen, closet or vanity in 3D before you buy.', link: 'Start a design' }
-  function annShow() {
-    try { if (localStorage.getItem(ANN_KEY)) return } catch (e) { return }
-    if (document.querySelector('.lcoann')) return
-    var bar = el('div', 'lcoann'); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Announcement')
-    bar.appendChild(el('span', '', ANN.text))
-    var a = el('a', '', ANN.link); a.href = '#chat'; a.setAttribute('data-track', 'announce-design'); a.addEventListener('click', function (e) { e.preventDefault(); open() })
+  // The red sale bar above it (owner 2026-10-24: "a red banner like sale or stuff, like free 1 month membership"): the offer is the owner's wording, our own link only. Change the offer
+  // and SALE_KEY together; no offer text = no bar.
+  var SALE = { text: 'Join The Local Cabinetry Membership today: your first month is free.', link: 'See membership', href: '/member' }
+  function barShow(key, cls, msg, onGo, hrefTo, track) {
+    try { if (localStorage.getItem(key)) return } catch (e) { return }
+    if (document.querySelector('.' + cls)) return
+    var bar = el('div', 'lcoann ' + cls); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Announcement')
+    var sp = el('span', ''); sp.textContent = msg.text; bar.appendChild(sp)
+    var a = el('a', '', msg.link); a.href = hrefTo; a.setAttribute('data-track', track)
+    if (onGo) a.addEventListener('click', function (e) { e.preventDefault(); onGo() })
     bar.appendChild(a)
     var x = el('button', 'lcoann-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close the announcement')
-    x.addEventListener('click', function () { bar.hidden = true; try { localStorage.setItem(ANN_KEY, '1') } catch (e) { /* ignore */ } })
+    x.addEventListener('click', function () { bar.hidden = true; try { localStorage.setItem(key, '1') } catch (e) { /* ignore */ } })
     bar.appendChild(x)
-    document.body.insertBefore(bar, document.body.firstChild)
+    return bar
+  }
+  function annShow() {
+    // the design bar first, then the sale bar goes in above it: red on top, navy below
+    var bar = barShow(ANN_KEY, 'lcoann-design', ANN, open, '#chat', 'announce-design')
+    if (bar) document.body.insertBefore(bar, document.body.firstChild)
+    var sale = SALE.text ? barShow(SALE_KEY, 'lcoann-sale', SALE, null, SALE.href, 'announce-sale') : null
+    if (sale) document.body.insertBefore(sale, document.body.firstChild)
   }
   function catClose() { if (!cat || cat.hidden) return; cat.hidden = true; if (!catBar && catFrom && catFrom.focus) { try { catFrom.focus() } catch (e) { /* ignore */ } } }
   function catShow() {

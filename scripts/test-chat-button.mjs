@@ -207,17 +207,17 @@ async function main() {
     await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false })
     await send('Emulation.setTouchEmulationEnabled', { enabled: false, maxTouchPoints: 0 })
     await send('Page.navigate', { url: base + PAGE }); await sleep(1500)
-    await ev(`localStorage.removeItem('lco_welcome_v1'); localStorage.removeItem('lco_ann_v1'); localStorage.removeItem('lco_visit_v1'); true`)
+    await ev(`localStorage.removeItem('lco_welcome_v1'); localStorage.removeItem('lco_ann_v1'); localStorage.removeItem('lco_ann_sale_v1'); localStorage.removeItem('lco_visit_v1'); true`)
     await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
-    const bar = `(() => { const b = document.querySelector('.lcoann'); return b && !b.hidden ? b.textContent : null })()`
-    log(/Start a design/.test(String(await ev(bar))) && (await ev(`document.body.firstElementChild.classList.contains('lcoann')`)), '1280', 'first visit: the announcement bar is at the top of the page')
+    const bar = `(() => { const b = document.querySelector('.lcoann-design'); return b && !b.hidden ? b.textContent : null })()`
+    log(/Start a design/.test(String(await ev(bar))) && (await ev(`document.body.firstElementChild.classList.contains('lcoann-sale') && document.body.firstElementChild.nextElementSibling.classList.contains('lcoann-design')`)), '1280', 'first visit: the red sale bar and the design bar are at the top of the page')
     log(!(await ev(`!!document.querySelector('.lcocat:not([hidden])')`)), '1280', 'no welcome card in the first seconds')
     await sleep(4500)
     const wc = await ev(`(() => { const c = document.querySelector('.lcocat:not([hidden])'); return c ? [...c.querySelectorAll('h2,button,a')].map((x) => x.textContent) : null })()`)
     log(Array.isArray(wc) && wc[0] === 'Welcome to The Local Cabinetry' && wc.includes('Design my room') && wc.includes('Download the catalog'), '1280', 'the welcome card opens ~5 s in', `(${JSON.stringify(wc)})`)
     await ev(`[...document.querySelectorAll('.lcocat button')].find((b) => b.textContent === 'Design my room').click(); true`); await sleep(500)
     log((await ev(`!!document.querySelector('.lcocat[hidden]')`)) && (await ev(`document.querySelector('button[data-lco-chat]').getAttribute('aria-expanded')`)) === 'true', '1280', '"Design my room" closes the card and opens the chat')
-    await ev(`document.querySelector('.lcoann-x').click(); true`)
+    await ev(`document.querySelectorAll('.lcoann-x').forEach((x) => x.click()); true`)
     await send('Page.navigate', { url: base + PAGE }); await sleep(7000)
     log(!(await ev(bar)) && !(await ev(`!!document.querySelector('.lcocat:not([hidden])')`)), '1280', 'next visit: the closed bar and the seen card stay away')
   } finally { try { ws && ws.close() } catch {} proc.kill('SIGTERM'); if (srv) srv.close() }
