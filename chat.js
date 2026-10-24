@@ -170,6 +170,8 @@
     '.lcochat-t{font-size:12px;color:#7a7468;padding:0 6px}',
     // suggestion chips: 48 px tall, 8 px apart, whole chip is the button
     '.lcochat-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;max-width:100%}',
+    '.lcochat-guide{display:inline-flex;align-items:center;gap:6px;margin-top:8px;min-height:40px;padding:8px 14px;border:1px solid #e7e5df;border-radius:20px;background:#fff;color:#0e2740;font-size:14px;text-decoration:none}',
+    '.lcochat-guide::after{content:"\\2197";font-size:13px;color:#51606f}.lcochat-guide:hover{border-color:#0e2740}',
     '.lcochat-chip{display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;padding:0 18px;border:1px solid #d9d4c8;border-radius:999px;background:#fff;color:#0e2740;font:600 15px/1.1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}',
     '.lcochat-chip:active:not(:disabled){background:#f3f0ea;border-color:#b4862f}',
     '@media (hover:hover){.lcochat-chip:hover:not(:disabled){border-color:#0e2740;background:#f8f6f1}}',
@@ -383,6 +385,14 @@
   function clearChips() { if (state.chipsEl && state.chipsEl.parentNode) state.chipsEl.parentNode.removeChild(state.chipsEl); state.chipsEl = null }
   function setChipsDisabled(on) { if (state.chipsEl) Array.prototype.forEach.call(state.chipsEl.querySelectorAll('button'), function (b) { b.disabled = !!on }) }
   function hotUpload(on) { if (!photoB) return; photoB.classList.toggle('hot', !!on); if (on) photoB.title = 'Add a photo or sketch' }
+  // The how-to-measure guide under our measure question (server field link: { label, url }; owner 2026-10-24, T-261024-13): a link button that stays, our own site only
+  function renderGuide(r, link) {
+    var url = String(link && link.url || ''), lbl = String(link && link.label || '').slice(0, 60)
+    if (!/^https:\/\/thelocalcabinetry\.com\//.test(url) || !lbl) return
+    var c = r.querySelector('.lcochat-c') || r
+    var a = el('a', 'lcochat-guide', lbl); a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('data-track', 'chat-measure-guide')
+    c.appendChild(a)
+  }
   function renderChips(r, chips) {
     var c = r.querySelector('.lcochat-c'); if (!c) return
     var box = el('div', 'lcochat-chips'); box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Quick replies')
@@ -432,7 +442,7 @@
     if (from === 'you') r.setAttribute('data-seq', String(m.seq))
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.lastFrom = from
-    if (from === 'us') { if (Array.isArray(m.chips) && m.chips.length) renderChips(r, m.chips); if (m.upload === true) hotUpload(true) }
+    if (from === 'us') { if (Array.isArray(m.chips) && m.chips.length) renderChips(r, m.chips); if (m.upload === true) hotUpload(true); if (m.link) renderGuide(r, m.link) }
     if (log.scrollHeight - log.scrollTop - log.clientHeight < 160) scrollDown()
   }
   // GET visit/messages carries read_seq = the highest VISITOR seq our side has read (the system picked it up, or a person did). Under that line a small 'Seen'.
