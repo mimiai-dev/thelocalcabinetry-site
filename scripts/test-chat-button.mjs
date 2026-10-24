@@ -178,6 +178,13 @@ async function main() {
       s = await ev(btnState); await tap(s.x, s.y); await sleep(600)
       const after = await ev(`(() => { const b = document.querySelector('button[data-lco-chat]'); return { dot: !!b.querySelector('.lcochat-unread'), dots: !!document.querySelector('.lcochat-typing'), answer: document.querySelector('.lcochat-log').textContent.includes('Ohio warehouse') } })()`)
       log(!after.dot && !after.dots && after.answer, vp.name, 'opening shows the answer, clears the dot, no dots left')
+      // 4. a fresh scripted reply (the guided start's next question, with chips) pauses on the typing line first, like a person (owner 2026-10-24, T-261024-10)
+      await ev(`(() => { window.__t = {}; const lg = document.querySelector('.lcochat-log'); new MutationObserver(() => { const now = performance.now(); if (!window.__t.typing && document.querySelector('.lcochat-typing')) window.__t.typing = now; if (!window.__t.line && lg.textContent.includes('Which door style')) window.__t.line = now }).observe(lg, { childList: true, subtree: true, characterData: true }) })()`)
+      api.lines.push({ seq: 4, from: 'us', text: 'Which door style do you like?', chips: [{ label: 'Shaker', value: 'door:shaker' }, { label: 'Flat slab', value: 'door:slab' }], at: new Date().toISOString() })
+      await sleep(5500)
+      const tt = await ev(`window.__t`)
+      log(!!(tt.typing && tt.line && tt.line - tt.typing >= 600), vp.name, 'a fresh scripted reply shows the typing line first, then the question', `(${tt.line && tt.typing ? Math.round(tt.line - tt.typing) : '?'} ms)`)
+      log(await ev(`!!document.querySelector('.lcochat-chips') && !document.querySelector('.lcochat-typing')`), vp.name, 'its chips are there and the typing line is gone')
       await clickSel('.lcochat-panel .lcochat-hb button.lcochat-x'); await sleep(300)
     }
   } finally { try { ws && ws.close() } catch {} proc.kill('SIGTERM'); if (srv) srv.close() }
