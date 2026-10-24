@@ -49,7 +49,7 @@ function stub(url, method) {
   if (p.startsWith('messages')) {
     const after = Number(u.searchParams.get('after') || 0)
     const msgs = api.lines.filter((m) => m.seq > after)
-    return { messages: msgs, last_seq: Math.max(0, ...api.lines.map((m) => m.seq)), mode: 'ai', typing: api.typing, read_seq: api.read }
+    return { messages: msgs, last_seq: Math.max(0, ...api.lines.map((m) => m.seq)), mode: 'ai', typing: api.typing, read_seq: api.read, ...(api.working ? { working: api.working } : {}) }
   }
   return { ok: true }
 }
@@ -178,6 +178,14 @@ async function main() {
       s = await ev(btnState); await tap(s.x, s.y); await sleep(600)
       const after = await ev(`(() => { const b = document.querySelector('button[data-lco-chat]'); return { dot: !!b.querySelector('.lcochat-unread'), dots: !!document.querySelector('.lcochat-typing'), answer: document.querySelector('.lcochat-log').textContent.includes('Ohio warehouse') } })()`)
       log(!after.dot && !after.dots && after.answer, vp.name, 'opening shows the answer, clears the dot, no dots left')
+      // 4a. the real step while a reply is owed: the typing line says it, and follows it (owner 2026-10-24, T-261024-11)
+      api.working = { step: 'checking', text: 'Checking your sizes…' }; await sleep(7000)   // the poll has backed off after the quiet stretch above
+      const cap = `(document.querySelector('.lcochat-typing .lcochat-tcap') || {}).textContent || ''`
+      log((await ev(cap)) === 'Checking your sizes…', vp.name, 'the typing line shows the real step (working)')
+      api.working = { step: 'rendering', text: 'Rendering the 3D view…' }; await sleep(2800)
+      log((await ev(cap)) === 'Rendering the 3D view…', vp.name, 'and follows it to the next step')
+      api.working = null; await sleep(2800)
+      log(!(await ev(`!!document.querySelector('.lcochat-typing')`)), vp.name, 'nothing owed: the line goes')
       // 4. a fresh scripted reply (the guided start's next question, with chips) pauses on the typing line first, like a person (owner 2026-10-24, T-261024-10)
       await ev(`(() => { window.__t = {}; const lg = document.querySelector('.lcochat-log'); new MutationObserver(() => { const now = performance.now(); if (!window.__t.typing && document.querySelector('.lcochat-typing')) window.__t.typing = now; if (!window.__t.line && lg.textContent.includes('Which door style')) window.__t.line = now }).observe(lg, { childList: true, subtree: true, characterData: true }) })()`)
       api.lines.push({ seq: 4, from: 'us', text: 'Which door style do you like?', chips: [{ label: 'Shaker', value: 'door:shaker' }, { label: 'Flat slab', value: 'door:slab' }], at: new Date().toISOString() })

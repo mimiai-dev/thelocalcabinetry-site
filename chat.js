@@ -363,6 +363,11 @@
     var b = el('div', 'lcochat-m'); b.appendChild(el('i')); b.appendChild(el('i')); b.appendChild(el('i'))
     c.appendChild(b); c.appendChild(el('div', 'lcochat-still lcochat-tcap', caption || T.typingUs)); r.appendChild(c); log.appendChild(r); state.typing = r; scrollDown()
   }
+  function setTypingCaption(caption) {
+    if (!state.typing) return
+    var c = state.typing.querySelector('.lcochat-tcap')
+    if (c && c.textContent !== caption) { c.textContent = caption; state.typing.setAttribute('aria-label', caption) }
+  }
   // Our own local greeting, never sent to the server and never stored: the AI says so in its first words.
   function greet() {
     if (humanMode()) return   // the person path shows only the server's one ack line (owner 2026-10-20: no local line repeating it)
@@ -522,8 +527,12 @@
       if (!state.open && (state.maxUs || 0) > usBefore) setUnread(true)
       if (j.need_email === true && state.emailMode !== 'off') emailCard(true)   // this conversation has no email yet (begun before the step): ask in the thread, under its lines
       applyRead(j.read_seq)
-      if (j.typing === true && !state.humanTyping) showTyping(j.typing_name ? String(j.typing_name).slice(0, 30) + ' ' + T.typing : T.typingUs)
-      else if (j.typing !== true && state.humanTyping && !state.drawQ) hideTyping()   // a scripted reply still pausing keeps its typing line
+      // the real step while a reply is owed (server `working`: reading, checking your sizes, drawing, rendering the 3D view …; owner 2026-10-24, T-261024-11) is the typing line's words
+      var step = j.working && typeof j.working.text === 'string' ? j.working.text.slice(0, 80) : ''
+      var cap = j.typing_name ? String(j.typing_name).slice(0, 30) + ' ' + T.typing : (step || T.typingUs)
+      if ((j.typing === true || step) && !state.humanTyping) showTyping(cap)
+      else if ((j.typing === true || step) && state.typing && !state.drawQ) setTypingCaption(cap)
+      else if (j.typing !== true && !step && state.humanTyping && !state.drawQ) hideTyping()   // a scripted reply still pausing keeps its typing line
       maybeSeen()
       if (fresh) { state.idleSince = Date.now(); scrollDown() }
       if (!state.open && !state.owedSince) return   // the answer is in (dot shown): stop until the panel opens
