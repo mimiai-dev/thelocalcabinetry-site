@@ -61,7 +61,8 @@
   var T = ZH ? { seen: '已读', typing: '正在输入', typingUs: 'The Local Cabinetry 正在输入', unread: '有新消息' }
              : { seen: 'Seen', typing: 'is typing', typingUs: 'The Local Cabinetry is typing', unread: 'new message' }
   var CATALOG = '/catalog/The-Local-Cabinetry-Catalog.pdf'
-  var CAT_KEY = 'lco_catalog_pop_v1'   // set once the popup was shown: it never comes back for this browser
+  var CAT_KEY = 'lco_welcome_v1'   // set once the welcome card was shown: it never comes back for this browser (was lco_catalog_pop_v1, the catalog-only popup; owner 2026-10-24 T-261024-23)
+  var ANN_KEY = 'lco_ann_v1'       // the top bar was closed (a new announcement = a new key)
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
@@ -263,6 +264,14 @@
     '.lcocat-tx p{margin:0 0 20px;color:#4a5560}',
     '.lcocat-go{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 24px;border-radius:8px;background:#b4862f;color:#fff;font-weight:600;text-decoration:none}',
     '.lcocat-go:hover{background:#9a7226}',
+    '.lcocat-go{border:0;cursor:pointer;font:inherit;font-weight:600}.lcocat-acts{display:flex;flex-wrap:wrap;gap:10px;align-items:center}',
+    '.lcocat-alt{display:inline-flex;align-items:center;min-height:48px;padding:0 18px;border:1px solid #b4862f;border-radius:8px;color:#0e2740;font-weight:600;text-decoration:none}.lcocat-alt:hover{background:#f6f1e7}',
+    '.lcocat-bar .lcocat-alt{display:none}',
+    // the top announcement bar on every page (T-261024-23): one line, our own link, closable for good (ANN_KEY)
+    '.lcoann{position:relative;z-index:2147483000;display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 48px 8px 16px;background:#0e2740;color:#fff;font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center}',
+    '.lcoann a{color:#e9c983;font-weight:600;text-decoration:underline;text-underline-offset:3px}',
+    '.lcoann-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:none;color:#fff;font-size:22px;line-height:1;cursor:pointer}.lcoann-x:hover{background:rgba(255,255,255,.12)}',
+    '.lcoann[hidden]{display:none}',
     '.lcocat-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#0e2740;font-size:26px;line-height:1;cursor:pointer}',
     '.lcocat-go:focus-visible,.lcocat-x:focus-visible{outline:3px solid #0e2740;outline-offset:2px}',
     '@media (max-width:620px){.lcocat-card{flex-direction:column}.lcocat-img{flex:0 0 150px}.lcocat-tx{padding:22px 20px 24px}.lcocat-tx h2{font-size:22px}}',
@@ -648,11 +657,26 @@
   var cat, catFrom, catBar = false
   function catArm() {
     try { catBar = window.matchMedia('(max-width:620px)').matches } catch (e) { catBar = false }
-    if (!catBar) { setTimeout(catShow, 15000); return }
+    if (!catBar) { setTimeout(catShow, 5000); return }   // a welcome, so early (was 15 s for the catalog-only popup)
     setTimeout(function () {
       function onScroll() { if (window.scrollY < window.innerHeight / 2) return; window.removeEventListener('scroll', onScroll); catShow() }
       window.addEventListener('scroll', onScroll, { passive: true })
     }, 15000)
+  }
+  // The top announcement bar (owner 2026-10-24, T-261024-23: "both a welcome banner on first visit and a top announcement bar"): on every page until closed (then never again in
+  // this browser). Our own words and link only; the recent-sales strip (T-261024-22) joins it only with real orders, after the owner's yes.
+  var ANN = { text: 'See your kitchen, closet or vanity in 3D before you buy.', link: 'Start a design' }
+  function annShow() {
+    try { if (localStorage.getItem(ANN_KEY)) return } catch (e) { return }
+    if (document.querySelector('.lcoann')) return
+    var bar = el('div', 'lcoann'); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Announcement')
+    bar.appendChild(el('span', '', ANN.text))
+    var a = el('a', '', ANN.link); a.href = '#chat'; a.setAttribute('data-track', 'announce-design'); a.addEventListener('click', function (e) { e.preventDefault(); open() })
+    bar.appendChild(a)
+    var x = el('button', 'lcoann-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close the announcement')
+    x.addEventListener('click', function () { bar.hidden = true; try { localStorage.setItem(ANN_KEY, '1') } catch (e) { /* ignore */ } })
+    bar.appendChild(x)
+    document.body.insertBefore(bar, document.body.firstChild)
   }
   function catClose() { if (!cat || cat.hidden) return; cat.hidden = true; if (!catBar && catFrom && catFrom.focus) { try { catFrom.focus() } catch (e) { /* ignore */ } } }
   function catShow() {
@@ -660,19 +684,23 @@
     if (state.open || cat) return
     try { localStorage.setItem(CAT_KEY, '1') } catch (e) { return }
     catFrom = document.activeElement
-    cat = el('div', 'lcocat' + (catBar ? ' lcocat-bar' : '')); cat.setAttribute('role', 'dialog'); if (!catBar) cat.setAttribute('aria-modal', 'true'); cat.setAttribute('aria-label', 'Get our catalog')
+    cat = el('div', 'lcocat' + (catBar ? ' lcocat-bar' : '')); cat.setAttribute('role', 'dialog'); if (!catBar) cat.setAttribute('aria-modal', 'true'); cat.setAttribute('aria-label', 'Welcome to The Local Cabinetry')
     var card = el('div', 'lcocat-card'), im = el('div', 'lcocat-img'), pic = el('img'); pic.src = '/catalog/cover.jpg'; pic.alt = 'The Local Cabinetry catalog cover'; im.appendChild(pic)
     var tx = el('div', 'lcocat-tx')
-    tx.appendChild(el('h2', '', 'See every door style and finish'))
-    tx.appendChild(el('p', '', 'Our catalog: six door collections, seventeen finishes and how every cabinet is built. Free PDF, no sign-up.'))
-    var go = el('a', 'lcocat-go', 'Download the catalog'); go.href = CATALOG; go.setAttribute('download', ''); go.setAttribute('data-track', 'catalog-popup')
-    tx.appendChild(go)
+    // the welcome card on a first visit (owner 2026-10-24, T-261024-23: "I don't see the first open up banner ever"): say hello, offer the design and the catalog
+    tx.appendChild(el('h2', '', 'Welcome to The Local Cabinetry'))
+    tx.appendChild(el('p', '', 'Cabinets made for your room. Tell us your room and see it in 3D, or start with our catalog: six door collections and seventeen finishes.'))
+    var acts = el('div', 'lcocat-acts')
+    var dz = el('button', 'lcocat-go', 'Design my room'); dz.type = 'button'; dz.setAttribute('data-track', 'welcome-design')
+    var go = el('a', 'lcocat-alt', 'Download the catalog'); go.href = CATALOG; go.setAttribute('download', ''); go.setAttribute('data-track', 'catalog-popup')
+    acts.appendChild(dz); acts.appendChild(go); tx.appendChild(acts)
+    dz.addEventListener('click', function () { catClose(); open() })
     var x = el('button', 'lcocat-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close')
     card.appendChild(im); card.appendChild(tx); card.appendChild(x); cat.appendChild(card); document.body.appendChild(cat)
     x.addEventListener('click', catClose); go.addEventListener('click', function () { setTimeout(catClose, 0) })
     cat.addEventListener('click', function (e) { if (e.target === cat) catClose() })
-    cat.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); catClose() } else if (e.key === 'Tab' && !catBar) { e.preventDefault(); (document.activeElement === go ? x : go).focus() } })
-    if (!catBar) go.focus()
+    cat.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); catClose() } else if (e.key === 'Tab' && !catBar) { e.preventDefault(); var f = [dz, go, x], i = f.indexOf(document.activeElement); f[(i + (e.shiftKey ? f.length - 1 : 1)) % f.length].focus() } })
+    if (!catBar) dz.focus()
   }
   // ---- The choice, at the top of the panel before a chat starts: the AI assistant or a person. Afterwards a small link switches it.
   function ico(d) { return svg(d) }
@@ -888,7 +916,7 @@
     resumeFromLink()
     window.addEventListener('hashchange', resumeFromLink)   // the link pasted into a tab that is already on the site
     greet(); applyMode()
-    catArm()
+    annShow(); catArm()
 
     btn.addEventListener('click', function () { if (state.open) close(); else open() })
     if (window.__lcoQ) { window.__lcoQ = 0; open() }   // a tap that came before this file was ready
