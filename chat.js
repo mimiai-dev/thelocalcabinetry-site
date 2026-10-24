@@ -224,6 +224,8 @@
     '@media (prefers-reduced-motion:reduce){.lcochat-typing i{animation:none;opacity:.7}.lcochat-tcap{animation:none;background:none;color:#7a7468}}',
     '.lcochat-down{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:48px;height:48px;border:1px solid #e7e5df;border-radius:50%;background:#fff;color:#0e2740;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(8,20,34,.15);cursor:pointer}',
     '.lcochat-down[hidden]{display:none}',
+    // the jump button never covers the last bubble: while it shows, the log keeps a strip at the bottom for it (owner 2026-10-24, T-261024-10)
+    '.lcochat-log.has-down{padding-bottom:72px}',
     '.lcochat-err{padding:8px 16px;font-size:14px;background:#fdecea;color:#8a1c12}',
     '.lcochat-err[hidden]{display:none}',
     // the composer: one rounded box (photos, the message, then photo and send buttons), 16 px text so iOS does not zoom
@@ -402,17 +404,31 @@
       state.last = Math.max(state.last, m.seq); state.maxUs = Math.max(state.maxUs || 0, m.seq)
       return
     }
+    var at = m.at || m.ts || m.time || m.created_at || m.created
+    state.last = Math.max(state.last, m.seq)
+    if (from === 'us') state.maxUs = Math.max(state.maxUs || 0, m.seq)
+    // A scripted reply (the guided start's next question, with chips) that the server wrote the same second as the tap: the typing line shows for a moment first, so it reads like a
+    // person answering, not a form (owner 2026-10-24, T-261024-10). Only for a fresh one (under 15 s old); history draws at once. Lines behind it wait their turn (order kept).
+    var scripted = from === 'us' && m.holding !== true && Array.isArray(m.chips) && m.chips.length > 0 && Date.now() - toDate(at).getTime() < 15000
+    if (scripted || state.drawQ) {
+      var wait = scripted ? Math.min(1600, 700 + String(m.text || '').length * 12) : 0
+      if (scripted && !state.typing) showTyping(T.typingUs)
+      state.drawQ = (state.drawQ || Promise.resolve()).then(function () { return new Promise(function (ok) { setTimeout(ok, wait) }) }).then(function () { drawMsg(m, from, at) })
+      var mine = state.drawQ; mine.then(function () { if (state.drawQ === mine) state.drawQ = null })
+      return
+    }
+    drawMsg(m, from, at)
+  }
+  function drawMsg(m, from, at) {
     clearChips(); hotUpload(false)
     if (from === 'us' && m.holding !== true) { hideTyping(); state.owedSince = 0 }
-    var at = m.at || m.ts || m.time || m.created_at || m.created
     daySep(toDate(at))
     var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human' || m.team === true, m.name)   // team: the server's human-mode line, the team's avatar (never the AI's)
     if (from === 'you') r.setAttribute('data-seq', String(m.seq))
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
-    state.last = Math.max(state.last, m.seq)
-    if (from === 'us') state.maxUs = Math.max(state.maxUs, m.seq)
     state.lastFrom = from
-    if (from === 'us' && !isAck) { if (Array.isArray(m.chips) && m.chips.length) renderChips(r, m.chips); if (m.upload === true) hotUpload(true) }
+    if (from === 'us') { if (Array.isArray(m.chips) && m.chips.length) renderChips(r, m.chips); if (m.upload === true) hotUpload(true) }
+    if (log.scrollHeight - log.scrollTop - log.clientHeight < 160) scrollDown()
   }
   // GET visit/messages carries read_seq = the highest VISITOR seq our side has read (the system picked it up, or a person did). Under that line a small 'Seen'.
   function applyRead(n) {
@@ -434,7 +450,8 @@
     btn.setAttribute('aria-label', on ? label + ', ' + T.unread : label)
     if (on) showBtn()
   }
-  function scrollDown() { log.scrollTop = log.scrollHeight; if (downB) downB.hidden = true }
+  function scrollDown() { log.scrollTop = log.scrollHeight; setDown(false) }
+  function setDown(on) { if (!downB) return; downB.hidden = !on; log.classList.toggle('has-down', !!on) }
   function grow() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 140) + 'px' }
 
   // 'after_chip' mode only (switch in the server config): after the first chip step a mandatory email card sits in the thread; chips and the box wait for it.
@@ -506,7 +523,7 @@
       if (j.need_email === true && state.emailMode !== 'off') emailCard(true)   // this conversation has no email yet (begun before the step): ask in the thread, under its lines
       applyRead(j.read_seq)
       if (j.typing === true && !state.humanTyping) showTyping(j.typing_name ? String(j.typing_name).slice(0, 30) + ' ' + T.typing : T.typingUs)
-      else if (j.typing !== true && state.humanTyping) hideTyping()
+      else if (j.typing !== true && state.humanTyping && !state.drawQ) hideTyping()   // a scripted reply still pausing keeps its typing line
       maybeSeen()
       if (fresh) { state.idleSince = Date.now(); scrollDown() }
       if (!state.open && !state.owedSince) return   // the answer is in (dot shown): stop until the panel opens
@@ -814,7 +831,7 @@
     var logw = el('div', 'lcochat-logw'); logw.appendChild(log)
     downB = el('button', 'lcochat-down'); downB.type = 'button'; downB.hidden = true; downB.setAttribute('aria-label', 'Jump to the latest message'); downB.appendChild(svg('M12 5v14M6 13l6 6 6-6')); logw.appendChild(downB)
     downB.addEventListener('click', scrollDown)
-    log.addEventListener('scroll', function () { downB.hidden = log.scrollHeight - log.scrollTop - log.clientHeight < 80 }, { passive: true })
+    log.addEventListener('scroll', function () { setDown(log.scrollHeight - log.scrollTop - log.clientHeight >= 80) }, { passive: true })
     err = el('div', 'lcochat-err'); err.hidden = true; err.setAttribute('role', 'alert')
 
     var box = el('div', 'lcochat-box'), pi = el('div', 'lcochat-pi')
