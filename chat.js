@@ -269,7 +269,7 @@
     '.lcocat-bar .lcocat-alt{display:none}',
     // the top announcement bar on every page (T-261024-23): one line, our own link, closable for good (ANN_KEY)
     '.lcoann{position:relative;z-index:2147483000;display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 48px 8px 16px;background:#0e2740;color:#fff;font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center}',
-    '.lcoann a{color:#e9c983;font-weight:600;text-decoration:underline;text-underline-offset:3px}',
+    '.lcoann a{color:#e9c983;font-weight:600;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}',
     '.lcoann-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:none;color:#fff;font-size:22px;line-height:1;cursor:pointer}.lcoann-x:hover{background:rgba(255,255,255,.12)}',
     '.lcoann[hidden]{display:none}',
     '.lcooffer{margin:0 0 14px;padding:12px 14px;border-left:3px solid #e9c983;background:#0e2740;color:#fff;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}',
