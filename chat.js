@@ -62,7 +62,7 @@
              : { seen: 'Seen', typing: 'is typing', typingUs: 'The Local Cabinetry is typing', unread: 'new message' }
   var CATALOG = '/catalog/The-Local-Cabinetry-Catalog.pdf'
   var CAT_KEY = 'lco_welcome_v1'   // set once the welcome card was shown: it never comes back for this browser (was lco_catalog_pop_v1, the catalog-only popup; owner 2026-10-24 T-261024-23)
-  var ANN_KEY = 'lco_ann_v1'       // the top bar was closed (a new announcement = a new key)
+  var ANN_KEY = 'lco_ann_v2'       // the top bar was closed (a new announcement = a new key: v2 = the free-month offer, 2026-10-25, so a visitor who closed v1 still sees it)
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
@@ -272,6 +272,7 @@
     '.lcoann a{color:#e9c983;font-weight:600;text-decoration:underline;text-underline-offset:3px}',
     '.lcoann-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:none;color:#fff;font-size:22px;line-height:1;cursor:pointer}.lcoann-x:hover{background:rgba(255,255,255,.12)}',
     '.lcoann[hidden]{display:none}',
+    '.lcooffer{margin:0 0 14px;padding:12px 14px;border-left:3px solid #e9c983;background:#0e2740;color:#fff;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}',
     '.lcocat-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#0e2740;font-size:26px;line-height:1;cursor:pointer}',
     '.lcocat-go:focus-visible,.lcocat-x:focus-visible{outline:3px solid #0e2740;outline-offset:2px}',
     '@media (max-width:620px){.lcocat-card{flex-direction:column}.lcocat-img{flex:0 0 150px}.lcocat-tx{padding:22px 20px 24px}.lcocat-tx h2{font-size:22px}}',
@@ -665,13 +666,30 @@
   }
   // The top announcement bar (owner 2026-10-24, T-261024-23: "both a welcome banner on first visit and a top announcement bar"): on every page until closed (then never again in
   // this browser). Our own words and link only; the recent-sales strip (T-261024-22) joins it only with real orders, after the owner's yes.
-  var ANN = { text: 'See your kitchen, closet or vanity in 3D before you buy.', link: 'Start a design' }
+  // 2026-10-25 (owner, T-261025-20): the membership offer. A free first month of the membership (ops lib/membership.ts plan free-month: $0, 1 month, the same 10% as the yearly
+  // plan, goods only, freight never discounted; once per customer who was never a member, nothing charged after it). The link opens the membership form with the claim set
+  // (memberOffer below); the form's product_id carries it to ops, which shows an "Offer:" line on the application.
+  var ANN = { text: 'Get your first month of membership free: 10% off all your orders.', link: 'Claim it', href: '/member/annual/?offer=free-month' }
+  var OFFER_PRODUCT = 'Member application: free first month'
+  // /member/annual/?offer=free-month: the membership form becomes the free-month claim (the hidden product_id, a note above the form, the button's words)
+  function memberOffer() {
+    if (!/^\/member\/annual\/?$/.test(location.pathname)) return
+    var q = ''; try { q = new URLSearchParams(location.search).get('offer') || '' } catch (e) { return }
+    if (q !== 'free-month') return
+    var f = document.querySelector('form.member-form'); if (!f) return
+    var pid = f.querySelector('input[name="product_id"]'); if (!pid) return
+    pid.value = OFFER_PRODUCT
+    var b = f.querySelector('button[type="submit"]'); if (b) b.textContent = 'Claim my free month'
+    var note = el('p', 'lcooffer', 'Your first month of membership is free: 10% off your orders for that month. Nothing is charged. After the month you can join for $240 a year, or stop.')
+    f.parentNode.insertBefore(note, f)
+    setTimeout(function () { try { note.scrollIntoView({ block: 'center' }) } catch (e) { /* ignore */ } }, 300)
+  }
   function annShow() {
     try { if (localStorage.getItem(ANN_KEY)) return } catch (e) { return }
     if (document.querySelector('.lcoann')) return
     var bar = el('div', 'lcoann'); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Announcement')
     bar.appendChild(el('span', '', ANN.text))
-    var a = el('a', '', ANN.link); a.href = '#chat'; a.setAttribute('data-track', 'announce-design'); a.addEventListener('click', function (e) { e.preventDefault(); open() })
+    var a = el('a', '', ANN.link); a.href = ANN.href; a.setAttribute('data-track', 'announce-member')
     bar.appendChild(a)
     var x = el('button', 'lcoann-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close the announcement')
     x.addEventListener('click', function () { bar.hidden = true; try { localStorage.setItem(ANN_KEY, '1') } catch (e) { /* ignore */ } })
@@ -916,7 +934,7 @@
     resumeFromLink()
     window.addEventListener('hashchange', resumeFromLink)   // the link pasted into a tab that is already on the site
     greet(); applyMode()
-    annShow(); catArm()
+    annShow(); memberOffer(); catArm()
 
     btn.addEventListener('click', function () { if (state.open) close(); else open() })
     if (window.__lcoQ) { window.__lcoQ = 0; open() }   // a tap that came before this file was ready
