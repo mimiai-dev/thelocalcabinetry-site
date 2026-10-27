@@ -3,7 +3,7 @@
 For social media and marketing. Everything here is taken from our live site (thelocalcabinetry.com) and from rules the owner and lead have set. If something is not written here, ask before you post it.
 
 ## 1. Who we are
-The Local Cabinetry is a Houston, Texas cabinetry brand (Luxlive Home LLC). We sell ready-to-assemble (RTA) kitchen cabinets, bathroom vanities and closets, designed with the customer (free 3D layout and quote) and shipped nationwide. Site: thelocalcabinetry.com. Email: info@thelocalcabinetry.com. Phone: (857) 930-8324.
+The Local Cabinetry is a Houston, Texas cabinetry brand (Luxlive Home LLC). We sell ready-to-assemble (RTA) kitchen cabinets, bathroom vanities and closets, designed with the customer (free 3D layout and quote) and shipped nationwide. Site: thelocalcabinetry.com. Email: info@thelocalcabinetry.com. Phone:(phone number, removed 2026-10-27).
 
 ## 2. Voice
 Warm, plain, expert, short.

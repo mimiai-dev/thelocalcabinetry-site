@@ -1,42 +1,35 @@
 #!/usr/bin/env node
-// The public phone number lives in ONE place: site.config.json, as parts. The site is prebuilt static HTML and, since owner 2026-10-23, no page, JSON-LD,
-// llms.txt or script carries the number as a plain digit string or a tel: link: bots that read the source find none. People get "Call us", and
-// /call.js (every page) and chat.js (the chat's "Talk to a person" > Call) put the number together in the browser from parts; the tel: href is
-// built only on click. This script writes those parts into call.js and chat.js and checks that nothing else carries the number.
-//   node scripts/site-config.mjs          rewrite call.js and the parts line in chat.js from site.config.json
-//   node scripts/site-config.mjs --check  fail if they disagree, or if any served file carries the number or a tel: link (scripts/check-assets.sh)
+// The site carries NO phone number (owner 2026-10-27: removed completely: no number, no "Call us", no tel: link; before that, 2026-10-23, it was put
+// together in the browser from parts). This guard fails if any served file carries a removed number, a tel: link, a data-call button or a parts line.
+// The removed numbers are kept here only as SHA-256 hashes of their digits (country code first): every digit run in a served file is hashed and compared,
+// so this file (served too) never carries the number itself.
+//   node scripts/site-config.mjs --check   (scripts/check-assets.sh)
 import fs from 'node:fs'
 import path from 'node:path'
+import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const CHECK = process.argv.includes('--check')
-const { phone } = JSON.parse(fs.readFileSync(path.join(ROOT, 'site.config.json'), 'utf8'))
-if (!/^\d$/.test(phone.country) || !/^\d{3}$/.test(phone.area) || !/^\d{3}$/.test(phone.exchange) || !/^\d{4}$/.test(phone.line)) { console.error('site.config.json: phone needs country (1 digit), area (3), exchange (3), line (4)'); process.exit(1) }
-// split further so the source holds no run of more than two digits in a row
-const parts = [phone.country, phone.area.slice(0, 2), phone.area.slice(2), phone.exchange.slice(0, 2), phone.exchange.slice(2), phone.line.slice(0, 2), phone.line.slice(2)]
-const arr = `[${parts.map((p) => `'${p}'`).join(', ')}]`
-const PARTS_RE = /var P = \[[^\]]*\]/
-const partsLine = `var P = ${arr}`
+const REMOVED = new Set(['3634150fe787e6a6c0ad67d56a9f41221e818223ddbbe43c258f2e6c576d9dce'])
+const sha = (s) => crypto.createHash('sha256').update(s).digest('hex')
+const TEXT = /\.(html|js|mjs|json|txt|xml|md|css|svg|webmanifest)$/i
 const bad = []
-for (const f of ['call.js', 'chat.js']) {
-  const p = path.join(ROOT, f), s = fs.readFileSync(p, 'utf8')
-  if (!PARTS_RE.test(s)) { bad.push(`${f}: no  var P = [...]  line`); continue }
-  const t = s.replace(PARTS_RE, partsLine)
-  if (t !== s) { if (CHECK) bad.push(`${f}: parts differ from site.config.json (run node scripts/site-config.mjs)`); else fs.writeFileSync(p, t) }
-}
-// nothing served may carry the number or a tel: link
-const digits = phone.country + phone.area + phone.exchange + phone.line
-const leaks = [new RegExp(digits), new RegExp(`${phone.exchange}[-. ]${phone.line}`), new RegExp(`\\(${phone.area}\\)`), /href="tel:/i, /"telephone"/]
-const SKIP = new Set(['.git', 'node_modules', 'docs', 'catalog', 'brand-kit-a5649501d5a1feec', 'scripts', '.github'])
-;(function walk(dir) {
+function walk(dir) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (e.name === '.git' || e.name === 'node_modules') continue
     const p = path.join(dir, e.name)
-    if (e.isDirectory()) { if (!(SKIP.has(e.name) && dir === ROOT)) walk(p) }
-    else if (/\.(html|txt|js|json|xml|webmanifest)$/.test(e.name) && e.name !== 'site.config.json') {
-      const s = fs.readFileSync(p, 'utf8')
-      for (const re of leaks) if (re.test(s)) { bad.push(`${path.relative(ROOT, p)}: carries the phone number (${re})`); break }
+    if (e.isDirectory()) { walk(p); continue }
+    if (!TEXT.test(e.name)) continue
+    const rel = path.relative(ROOT, p), s = fs.readFileSync(p, 'utf8')
+    if (/href\s*=\s*["']tel:/i.test(s)) bad.push(`${rel}: a tel: link`)
+    if (/<a[^>]*\sdata-call[\s>=]/i.test(s)) bad.push(`${rel}: a data-call button`)
+    if (/var P = \[\s*'\d/.test(s)) bad.push(`${rel}: a phone parts line`)
+    // digit runs with phone separators between them (spaces, dots, dashes, brackets, quotes and commas of a parts array)
+    for (const m of s.matchAll(/\d[\d\s().'",+\-\[\]]{8,40}\d/g)) {
+      const d = m[0].replace(/\D/g, '')
+      for (const n of [d, '1' + d]) if (n.length >= 10 && n.length <= 12 && REMOVED.has(sha(n))) bad.push(`${rel}: a removed phone number`)
     }
   }
-})(ROOT)
-if (bad.length) { console.error('site-config:\n- ' + bad.join('\n- ')); process.exit(1) }
-console.log(CHECK ? 'site-config: OK (no number in served files; call.js and chat.js match site.config.json)' : 'site-config: call.js and chat.js written')
+}
+walk(ROOT)
+if (bad.length) { console.error('site-config:\n- ' + [...new Set(bad)].join('\n- ')); process.exit(1) }
+console.log('site-config: OK (no phone number, tel: link or call button in served files)')
