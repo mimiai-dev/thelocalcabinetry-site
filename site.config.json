@@ -1,4 +1,4 @@
 {
-  "_comment": "The ONE place for the public phone number, kept as parts on purpose: the site never carries it as a plain digit string or a tel: link (owner 2026-10-23). Change it here, then run: node scripts/site-config.mjs (rewrites call.js and the parts line in chat.js). scripts/check-assets.sh runs it with --check.",
-  "phone": { "country": "1", "area": "857", "exchange": "930", "line": "8324" }
+  "_comment": "The site carries no phone number (owner 2026-10-27: removed completely, no number and no call button). scripts/site-config.mjs --check (run by scripts/check-assets.sh) fails if any served file carries a phone number we removed, a tel: link or a call button.",
+  "phone": null
 }

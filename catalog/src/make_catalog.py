@@ -169,7 +169,7 @@ pages.append(f'''<section class="page"><p class="eyebrow">How we work</p><h2>Fro
 </div>{foot(pn)}</section>'''); pn+=1
 pages.append(f'''<section class="page end"><p class="eyebrow">Contact</p><h2>Start your project</h2><p class="lead" style="margin-top:14pt">Tell us what you are planning. We reply with a layout and an estimate.</p>
 <p class="big">Design your cabinets online: <b>thelocalcabinetry.com/design</b></p>
-<p class="big">Email: <b>info@thelocalcabinetry.com</b><br>Phone: <b>+1 (857) 930-8324</b><br>Houston, TX</p>
+<p class="big">Email: <b>info@thelocalcabinetry.com</b><br>Houston, TX</p>
 <img src="../../logo-tlc.svg" style="height:.9in;margin-top:.6in" alt="The Local Cabinetry">{foot(pn)}</section>''')
 open('index.html','w').write(f'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>The Local Cabinetry Catalog</title><style>{css}</style></head><body>{"".join(pages)}</body></html>')
 print('code rows',sum(len(r) for r in rows.values()),'unsized',len(unsized),'pages',len(pages),'code pages',len(code_pages))
