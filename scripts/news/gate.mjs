@@ -39,7 +39,7 @@ export const UNBACKED = [
 export const ALLOWED_CERTS = ['KCMA', 'CARB2', 'CARB Phase 2', 'TSCA Title VI']
 export const IMAGE_DIRS = ['accessories', 'closets', 'rooms', 'kitchens', 'vanities', 'installs', 'doors']
 /** Internal pages that count as "product / category" links (at least one besides /design). */
-export const PRODUCT_PATHS = [/^\/c\/[a-z0-9-]+\/?$/, /^\/(kitchens|closets|vanities|doors|door-styles|interior-doors|accessories|cost-guide|finish-sheets|catalog)\/?$/, /^\/how-to-measure-your-(kitchen|closet|bathroom)\/?$/, /^\/p\/[a-z0-9-]+\/?$/]
+export const PRODUCT_PATHS = [/^\/c\/[a-z0-9-]+\/?$/, /^\/(kitchens|closets|vanities|doors|door-styles|interior-doors|accessories|cost-guide|finish-sheets|catalog)\/?$/, /^\/how-to-measure-your-(kitchen|closet|bathroom)\/?$/, /^\/p\/[a-z0-9_-]+\/?$/]
 export const LIMITS = { minWords: 700, maxWords: 1600, maxGrade: 9.5, maxEmDashes: 2, minSources: 2, minSourceDomains: 2, maxTitle: 65, overlapWords: 10 }
 
 const PHONE = /(\+?1[\s.-]?)?\(?\b\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b|\btel:|\b(call|text) us\b/i
