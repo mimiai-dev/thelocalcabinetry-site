@@ -1,9 +1,9 @@
 /* First-party click log for thelocalcabinetry.com. One same-origin file, no cookies, no third party.
  * Sends small GET requests to /_t (the VPS nginx answers 204 and writes /var/log/lco-web/tlc-events.json).
- * Sends: pageview, click on every <a> / <button> / [role=button], form submit, pageleave (seconds on page).
+ * Sends: pageview, click on every <a> / <button> / [role=button], form submit, pageleave (ACTIVE seconds on page: tab visible and an input in the last 30 s, sent with navigator.sendBeacon).
  * Each event carries ONLY: page path, element id (data-track or a CSS-path-like id), the element's visible text
  * (40 chars; never from inputs), link host + path (no query, no hash; mailto:/tel: only the scheme), mobile/desktop,
- * a random per-tab session id (sessionStorage, gone when the tab closes), and the seconds on page.
+ * a random per-tab session id (sessionStorage, gone when the tab closes), a random page-view id, and the active seconds on page.
  * Never: input values, typed text, form data, cookies, localStorage ids, fingerprinting, click ids (gclid, fbclid), full URLs.
  * Query strings are never logged by the click events. The one exception is the first-touch source below: only the three campaign labels
  * utm_source / utm_medium / utm_campaign (marketing labels, not personal data) are read from the landing URL.
@@ -55,8 +55,7 @@
     var ENDPOINT = "/_t";
     var MAX_EVENTS = 200; // per page load; pageleave is always allowed on top
     var DEBOUNCE_MS = 400; // the same element twice within this is one click
-    var sent = 0, seq = 0, left = false, last = { id: "", at: 0 };
-    var t0 = Date.now();
+    var sent = 0, seq = 0, last = { id: "", at: 0 };
 
     // per-tab random id: sessionStorage only (no cookie, no localStorage); if storage is blocked it lives for this page load
     // ponytail: a plain random id, not a hash of anything about the visitor; a new tab is a new session by design.
@@ -152,21 +151,55 @@
       send("submit", { i: idOf(f), l: "form" });
     }
 
-    function leave() {
-      if (left) return;
-      left = true;
-      send("leave", { d: Math.min(1800, Math.round((Date.now() - t0) / 1000)) });
+    // ---- time on page: ACTIVE seconds (tab visible AND an input within the last 30 s), what the Ops /traffic page reads.
+    // Each page view has a random id w (6 chars, sent with pv and every leave); a leave carries a = the active seconds since the last
+    // leave of the same w, the server sums them per w and caps a view at 30 minutes. Wall-clock time is never sent.
+    var IDLE_MS = 30000, CAP_S = 1800;
+    var w = "", activeMs = 0, sentS = 0, leaves = 0;
+    var vis = document.visibilityState !== "hidden";
+    var mark = Date.now(), lastIn = mark;
+    function newView() {
+      w = "";
+      try { var b = new Uint8Array(6); crypto.getRandomValues(b); for (var j = 0; j < 6; j++) w += (b[j] % 36).toString(36); }
+      catch (e) { w = Math.random().toString(36).slice(2, 8).padEnd(6, "0"); }
+      activeMs = 0; sentS = 0; leaves = 0; mark = lastIn = Date.now(); vis = document.visibilityState !== "hidden";
     }
+    function account(now) { // credit [mark, now] up to 30 s after the last input, only while visible
+      if (vis) { var to = Math.min(now, lastIn + IDLE_MS); if (to > mark) activeMs += to - mark; }
+      mark = now;
+    }
+    function touch() { var n = Date.now(); account(n); lastIn = n; }
+    function leave() {
+      account(Date.now());
+      var total = Math.min(CAP_S, Math.floor(activeMs / 1000)), delta = total - sentS;
+      if (delta <= 0 && leaves > 0) return; // nothing new; one leave (even 0 s) per view so a bounce is measured
+      if (delta < 0) delta = 0;
+      sentS += delta; leaves++; seq++;
+      var url = ENDPOINT + "?e=leave&p=" + enc(location.pathname.slice(0, 120)) + "&v=" + (window.innerWidth < 768 ? "m" : "d") +
+        "&s=" + sid + "&n=" + seq + "&w=" + w + "&a=" + delta;
+      try {
+        if (nav.sendBeacon && nav.sendBeacon(url)) return;
+        if (window.fetch) fetch(url, { method: "GET", keepalive: true, credentials: "omit", cache: "no-store" }).catch(function () {});
+        else new Image().src = url;
+      } catch (e) {}
+    }
+    function pv() { newView(); send("pv", { w: w }); }
 
     // capture phase: runs even when a page handler stops propagation
     document.addEventListener("click", onClick, true);
     document.addEventListener("submit", onSubmit, true);
+    ["pointerdown", "keydown", "scroll", "touchstart", "mousemove", "wheel"].forEach(function (t) {
+      document.addEventListener(t, touch, { capture: true, passive: true });
+    });
     window.addEventListener("pagehide", leave);
-    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") leave(); });
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") { leave(); vis = false; }
+      else { vis = true; mark = lastIn = Date.now(); } // coming back counts as activity; the hidden stretch is not credited
+    });
     // back/forward cache: the page comes back alive, count it as a new view
-    window.addEventListener("pageshow", function (e) { if (e.persisted) { left = false; t0 = Date.now(); send("pv"); } });
-    // ponytail: no single-page-app route tracking (the site is static pages); no scroll/hover; 'leave' fires once per page view.
+    window.addEventListener("pageshow", function (e) { if (e.persisted) pv(); });
+    // ponytail: no single-page-app route tracking (the site is static pages); input events only feed the 30 s idle window; 'leave' is sent when the tab is hidden / the page is left, with the new active seconds only.
 
-    send("pv");
+    pv();
   } catch (e) { /* never break the page */ }
 })();
