@@ -19,7 +19,7 @@
  *
  * ONE BUTTON (owner 2026-10-21, T-261020-5): one floating "Chat with us" button and nothing else in the corner (the round WhatsApp bubble is gone; WhatsApp is
  * inside the chat). First screen: "AI assistant: design and quotation, 5% off your order" or "Talk to a person". The person path offers two ways:
- * Email us (owner 2026-10-21: the /contact form, pre-filled from sessionStorage with what was typed, never with an email or phone, never via the URL), and WhatsApp (a wa.me link; no phone number or call option anywhere, owner 2026-10-27). Neither sends anything from here.
+ * Email us (owner 2026-10-21: the /contact form, pre-filled from sessionStorage with what was typed, never with an email or phone, never via the URL), and WhatsApp (our /design/api/wa, which redirects to wa.me; no phone number or call option anywhere, owner 2026-10-27 / 2026-10-28). Neither sends anything from here.
  * CHOICE FIRST (owner 2026-10-20): the panel opens with two tap-first choices at the top, the AI assistant or "Talk to a person". The choice
  * rides on the first message as `route`; later a small link switches it (POST visit/mode {mode: ai|human}) and the server stores it on the thread
  * (buyer_threads.human_mode): a human-mode thread gets no AI reply, one honest ack line from the server, and the WhatsApp button stays the instant alternative.
@@ -41,13 +41,10 @@
   // the brand-kit mark (gold TLC on navy, made for a round crop): the avatar on our lines and in the header, never a letter
   var MARK = '/brand-kit-a5649501d5a1feec/logos/tlc-avatar-navy-192.webp'
   var CONTACT = '/contact/', PREFILL_KEY = 'lco_contact_prefill_v1'
-  // The owner's WhatsApp number: the ONE place to change it (country code, digits only, no + and no leading 0).
-  // A placeholder-looking number renders no WhatsApp button at all: a button that dials a stranger is worse than none.
-  var WHATSAPP = '84976096632'
-  var WA_TEXT = 'Hi, I saw your kitchens on thelocalcabinetry.com'
-  var PLACEHOLDERS = [/^0+$/, /^(\d)\1+$/, /^1?234567890$/, /^1?5551?\d{4}$/, /^123456789\d*$/, /^(44)?0?7700900\d{3}$/, /^1?5550\d{3}$/]
-  function waOk(n) { return /^[1-9]\d{7,14}$/.test(n) && !PLACEHOLDERS.some(function (re) { return re.test(n) }) }
-  var WA_URL = waOk(WHATSAPP) ? 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(WA_TEXT) : ''
+  // WhatsApp (owner 2026-10-28: no phone number on, or indexable from, any page or script): the button points at our own server, which answers
+  // with the wa.me link (302; the number and the greeting live in the ops repo, lib/public-contact.ts; GET only, rate-limited, noindex; robots.txt
+  // disallows /design/api/). The digits are never in this file.
+  var WA_URL = '/design/api/wa'
   var WA_PATH = 'M3 21l1.6-5A8.5 8.5 0 1 1 8 19.4zM9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 .8c-1-.4-2-1.4-2.4-2.4l.8-1-1-2z'
   var API = '/design/api/visit/'
   // the few words the page itself writes, in the visitor's language (English or Chinese); every reply text comes from the server
@@ -758,7 +755,7 @@
   // WhatsApp and Call on the person path: plain links (a new tab / the phone app); nothing is sent from the chat
   function optLink(href, val, icon, title, sub, blank) {
     var a = el('a', 'lcoroute-b ' + val); a.href = href; a.setAttribute('data-track', 'route-' + val)
-    if (blank) { a.target = '_blank'; a.rel = 'noopener' }
+    if (blank) { a.target = '_blank'; a.rel = 'nofollow noopener' }
     a.appendChild(icoBox(icon)); var t = el('span', 'lcoroute-t'); t.appendChild(el('b', '', title)); t.appendChild(el('small', '', sub)); a.appendChild(t)
     return a
   }
@@ -872,7 +869,7 @@
     who.appendChild(st); who.appendChild(modeLine); head.appendChild(who)
     var hb = el('div', 'lcochat-hb')   // no 'open bigger' link to /design here (owner 2026-10-21: the chat and the design page are different things)
     if (WA_URL) {
-      var wh = el('a', 'lcochat-x'); wh.href = WA_URL; wh.target = '_blank'; wh.rel = 'noopener'; wh.title = 'Message us on WhatsApp'
+      var wh = el('a', 'lcochat-x'); wh.href = WA_URL; wh.target = '_blank'; wh.rel = 'nofollow noopener'; wh.title = 'Message us on WhatsApp'
       wh.setAttribute('aria-label', 'Message us on WhatsApp'); wh.setAttribute('data-track', 'chat-whatsapp')
       wh.appendChild(svg(WA_PATH)); hb.appendChild(wh)
     }
