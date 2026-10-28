@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { parseFrontMatter, markdown, CATEGORIES, slugify, stripTags, wordCount } from './lib.mjs'
+import { gatePost } from './gate.mjs'
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..')
 const dir = path.join(ROOT, 'content/news'); const errs = []
 const fail = (f, m) => errs.push(`${f}: ${m}`)
@@ -16,6 +17,7 @@ for (const f of files) {
   const m = /^(\d{4}-\d{2}-\d{2})-(.+)\.md$/.exec(f); if (!m) { fail(f, 'file name must be <yyyy-mm-dd>-<slug>.md'); continue }
   const slug = fm.slug || m[2]; if (slugs.has(slug)) fail(f, 'duplicate slug'); slugs.add(slug)
   for (const b of BANNED) if (b.test(body) || b.test(JSON.stringify(fm))) fail(f, `banned wording (${b})`)
+  if (/\(?\b\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b|\btel:/i.test(body)) fail(f, 'a phone number (owner 2026-10-28: no phone numbers anywhere)')
   if (!CATEGORIES.some((c) => c.slug === fm.category)) fail(f, 'category must be one of ' + CATEGORIES.map((c) => c.slug).join(', '))
   if (fm.draft !== false) continue                       // drafts only need to parse and to stay clean
   // everything below applies to PUBLISHED posts only
@@ -27,7 +29,11 @@ for (const f of files) {
   else if (!fs.existsSync(path.join(ROOT, fm.hero.replace(/^\//, '')))) fail(f, 'hero file not found: ' + fm.hero)
   if (!fm.hero_w || !fm.hero_h) fail(f, 'hero_w and hero_h are required')
   if (fm.facts_verified !== true) fail(f, 'facts_verified must be true')
-  if (!['owner', 'lead'].includes(fm.reviewed_by)) fail(f, 'reviewed_by must be owner or lead')
+  // the automated pipeline (owner 2026-10-28) publishes with reviewed_by: gate, and only a post marked generated_by: pipeline may say so;
+  // such a post must pass the publish gate (scripts/news/gate.mjs, offline rules here; the pipeline also ran the online rules before the PR)
+  const auto = fm.generated_by === 'pipeline'
+  if (!(auto ? fm.reviewed_by === 'gate' : ['owner', 'lead'].includes(fm.reviewed_by))) fail(f, auto ? 'a pipeline post is reviewed_by: gate' : 'reviewed_by must be owner or lead')
+  if (auto) for (const e of gatePost(fm, body, { root: ROOT, file: f }).errors) fail(f, 'gate: ' + e)
   let html, headings; try { ({ html, headings } = markdown(body)) } catch (e) { fail(f, e.message); continue }
   if (headings.filter((h) => h.lvl === 2).length < 2) fail(f, 'at least 2 h2 headings')
   if (wordCount(body.replace(/<!--[\s\S]*?-->/g, '')) < 350) fail(f, 'at least 350 words')

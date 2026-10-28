@@ -37,7 +37,12 @@ This creates `content/news/<today>-<slug>.md` as a DRAFT with the front matter a
 Commit the post AND the generated files together. CI (`check-assets` workflow) runs `check.mjs` and fails when a published post is missing something, a price or banned wording appears, a draft leaks into any output, or the generated files do not match the posts.
 
 ## 5. Who approves
-The owner or the lead approves a post by setting `reviewed_by` (and the author turns `draft` to `false` in the same pull request). Nobody merges a post without that approval. There is no scheduled or automatic publishing.
+The owner or the lead approves a post by setting `reviewed_by` (and the author turns `draft` to `false` in the same pull request). Nobody merges a hand-written post without that approval.
+
+**The automated pipeline** (owner 2026-10-28: three posts a week on random, non-adjacent weekdays) is the one exception. Its posts carry `generated_by: pipeline` and `reviewed_by: gate`, and the gate is their approval:
+- `scripts/news/gate.mjs` is the publish gate. Offline rules (CI runs them through `check.mjs` on every published pipeline post): no AI-tell phrasing (a banned-phrase list), at most 2 em dashes, no claim we cannot back (no "made in", no green / eco / NGBS / other certifications; only KCMA, CARB2 and TSCA Title VI), no warranty wording, no phone number, no price, 700 to 1600 words, Flesch-Kincaid grade 9.5 or lower, the keyword in the title or description and the first paragraph, links to `/design` and to a product or category page, images only our own files under `accessories/ closets/ rooms/ kitchens/ vanities/ installs/ doors/`, and a closing `## Sources` section with 2 or more https sources from 2 or more sites. Online rules (the pipeline runs `--online` before it opens the PR): every external link answers, and no run of 10 words is copied from any source page.
+- The pipeline itself (topic choice, writing, fact check, schedule, merge) lives in the ops repo, `scripts/news/` (see its `CLAUDE.md`). It opens a PR here and merges it only when the gate and this repo's `check-assets` check pass; a post that fails is left as a draft PR with the gate report and is never merged.
+- `reviewed_by: gate` is refused on any post without `generated_by: pipeline`.
 
 ## 6. After publishing
 Check the live page at 390 and 1280 px, then submit `https://thelocalcabinetry.com/sitemap-index.xml` in Google Search Console and Bing Webmaster Tools if it is not there yet.
