@@ -41,7 +41,7 @@ const T = read('about/index.html')
 const headT = T.slice(0, T.indexOf('</head>'))
 const keepHead = [
   /<meta http-equiv="Content-Security-Policy"[^>]*>/, /<link rel="icon"[^>]*>/g, /<link rel="apple-touch-icon"[^>]*>/, /<!--fonts:start-->.*?<!--fonts:end-->/s,
-  /<link rel="stylesheet" href="\/_astro\/about\.[0-9a-f]{8}\.css">/, /<script src="\/t\.js" defer><\/script>/, /<script src="\/_astro\/hdr\.[0-9a-f]{8}\.js" defer><\/script>/, /<script src="\/chat\.js"[^>]*><\/script>/, /<!--btn-css-->.*?<!--\/btn-css-->/s,
+  /<link rel="stylesheet" href="\/_astro\/about\.[0-9a-f]{8}\.css">/, /<script src="\/t\.js" defer><\/script>/, /<script src="\/_astro\/hdr\.[0-9a-f]{8}\.js" defer><\/script>/, /<script src="\/chat\.js(\?v=[0-9a-f]+)?"[^>]*><\/script>/, /<!--btn-css-->.*?<!--\/btn-css-->/s,
 ].map((re) => { const m = headT.match(re); if (!m) throw new Error('template head piece missing: ' + re); return m[0] }).join('')
 const bodyStart = T.indexOf('<body>') + 6
 const hdr = T.slice(bodyStart, T.indexOf('<main>'))

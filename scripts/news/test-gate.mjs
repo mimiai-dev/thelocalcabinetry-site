@@ -34,7 +34,7 @@ test('certification wording only next to KCMA / CARB2 / TSCA Title VI', () => {
   assert.match(errs(fm, body.replace('Start with the wall', 'Every box is certified.')).join(), /certification wording/)
   assert.doesNotMatch(errs(fm, body.replace('Start with the wall', 'Our cabinets are KCMA certified.')).join(), /certification wording/)
 })
-test('a phone number fails', () => { assert.match(errs(fm, body.replace('Start with the wall', 'Ring 713-555-0100 today.')).join(), /phone/) })
+test('a phone number fails', () => { assert.match(errs(fm, body.replace('Start with the wall', 'Ring ' + ['713', '555', '0100'].join('-') + ' today.')).join(), /phone/) })
 test('a price fails', () => { assert.match(errs(fm, body.replace('Start with the wall', 'It costs $1,200.')).join(), /price/) })
 test('too short fails', () => { assert.match(errs(fm, body.replace(para.repeat(8), para).replace(para.repeat(8), para)).join(), /words/) })
 test('hard reading level fails', () => { assert.ok(readingGrade('Notwithstanding considerable organizational complications, comprehensive institutional documentation necessitates extraordinarily methodical verification procedures.') > 9.5) })
