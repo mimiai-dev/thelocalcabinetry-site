@@ -41,7 +41,7 @@ const T = read('about/index.html')
 const headT = T.slice(0, T.indexOf('</head>'))
 const keepHead = [
   /<meta http-equiv="Content-Security-Policy"[^>]*>/, /<link rel="icon"[^>]*>/g, /<link rel="apple-touch-icon"[^>]*>/, /<!--fonts:start-->.*?<!--fonts:end-->/s,
-  /<link rel="stylesheet" href="\/_astro\/about\.[0-9a-f]{8}\.css">/, /<script src="\/t\.js" defer><\/script>/, /<script src="\/call\.js" defer><\/script>/, /<script src="\/_astro\/hdr\.[0-9a-f]{8}\.js" defer><\/script>/, /<script src="\/chat\.js"[^>]*><\/script>/, /<!--btn-css-->.*?<!--\/btn-css-->/s,
+  /<link rel="stylesheet" href="\/_astro\/about\.[0-9a-f]{8}\.css">/, /<script src="\/t\.js" defer><\/script>/, /<script src="\/_astro\/hdr\.[0-9a-f]{8}\.js" defer><\/script>/, /<script src="\/chat\.js(\?v=[0-9a-f]+)?"[^>]*><\/script>/, /<!--btn-css-->.*?<!--\/btn-css-->/s,
 ].map((re) => { const m = headT.match(re); if (!m) throw new Error('template head piece missing: ' + re); return m[0] }).join('')
 const bodyStart = T.indexOf('<body>') + 6
 const hdr = T.slice(bodyStart, T.indexOf('<main>'))
@@ -96,6 +96,9 @@ const cssHash = crypto.createHash('sha256').update(NEWS_CSS).digest('hex').slice
 const cssPath = `_astro/news.${cssHash}.css`
 put(cssPath, NEWS_CSS)
 
+// the links under a post's "## Sources" heading (pipeline posts) become schema.org citation entries
+const citationsOf = (body) => { const m = /^##\s+Sources\s*$/im.exec(body); if (!m) return {}; const urls = [...body.slice(m.index).matchAll(/\]\((https:\/\/[^)\s]+)\)/g)].map((x) => x[1]); return urls.length ? { citation: [...new Set(urls)].map((url) => ({ '@type': 'CreativeWork', url })) } : {} }
+
 // ---------- shared bits
 const ORG = { '@type': 'Organization', '@id': SITE + '/#organization', name: 'The Local Cabinetry', url: SITE + '/', logo: { '@type': 'ImageObject', url: SITE + '/apple-touch-icon.png', width: 180, height: 180 } }
 const abs = (u) => (u.startsWith('http') ? u : SITE + (u.startsWith('/') ? u : '/' + u))
@@ -138,7 +141,7 @@ for (const p of posts) {
     (links.length ? `<h2>Related pages</h2><ul>${links.map((l) => `<li><a href="${l[0]}">${esc(l[1])}</a></li>`).join('')}</ul>` : '') + `</div></article>` +
     (related.length ? `<section class="nw nw-rel" aria-labelledby="rel"><h2 id="rel">More from the news</h2><div class="nw-grid">${related.map((r) => card(r, 'h3')).join('')}</div></section>` : '')
   const ld = [ORG, { '@type': 'WebSite', '@id': SITE + '/#website', name: 'The Local Cabinetry', url: SITE + '/', publisher: { '@id': SITE + '/#organization' } },
-    { '@type': 'BlogPosting', '@id': url + '#post', headline: p.fm.title, description: p.fm.description, datePublished: p.date, dateModified: p.updated, mainEntityOfPage: canonical, url: canonical, image: [img], author: { '@type': 'Organization', name: p.fm.author || 'The Local Cabinetry', url: SITE + '/' }, publisher: { '@id': SITE + '/#organization' }, articleSection: c.name, keywords: (p.fm.tags || []).join(', '), inLanguage: 'en-US', wordCount: wordCount(p.body) },
+    { '@type': 'BlogPosting', '@id': url + '#post', headline: p.fm.title, description: p.fm.description, datePublished: p.date, dateModified: p.updated, mainEntityOfPage: canonical, url: canonical, image: [img], author: { '@type': 'Organization', name: p.fm.author || 'The Local Cabinetry', url: SITE + '/' }, publisher: { '@id': SITE + '/#organization' }, articleSection: c.name, keywords: (p.fm.tags || []).join(', '), inLanguage: 'en-US', wordCount: wordCount(p.body), ...citationsOf(p.body) },
     crumbsLd([['Home', '/'], ['News', '/news/'], [c.name, `/news/category/${c.slug}/`], [p.fm.title, `/news/${p.slug}/`]])]
   put(`news/${p.slug}/index.html`, page({ title: p.fm.title, description: p.fm.description, canonical, ogType: 'article', ogImage: img, jsonld: ld, main, extraHead: `<meta property="article:published_time" content="${p.date}"><meta property="article:modified_time" content="${p.updated}"><meta property="article:section" content="${esc(c.name)}">` }))
 }
