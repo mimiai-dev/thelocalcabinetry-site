@@ -5,7 +5,7 @@
 #    for a year: edit = new file name with the content hash, then point the pages at it);
 # 3. new hashed files named <name>.<8 hex>.css|js carry the sha256 prefix of their own content;
 # 4. no page loads the retired analytics (umami, alidata, monitor.js);
-# 5. the phone number everywhere matches site.config.json (scripts/site-config.mjs --check);
+# 5. no phone number in any served file: no written number, tel: / sms: link, wa.me link with digits, JSON-LD telephone or known number (scripts/site-config.mjs --check);
 # 6. no "luxova" in served files and logos only from the brand kit (scripts/check-brand.mjs).
 set -u
 cd "$(dirname "$0")/.."
@@ -39,7 +39,8 @@ try:
 except Exception: pass
 print('\n'.join(bad) if bad else 'check-assets: OK'); sys.exit(1 if bad else 0)
 PY
-# 5. the public phone number: every page, llms.txt and chat.js match site.config.json (node scripts/site-config.mjs rewrites them)
+# 5. no phone number anywhere (owner 2026-10-27 / 2026-10-28): the rules first against built-up samples, then every served file
+node scripts/site-config.mjs --self-test || fail=1
 node scripts/site-config.mjs --check || fail=1
 # 6. brand guard (lead D8): no "luxova" in what the site serves, logos only from the brand kit (brand-logos.json)
 node scripts/check-brand.mjs || fail=1
