@@ -45,6 +45,14 @@ test('external link outside Sources fails', () => { assert.match(errs(fm, body.r
 test('image outside our folders fails', () => { assert.match(errs({ ...fm, hero: '/fonts/x.jpg' }).join(), /photo folders/); assert.match(errs({ ...fm, hero: 'https://cdn.example.com/a.jpg' }).join(), /not from the site repo/) })
 test('keyword must be in title/description and first paragraph', () => { assert.match(errs({ ...fm, keyword: 'kitchen island seating' }).join(), /keyword/) })
 test('pipeline post must say reviewed_by: gate', () => { assert.match(errs({ ...fm, reviewed_by: 'lead' }).join(), /reviewed_by: gate/) })
+test('source quality: a forum fails, no authority fails', () => {
+  assert.match(errs(fm, body.replace('https://www.energy.gov/plumbing', 'https://www.reddit.com/r/x')).join(), /not acceptable/)
+  assert.match(errs(fm, body.replace('https://www.nkba.org/guidelines', 'https://a-blog.com/x').replace('https://www.energy.gov/plumbing', 'https://b-blog.com/y')).join(), /no source from an authority/)
+})
+test('body image repeating the hero, and a bare /design, fail', () => {
+  assert.match(errs(fm, body.replace('Start with the wall', 'Start.\n\n![A vanity](/rooms/bathroom-vanity.jpg)\n\nWith the wall')).join(), /repeats the hero/)
+  assert.match(errs(fm, body.replace('Start with the wall', 'Or start at /design and send it')).join(), /bare text/)
+})
 test('copied text is found', () => { assert.equal(sharedRuns('we measure the wall from corner to corner and note where the pipes come out', 'Guide: Measure the wall from corner to corner and note where the pipes come out of it.').length, 1) })
 test('online: dead link and copied text fail, robot refusal warns', async () => {
   const pages = { 'https://www.nkba.org/guidelines': { status: 200, text: '<p>' + para + '</p>' }, 'https://www.energy.gov/plumbing': { status: 404, text: '' } }

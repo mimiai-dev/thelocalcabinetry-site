@@ -42,6 +42,14 @@ export const IMAGE_DIRS = ['accessories', 'closets', 'rooms', 'kitchens', 'vanit
 export const PRODUCT_PATHS = [/^\/c\/[a-z0-9-]+\/?$/, /^\/(kitchens|closets|vanities|doors|door-styles|interior-doors|accessories|cost-guide|finish-sheets|catalog)\/?$/, /^\/how-to-measure-your-(kitchen|closet|bathroom)\/?$/, /^\/p\/[a-z0-9_-]+\/?$/]
 export const LIMITS = { minWords: 700, maxWords: 1600, maxGrade: 9.5, maxEmDashes: 2, minSources: 2, minSourceDomains: 2, maxTitle: 65, overlapWords: 10 }
 
+/** Sources: at least one from an authority; never social media, forums, user blogs or shops that sell cabinets (competitors). Hostnames without www. */
+export const AUTHORITY = [/\.gov$/, /\.edu$/, /(^|\.)(nkba|kcma|nahb|ashrae|iccsafe|ada|access-board|nfpa|aia|awinet|hpva|carb\.ca|epa|energystar|consumerreports)\.(org|gov|com)$/,
+  /(^|\.)(sherwin-williams|benjaminmoore|valspar|behr|ppgpaints|farrow-ball|blum|hettich|grass|salice|hafele|kohler|moen|ge|geappliances|whirlpool|bosch-home|subzero-wolf)\.com$/,
+  /(^|\.)(thisoldhouse|bobvila|familyhandyman|finehomebuilding|jlconline|houzz|bhg|marthastewart|thespruce|architecturaldigest|nytimes|washingtonpost|wsj)\.com$/]
+export const isAuthority = (host) => AUTHORITY.some((re) => re.test(host))
+export const BAD_SOURCES = [/(^|\.)(pinterest|reddit|quora|medium|facebook|instagram|tiktok|youtube|x|twitter|linkedin)\.com$/, /\.(blogspot|wordpress|substack|tumblr|wixsite)\.com$/,
+  /(^|\.)(amazon|wayfair|homedepot|lowes|ikea|cabinets|rtacabinetstore|thertastore|cabinetsdirectrta|lilyannCabinets|kitchencabinetkings|cabinetjoint|barkerdoor|conestogawood|taylorcraftcabinetdoor)\.com$/i]
+
 const PHONE = /(\+?1[\s.-]?)?\(?\b\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b|\btel:|\b(call|text) us\b/i
 
 // ---------- reading level
@@ -136,6 +144,8 @@ export function gatePost(fm, body, { root = ROOT, file = '' } = {}) {
     if (ext.length < LIMITS.minSources) err(`${ext.length} sources (at least ${LIMITS.minSources})`)
     if (new Set(ext.map((l) => hostOf(l.url))).size < LIMITS.minSourceDomains) err(`sources from fewer than ${LIMITS.minSourceDomains} different sites`)
     if (/^##\s/m.test(sources)) err('"## Sources" must be the last h2')
+    for (const l of ext) if (BAD_SOURCES.some((re) => re.test(hostOf(l.url)))) err(`source not acceptable (social, forum, user blog or a shop that sells cabinets): ${l.url}`)
+    if (!ext.some((l) => isAuthority(hostOf(l.url)))) err('no source from an authority (a .gov or .edu site, a standards or trade body, a paint or material maker, or an established building publication); see AUTHORITY in gate.mjs')
   }
 
   // images: our own, already in the repo
@@ -146,6 +156,8 @@ export function gatePost(fm, body, { root = ROOT, file = '' } = {}) {
     if (!IMAGE_DIRS.includes(rel.split('/')[0])) err(`image outside our photo folders (${IMAGE_DIRS.join(', ')}): ${src}`)
     else if (!fs.existsSync(path.join(root, rel))) err(`image file not found: ${src}`)
   }
+  if (fm.hero && linksOf(body).some((l) => l.image && l.url === fm.hero)) err('the image in the text repeats the hero; use a different photo or none')
+  if (/(^|[\s(])\/design\b(?![^\[]*\]\()/.test(prose.replace(/\[[^\]]*\]\([^)]*\)/g, ''))) err('"/design" written as bare text; make it a link')
   try { markdown(body) } catch (e) { err(e.message) }
   if (fm.generated_by === 'pipeline' && fm.reviewed_by !== 'gate') err('a pipeline post is reviewed_by: gate')
   return { errors, warnings, stats: { words, grade, dashes, sources: sourceLinks.length, file } }
