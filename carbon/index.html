@@ -36,7 +36,7 @@
 <div class="crumbs"><a href="/">Home</a> &nbsp;·&nbsp; <span>Shipping footprint</span></div>
 <span class="eyebrow">Estimate</span>
 <h1>Shipping footprint of a kitchen: flat-pack, assembled or imported</h1>
-<p class="lead">How much fuel does it take to get a kitchen's worth of cabinets to your door? This page estimates the carbon dioxide equivalent (CO₂e) from the truck and ship legs for a typical 10×10 kitchen, three ways. It counts transport only, not making the cabinets. Enter your ZIP to see your own numbers.</p>
+<p class="lead">How much fuel does it take to get a kitchen's worth of cabinets to your door? This page estimates the carbon dioxide equivalent (CO₂e) from the truck and ship legs for a typical 10×10 kitchen, three ways. It counts transport only, not making the cabinets. The flat-pack and assembled routes start at our Houston warehouse (77020); transport to Houston is not counted. Enter your ZIP to see your own numbers.</p>
 
 <section class="card" aria-labelledby="calc-h">
 <h2 id="calc-h" style="margin-top:0">Your delivery</h2>
@@ -53,9 +53,9 @@
 <section aria-labelledby="res-h" style="margin-top:28px">
 <h2 id="res-h" style="margin-top:0">Estimated footprint</h2>
 <p class="res-sub" id="res-sub">Example: Atlanta, GA (ZIP prefix 303) · 25 linear feet · about 850 road miles from Houston, 2360 from Long Beach</p>
-<div class="row"><div class="rl"><b>Flat-pack, trucked from Houston</b><span>Ready-to-assemble cartons from the Houston warehouse (ZIP 77020)</span></div><div class="track"><i id="b-flat" class="f1" style="width:16.7%"></i></div><div class="rv"><b id="v-flat">55 kg CO₂e</b><span id="d-flat">baseline</span></div></div>
-<div class="row"><div class="rl"><b>Same cabinets, assembled</b><span>Built boxes on pallets, same truck route from Houston</span></div><div class="track"><i id="b-asm" class="f2" style="width:46.2%"></i></div><div class="rv"><b id="v-asm">155 kg CO₂e</b><span id="d-asm">+175% vs flat-pack</span></div></div>
-<div class="row"><div class="rl"><b>Imported flat-pack</b><span>Asia to the U.S. West Coast by container ship, then truck from Long Beach</span></div><div class="track"><i id="b-sea" class="f3" style="width:53.5%"></i><i id="b-imt" class="f4" style="width:46.5%"></i></div><div class="rv"><b id="v-imp">330 kg CO₂e</b><span id="d-imp">+495% vs flat-pack</span></div></div>
+<div class="row"><div class="rl"><b>Flat-pack, trucked from Houston</b><span>Ready-to-assemble cartons. Starts at our Houston warehouse (77020); transport to Houston is not counted.</span></div><div class="track"><i id="b-flat" class="f1" style="width:16.7%"></i></div><div class="rv"><b id="v-flat">55 kg CO₂e</b><span id="d-flat">baseline</span></div></div>
+<div class="row"><div class="rl"><b>Same cabinets, assembled</b><span>Built boxes on pallets, same truck route from our Houston warehouse (77020)</span></div><div class="track"><i id="b-asm" class="f2" style="width:46.2%"></i></div><div class="rv"><b id="v-asm">155 kg CO₂e</b><span id="d-asm">+175% vs flat-pack</span></div></div>
+<div class="row"><div class="rl"><b>Imported flat-pack</b><span>Starts at an Asian port (Shanghai assumed): container ship to Long Beach, then truck to you</span></div><div class="track"><i id="b-sea" class="f3" style="width:53.5%"></i><i id="b-imt" class="f4" style="width:46.5%"></i></div><div class="rv"><b id="v-imp">330 kg CO₂e</b><span id="d-imp">+495% vs flat-pack</span></div></div>
 <p class="key"><span class="k3">Ship leg (imported bar): <b id="t-sea">175</b> kg</span><span class="k4">Truck from port (imported bar): <b id="t-imt">155</b> kg</span></p>
 <p class="verdict" id="res-line" aria-live="polite">For this delivery the flat-pack route has the smallest estimated footprint of the three.</p>
 <p class="note">Estimates, rounded. Roughly ±10–20% from the sizing alone, and more from the factors and routes below. Billable (space-adjusted) weight used for trucking: <span id="s-flat">690</span> lb flat-pack, <span id="s-asm">1920</span> lb assembled.</p>
@@ -85,7 +85,7 @@
 <tr><td>Where you are</td><td>The middle of your ZIP's first three digits, from the file <span style="white-space:nowrap">/carbon/zip3.json</span> on this site. Houston is ZIP 77020.</td><td>U.S. Census Bureau, <a href="https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.html">2026 Gazetteer, ZIP Code Tabulation Areas</a>, land-area-weighted per prefix.</td></tr>
 <tr><td>Import route (assumption)</td><td>Shanghai to the Port of Long Beach, about 6,500 miles, then truck from Long Beach to you. Flat-pack, so the same weight as above; the ship leg uses actual weight only. The leg from the factory to the Chinese port is not counted.</td><td>Straight-line (great-circle) distance between the two ports' coordinates, a minimum: ships sail further. We did not find a published port-to-port table we could verify.</td></tr>
 </tbody></table></div>
-<p class="note">The flat-pack and assembled bars both start at the Houston warehouse (ZIP 77020), the only dispatch point modelled here. The result for an assembled kitchen depends on the packing assumptions above; if it were weight only, flat-pack and assembled would tie, because the cabinets weigh about the same.</p>
+<p class="note">The flat-pack and assembled bars both start at our Houston warehouse (ZIP 77020); transport to Houston is not counted. Houston is the only starting point modelled here. The result for an assembled kitchen depends on the packing assumptions above; if it were weight only, flat-pack and assembled would tie, because the cabinets weigh about the same.</p>
 
 <h2 id="privacy">Your ZIP</h2>
 <p>The calculator runs in your browser. It downloads one small file of ZIP-prefix coordinates from this site and does the arithmetic locally. Your ZIP is not sent anywhere and is not stored.</p>
