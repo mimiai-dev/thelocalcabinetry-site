@@ -61,7 +61,7 @@ Fillers are small, but they are easy to forget. So are:
 
 Family Handyman suggests checking, before you finalize an order, that door swings are right, that end cabinets have finished ends, and that toe kicks and fillers are on the list. We agree. Put each one on the budget as its own line.
 
-![White shaker kitchen with matching cabinet runs](/kitchens/kitchen-shaker-white.jpg)
+![White shaker kitchen with matching cabinet runs](/kitchens/kitchen-shaker-white.jpg){1600x1292}
 
 ## Door style, box type and hardware
 

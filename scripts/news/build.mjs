@@ -6,7 +6,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { SITE, CATEGORIES, esc, parseFrontMatter, markdown, stripTags, wordCount, fmtDate, slugify } from './lib.mjs'
+import { SITE, CATEGORIES, picture, esc, parseFrontMatter, markdown, stripTags, wordCount, fmtDate, slugify } from './lib.mjs'
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..')
 const CHECK = process.argv.includes('--check')
@@ -51,6 +51,7 @@ const tail = T.slice(footEnd, T.lastIndexOf('</body>'))
 
 // ---------- one stylesheet for the news pages (content-hashed; never edited in place)
 const NEWS_CSS = `
+:root{--gold-ink:#8a6217}
 .nw{max-width:var(--maxw);margin:0 auto;padding:0 28px}
 .nw-head{padding:clamp(40px,6vw,72px) 0 28px;border-bottom:1px solid var(--line)}
 .nw-head h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5vw,56px);line-height:1.05;margin:0}
@@ -62,7 +63,7 @@ const NEWS_CSS = `
 .nw-card{display:flex;flex-direction:column;border:1px solid var(--line);background:#fff;color:inherit;text-decoration:none}
 .nw-card img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain;background:var(--panel)}
 .nw-card div{padding:18px 20px 22px}
-.nw-card .nw-meta{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.nw-card .nw-meta{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-ink);font-weight:700}
 .nw-card h2,.nw-card h3{font-family:var(--serif);font-weight:400;font-size:22px;line-height:1.2;margin:8px 0 8px;color:var(--navy)}
 .nw-card p{color:var(--soft);font-size:15px;margin:0}
 .nw-card:hover h2,.nw-card:hover h3{text-decoration:underline}
@@ -74,7 +75,7 @@ const NEWS_CSS = `
 .nw-post{max-width:760px;margin:0 auto;padding:0 28px 40px}
 .nw-post header{padding:18px 0 22px}
 .nw-post h1{font-family:var(--serif);font-weight:400;font-size:clamp(32px,5vw,50px);line-height:1.08;margin:10px 0 14px}
-.nw-post .nw-meta{font-size:13px;color:var(--soft)}.nw-post .nw-meta a{color:var(--gold);font-weight:700;text-decoration:none;letter-spacing:.1em;text-transform:uppercase;font-size:12px}
+.nw-post .nw-meta{font-size:13px;color:var(--soft)}.nw-post .nw-meta a{color:var(--gold-ink);font-weight:700;text-decoration:none;letter-spacing:.1em;text-transform:uppercase;font-size:12px}
 .nw-hero{margin:0 0 28px}.nw-hero img{display:block;width:100%;height:auto}
 .nw-prose{font-size:18px;line-height:1.7;color:var(--ink)}
 .nw-prose h2{font-family:var(--serif);font-weight:400;font-size:clamp(25px,3vw,32px);line-height:1.2;margin:40px 0 12px;color:var(--navy);scroll-margin-top:120px}
@@ -90,7 +91,7 @@ const NEWS_CSS = `
 .nw-rel{padding:10px 0 40px}.nw-rel h2{font-family:var(--serif);font-weight:400;font-size:28px;margin:0 0 6px}
 .nw-latest{padding:56px 0 20px}.nw-latest h2{font-family:var(--serif);font-weight:400;font-size:clamp(28px,3.4vw,40px);margin:0 0 6px}.nw-latest .nw-more{display:inline-block;margin-top:6px;color:var(--navy);font-weight:600}
 @media (max-width:1000px){.nw-grid{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:640px){.nw{padding:0 16px}.nw-post{padding:0 16px 30px}.nw-grid{grid-template-columns:1fr;gap:22px}.nw-card img{aspect-ratio:auto}.nw-prose{font-size:17px}}
+@media (max-width:640px){.nw{padding:0 16px}.nw-post{padding:0 16px 30px}.nw-grid{grid-template-columns:1fr;gap:22px}.nw-card img{aspect-ratio:var(--ar,3/2)}.nw-prose{font-size:17px}}
 `.trim() + '\n'
 const cssHash = crypto.createHash('sha256').update(NEWS_CSS).digest('hex').slice(0, 8)
 const cssPath = `_astro/news.${cssHash}.css`
@@ -116,9 +117,9 @@ function page({ title, description, canonical, ogType = 'website', ogImage = SIT
 const crumbsLd = (items) => ({ '@type': 'BreadcrumbList', itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it[0], item: abs(it[1]) })) })
 const crumbsHtml = (items) => `<nav class="nw-crumbs" aria-label="Breadcrumb">${items.map((it, i) => (i < items.length - 1 ? `<a href="${it[1]}">${esc(it[0])}</a>` : `<span aria-current="page">${esc(it[0])}</span>`)).join(' &rsaquo; ')}</nav>`
 const heroSrc = (p) => p.fm.hero
-function card(p, h = 'h2') {
+function card(p, h = 'h2', first = false) {
   const c = cat(p.fm.category)
-  return `<a class="nw-card" href="/news/${p.slug}/">${p.fm.hero ? `<img src="${esc(p.fm.hero)}" alt="${esc(p.fm.hero_alt || '')}" width="${p.fm.hero_w || 1200}" height="${p.fm.hero_h || 800}" loading="lazy" decoding="async">` : ''}<div><span class="nw-meta">${esc(c.name)} &middot; ${fmtDate(p.date)}</span><${h}>${esc(p.fm.title)}</${h}><p>${esc(p.fm.description)}</p></div></a>`
+  return `<a class="nw-card" href="/news/${p.slug}/">${p.fm.hero ? picture(p.fm.hero, p.fm.hero_alt || '', p.fm.hero_w || 1200, p.fm.hero_h || 800, '(max-width:640px) 100vw, (max-width:1000px) 50vw, 380px', (first ? 'fetchpriority="high" decoding="async"' : 'loading="lazy" decoding="async"') + ` style="--ar:${p.fm.hero_w || 1200}/${p.fm.hero_h || 800}"`) : ''}<div><span class="nw-meta">${esc(c.name)} &middot; ${fmtDate(p.date)}</span><${h}>${esc(p.fm.title)}</${h}><p>${esc(p.fm.description)}</p></div></a>`
 }
 
 // ---------- post pages
@@ -135,7 +136,7 @@ for (const p of posts) {
   const toc = headings.filter((h) => h.lvl === 2).length >= 4 ? `<nav class="nw-toc" aria-label="In this post"><b>In this post</b><ol>${headings.filter((h) => h.lvl === 2).map((h) => `<li><a href="#${h.id}">${esc(h.text)}</a></li>`).join('')}</ol></nav>` : ''
   const main = `<article class="nw-post" itemscope itemtype="https://schema.org/BlogPosting">${crumbsHtml([['Home', '/'], ['News', '/news/'], [c.name, `/news/category/${c.slug}/`], [p.fm.title, `/news/${p.slug}/`]])}` +
     `<header><span class="nw-meta"><a href="/news/category/${c.slug}/">${esc(c.name)}</a></span><h1 itemprop="headline">${esc(p.fm.title)}</h1><p class="nw-meta">By ${esc(p.fm.author || 'The Local Cabinetry')} &middot; <time datetime="${p.date}" itemprop="datePublished">${fmtDate(p.date)}</time>${p.updated !== p.date ? ` &middot; Updated <time datetime="${p.updated}" itemprop="dateModified">${fmtDate(p.updated)}</time>` : ''}</p></header>` +
-    (p.fm.hero ? `<figure class="nw-hero"><img src="${esc(p.fm.hero)}" alt="${esc(p.fm.hero_alt)}" width="${p.fm.hero_w || 1200}" height="${p.fm.hero_h || 800}" fetchpriority="high" decoding="async"></figure>` : '') +
+    (p.fm.hero ? `<figure class="nw-hero">${picture(p.fm.hero, p.fm.hero_alt, p.fm.hero_w || 1200, p.fm.hero_h || 800, '(max-width:800px) 100vw, 704px', 'fetchpriority="high" decoding="async"')}</figure>` : '') +
     toc + `<div class="nw-prose" itemprop="articleBody">${html}` +
     `<aside class="nw-cta"><h2>Plan yours with us</h2><p>Tell us the room and the size, and we draw the layout with you and send an estimate. Free design help, and the standard price list is the same for everyone.</p><a class="btn" href="/design">Design your cabinets</a></aside>` +
     (links.length ? `<h2>Related pages</h2><ul>${links.map((l) => `<li><a href="${l[0]}">${esc(l[1])}</a></li>`).join('')}</ul>` : '') + `</div></article>` +
@@ -153,7 +154,7 @@ function listing({ base, title, intro, list, pageNo, pages, catSlug }) {
   const slice = list.slice((pageNo - 1) * PER_PAGE, pageNo * PER_PAGE)
   const pager = pages > 1 ? `<nav class="nw-pager" aria-label="Pages">${Array.from({ length: pages }, (_, i) => i + 1).map((n) => (n === pageNo ? `<span aria-current="page">${n}</span>` : `<a href="${n === 1 ? base : base + 'page/' + n + '/'}">${n}</a>`)).join('')}</nav>` : ''
   const main = `<div class="nw"><div class="nw-head">${crumbsHtml(catSlug ? [['Home', '/'], ['News', '/news/'], [title, base]] : [['Home', '/'], ['News', '/news/']])}<h1>${esc(title)}</h1><p>${esc(intro)}</p>${cats}</div>` +
-    (slice.length ? `<div class="nw-grid">${slice.map((p) => card(p)).join('')}</div>${pager}` : `<p class="nw-empty">No posts here yet. Check back soon, or <a href="/design">start your own design</a>.</p>`) + '</div>'
+    (slice.length ? `<div class="nw-grid">${slice.map((p, i) => card(p, 'h2', i < 1)).join('')}</div>${pager}` : `<p class="nw-empty">No posts here yet. Check back soon, or <a href="/design">start your own design</a>.</p>`) + '</div>'
   const ld = [ORG, { '@type': 'CollectionPage', '@id': url, name: title, description: intro, url, isPartOf: { '@id': SITE + '/#website' } },
     crumbsLd(catSlug ? [['Home', '/'], ['News', '/news/'], [title, base]] : [['Home', '/'], ['News', '/news/']])]
   const prev = pageNo > 1 ? `<link rel="prev" href="${pageNo === 2 ? SITE + base : SITE + base + 'page/' + (pageNo - 1) + '/'}">` : ''
@@ -195,7 +196,7 @@ const mark = (file, name, inner) => {
   put(file, s.replace(re, `$1${inner}$2`))
 }
 mark('index.html', 'news-latest', posts.length ? `<section class="nw nw-latest" aria-labelledby="nl"><h2 id="nl">Latest from the news</h2><div class="nw-grid">${posts.slice(0, 3).map((p) => card(p, 'h3')).join('')}</div><a class="nw-more" href="/news/">All news &rarr;</a></section>` : '')
-mark('index.html', 'news-css', posts.length ? `<link rel="stylesheet" href="/${cssPath}">` : '')
+mark('index.html', 'news-css', posts.length ? `<link rel="stylesheet" href="/${cssPath}" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="/${cssPath}"></noscript>` : '')   // the news strip is below the fold: not render-blocking
 { let ll = read('llms.txt'); const re = /<!-- news:start -->[\s\S]*?<!-- news:end -->/
   const block = `<!-- news:start -->\n` + (posts.length ? `\n## News\n\n- [News](${SITE}/news/): guides, projects and product news.\n` + posts.slice(0, 10).map((p) => `- [${p.fm.title}](${SITE}/news/${p.slug}/): ${p.fm.description}`).join('\n') + '\n' : '') + `<!-- news:end -->`
   put('llms.txt', re.test(ll) ? ll.replace(re, block) : ll.replace(/\s*$/, '\n') + block + '\n') }

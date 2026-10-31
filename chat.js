@@ -53,8 +53,6 @@
              : { seen: 'Seen', typing: 'is typing', typingUs: 'The Local Cabinetry is typing', unread: 'new message' }
   var CATALOG = '/catalog/The-Local-Cabinetry-Catalog.pdf'
   var CAT_KEY = 'lco_welcome_v1'   // set once the welcome card was shown: it never comes back for this browser (was lco_catalog_pop_v1, the catalog-only popup; owner 2026-10-24 T-261024-23)
-  var BF_KEY = 'lco_ann_bf26_v1'   // the Black Friday 2026 bar was closed (its own key, so closing it does not hide the membership bar when that returns)
-  var ANN_KEY = 'lco_ann_v2'      // the top bar was closed (a new announcement = a new key: v2 = the free-month offer, 2026-10-25, so a visitor who closed v1 still sees it)
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
@@ -259,13 +257,6 @@
     '.lcocat-go{border:0;cursor:pointer;font:inherit;font-weight:600}.lcocat-acts{display:flex;flex-wrap:wrap;gap:10px;align-items:center}',
     '.lcocat-alt{display:inline-flex;align-items:center;min-height:48px;padding:0 18px;border:1px solid #b4862f;border-radius:8px;color:#0e2740;font-weight:600;text-decoration:none}.lcocat-alt:hover{background:#f6f1e7}',
     '.lcocat-bar .lcocat-alt{display:none}',
-    // the top announcement bar on every page (T-261024-23): one line, our own link, closable for good (ANN_KEY)
-    '.lcoann{position:relative;z-index:2147483000;display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 48px 8px 16px;background:#0e2740;color:#fff;font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center}',
-    '.lcoann a{color:#e9c983;font-weight:600;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}',
-    '.lcoann-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:none;color:#fff;font-size:22px;line-height:1;cursor:pointer}.lcoann-x:hover{background:rgba(255,255,255,.12)}',
-    '.lcoann[hidden]{display:none}',
-    // the Black Friday bar (owner 2026-10-31): black, white text, gold link, wraps on phones
-    'div.bfbar{background:#000;flex-wrap:wrap;row-gap:2px;column-gap:12px}div.bfbar a.bfd{font-weight:400;font-size:13px;color:#fff;opacity:.85}',
     '.lcooffer{margin:0 0 14px;padding:12px 14px;border-left:3px solid #e9c983;background:#0e2740;color:#fff;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}',
     '.lcocat-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#0e2740;font-size:26px;line-height:1;cursor:pointer}',
     '.lcocat-go:focus-visible,.lcocat-x:focus-visible{outline:3px solid #0e2740;outline-offset:2px}',
@@ -663,7 +654,6 @@
   // 2026-10-25 (owner, T-261025-20): the membership offer. A free first month of the membership (ops lib/membership.ts plan free-month: $0, 1 month, the same 10% as the yearly
   // plan, goods only, freight never discounted; once per customer who was never a member, nothing charged after it). The link opens the membership form with the claim set
   // (memberOffer below); the form's product_id carries it to ops, which shows an "Offer:" line on the application.
-  var ANN = { text: 'Get your first month of membership free: 10% off all your orders.', link: 'Claim it', href: '/member/annual/?offer=free-month' }
   var OFFER_PRODUCT = 'Member application: free first month'
   // /member/annual/?offer=free-month: the membership form becomes the free-month claim (the hidden product_id, a note above the form, the button's words)
   function memberOffer() {
@@ -680,25 +670,6 @@
   }
   // Black Friday 2026 (owner 2026-10-31): "plan your kitchen in advance, get 15-20% off your order". Friday 2026-11-27. The bar takes the top place until 2026-11-27 (the sale is that day only, owner 2026-10-31) (the visitor's
   // calendar day, inclusive); from 2026-12-01 the membership bar comes back. Tiers (owner 2026-10-31): 15% under $5,000, 20% from $5,000, on /black-friday/; the bar states the range and links the terms.
-  var BF = { until: '2026-11-27', text: 'Black Friday, Nov 27: plan your kitchen now and save 15–20% on your order.', link: 'Plan my kitchen →', href: '/design', details: 'Details', detailsHref: '/black-friday/' }
-  function bfActive() {
-    var d = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n }
-    return (d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())) <= BF.until
-  }
-  function annShow() {
-    var bf = bfActive(), key = bf ? BF_KEY : ANN_KEY
-    try { if (localStorage.getItem(key)) return } catch (e) { return }
-    if (document.querySelector('.lcoann')) return
-    var bar = el('div', 'lcoann' + (bf ? ' bfbar' : '')); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Announcement')
-    bar.appendChild(el('span', '', bf ? BF.text : ANN.text))
-    var a = el('a', '', bf ? BF.link : ANN.link); a.href = bf ? BF.href : ANN.href; a.setAttribute('data-track', bf ? 'announce-bf' : 'announce-member')
-    bar.appendChild(a)
-    if (bf) { var dt = el('a', 'bfd', BF.details); dt.href = BF.detailsHref; dt.setAttribute('data-track', 'announce-bf-details'); bar.appendChild(dt) }
-    var x = el('button', 'lcoann-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close the announcement')
-    x.addEventListener('click', function () { bar.hidden = true; try { localStorage.setItem(key, '1') } catch (e) { /* ignore */ } })
-    bar.appendChild(x)
-    document.body.insertBefore(bar, document.body.firstChild)
-  }
   function catClose() { if (!cat || cat.hidden) return; cat.hidden = true; if (!catBar && catFrom && catFrom.focus) { try { catFrom.focus() } catch (e) { /* ignore */ } } }
   function catShow() {
     try { if (localStorage.getItem(CAT_KEY)) return } catch (e) { return }   // storage blocked: never nag
@@ -929,7 +900,7 @@
     resumeFromLink()
     window.addEventListener('hashchange', resumeFromLink)   // the link pasted into a tab that is already on the site
     greet(); applyMode()
-    annShow(); memberOffer(); catArm()
+    memberOffer(); catArm()   // the top announcement bar is /ann.js (first script in <body>, so it is in place before the first paint and moves nothing)
 
     btn.addEventListener('click', function () { if (state.open) close(); else open() })
     if (window.__lcoQ) { window.__lcoQ = 0; open() }   // a tap that came before this file was ready
@@ -961,7 +932,8 @@
     // the pill/round choice is made when scrolling settles (150 ms), not on every frame, so the button never flickers mid-scroll
     var fitT = 0
     window.addEventListener('scroll', function () { clearTimeout(fitT); fitT = setTimeout(fitQueue, 150); hideOnScroll() }, { passive: true }); window.addEventListener('resize', fitQueue)
-    window.addEventListener('load', function () { fitQueue(); setTimeout(fitQueue, 1200) }); fitBtn(); setTimeout(fitQueue, 1200)   // again after the page's 0.7 s rise-in
+    // no layout read at mount (it forced a reflow in the page-load path): the first fit runs once the page has loaded and laid out
+    window.addEventListener('load', function () { setTimeout(fitBtn, 150); setTimeout(fitQueue, 1200) }); if (document.readyState === 'complete') setTimeout(fitBtn, 150)   // again after the page's 0.7 s rise-in
   }
 
   // Hide while scrolling down; back on scroll up, after ~600 ms of no scrolling, and at the page end. Never while the chat is open.

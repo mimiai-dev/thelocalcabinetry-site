@@ -2,6 +2,17 @@
 location ^~ /_astro/ {
     add_header Cache-Control "public, max-age=31536000, immutable" always;
 }
+location ^~ /fonts/ {
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+}
+location ~* \.(webp|jpe?g|png|svg|ico|mp4)$ {
+    add_header Cache-Control "public, max-age=2592000" always;   # 30 days: a changed image gets a new file name
+}
+location ~* ^/(chat|t)\.js$ {
+    # URLs carry ?v=<content hash>, so a change is a new URL; without v= revalidate
+    if ($arg_v) { add_header Cache-Control "public, max-age=31536000, immutable" always; }
+    if ($arg_v = "") { add_header Cache-Control "no-cache" always; }
+}
 location / {
     # html and every unhashed file: revalidate each time (ETag keeps it cheap)
     add_header Cache-Control "no-cache" always;

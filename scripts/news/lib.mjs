@@ -6,6 +6,19 @@ export const CATEGORIES = [
   { slug: 'product-news', name: 'Product news', blurb: 'New collections, finishes and parts.' },
   { slug: 'company', name: 'Company', blurb: 'News from The Local Cabinetry.' },
 ]
+import fs from 'node:fs'
+import path from 'node:path'
+const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..')
+export const IMG_WIDTHS = [480, 640, 960, 1400]
+// <picture> with webp at 480/960/1400 w when scripts/news/images.mjs has made them (the jpg stays the fallback and the src).
+// Falls back to a plain <img> for an image with no derived files (a remote or already-small image).
+export function picture(src, alt, w, h, sizes, attrs = '') {
+  const m = /^(\/[^?#]+)\.(jpe?g|png)$/i.exec(src)
+  const img = `<img src="${esc(src)}" alt="${esc(alt)}"${w ? ` width="${w}" height="${h}"` : ''} ${attrs}>`
+  if (!m) return img
+  const set = IMG_WIDTHS.filter((x) => fs.existsSync(path.join(ROOT, `${m[1]}-${x}.webp`))).map((x) => `${m[1]}-${x}.webp ${x}w`)
+  return set.length ? `<picture><source type="image/webp" srcset="${set.join(', ')}" sizes="${sizes}">${img}</picture>` : img
+}
 export const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 export const escXml = esc
 export function slugify(t) { return String(t).toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 70).replace(/-+$/, '') }
@@ -63,7 +76,7 @@ export function markdown(body, opts = {}) {
     if ((m = /^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*(?:\{(\d+)x(\d+)\})?$/.exec(l.trim()))) {
       flush(); const [, alt, src, cap, w, h] = m
       if (!alt) throw new Error('image without alt text: ' + src)
-      out.push(`<figure><img src="${esc(src)}" alt="${esc(alt)}"${w ? ` width="${w}" height="${h}"` : ''} loading="lazy" decoding="async">${cap ? `<figcaption>${inline(cap)}</figcaption>` : ''}</figure>`); i++; continue
+      out.push(`<figure>${picture(src, alt, w, h, '(max-width:800px) 100vw, 704px', 'loading="lazy" decoding="async"')}${cap ? `<figcaption>${inline(cap)}</figcaption>` : ''}</figure>`); i++; continue
     }
     if (/^>\s?/.test(l)) { flush(); const q = []; while (i < lines.length && /^>\s?/.test(lines[i])) { q.push(lines[i].replace(/^>\s?/, '')); i++ } out.push('<blockquote><p>' + inline(q.join(' ')) + '</p></blockquote>'); continue }
     if (/^\s*[-*]\s+/.test(l)) { flush(); const it = []; while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) { it.push('<li>' + inline(lines[i].replace(/^\s*[-*]\s+/, '')) + '</li>'); i++ } out.push('<ul>' + it.join('') + '</ul>'); continue }
