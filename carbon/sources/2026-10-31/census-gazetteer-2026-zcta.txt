@@ -1,0 +1,13 @@
+Source file used for carbon/zip3.json
+  Name:        2026_Gaz_zcta_national.zip  (U.S. Census Bureau, 2026 Gazetteer Files, ZIP Code Tabulation Areas, 2020 Census ZCTAs)
+  Page:        https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.html
+  File URL:    https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2026_Gazetteer/2026_Gaz_zcta_national.zip
+  Retrieved:   2026-10-31 (server Last-Modified: Tue, 08 Sep 2026 21:00:12 GMT; 952,131 bytes)
+  SHA-256:     f1e9046b91f6e60686a99343cb2752834c02b0764939403b331c78c017e2c54c
+  Licence:     U.S. Government work, public domain.
+  Columns:     GEOID|GEOIDFQ|ALAND|AWATER|ALAND_SQMI|AWATER_SQMI|INTPTLAT|INTPTLONG
+
+Rows quoted (the warehouse origin; the other 30,000+ rows are in the Census file and are not copied here):
+  77020|860Z200US77020|20226279|751426|7.809|0.29|29.768297|-95.308971
+
+How zip3.json was built: for each 3-digit ZIP prefix, the mean of INTPTLAT / INTPTLONG of all ZCTAs with that prefix, weighted by ALAND, rounded to 2 decimals. The page looks up the visitor's first three digits in that file; the full ZIP never leaves the browser.

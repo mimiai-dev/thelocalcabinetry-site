@@ -1,0 +1,6 @@
+# Source: U.S. EPA, GHG Emission Factors Hub, January 2025 edition, Table 11 "Global Warming Potential (GWP)" (100-year GWP values from IPCC AR5, 2013, Chapter 8, Table 8.A.1).
+# URL: https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf (SHA-256 5d07c678fae6783623acb1e23faa4a7c46268ee6c5a0654c9e49c50de7caf924). Retrieved: 2026-10-31. Public domain. Only the three gases used here are copied.
+gas,formula,gwp_100yr
+Carbon dioxide,CO2,1
+Methane,CH4,28
+Nitrous oxide,N2O,265
