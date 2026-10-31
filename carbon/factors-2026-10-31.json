@@ -1,0 +1,83 @@
+{
+  "version": "2026-10-31",
+  "date": "2026-10-31",
+  "status": "current",
+  "note": "Immutable. A change to any number, source or assumption is a NEW dated file (factors-YYYY-MM-DD.json) that the page then reads; this file is never edited. The page reads every number from the file it names in /carbon/carbon.js (FACTORS_FILE). Visitor ZIPs are never logged or stored.",
+  "quantity": "kg CO2e = billable short tons x miles x emission factor (kg CO2e per short ton-mile), summed leg by leg. Transport only; production, packaging, factory-to-Houston and last-metre are not counted.",
+  "factors": {
+    "truck": {
+      "label": "Medium- and heavy-duty truck, per short ton-mile",
+      "co2_kg": 0.186, "ch4_g": 0.0016, "n2o_g": 0.0054, "unit": "short ton-mile",
+      "co2e_kg_per_short_ton_mile": "co2_kg + ch4_g*gwp.ch4/1000 + n2o_g*gwp.n2o/1000 = 0.187476",
+      "source": { "title": "U.S. EPA, GHG Emission Factors Hub, January 2025 edition", "url": "https://www.epa.gov/climateleadership/ghg-emission-factors-hub", "file": "https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf", "table": "Table 8, Scope 3 Category 4, row 'Medium- and Heavy-Duty Truck' (short ton-mile)", "retrieved": "2026-10-31", "snapshot": "/carbon/sources/2026-10-31/epa-ghg-hub-2025-table8-scope3-cat4.csv", "boundary": "combustion only (tank-to-wheel)" }
+    },
+    "ship": {
+      "label": "Waterborne craft, per short ton-mile",
+      "co2_kg": 0.077, "ch4_g": 0.0310, "n2o_g": 0.0020, "unit": "short ton-mile",
+      "co2e_kg_per_short_ton_mile": "= 0.077 + 0.0310*28/1000 + 0.0020*265/1000 = 0.078398",
+      "source": { "title": "U.S. EPA, GHG Emission Factors Hub, January 2025 edition", "url": "https://www.epa.gov/climateleadership/ghg-emission-factors-hub", "file": "https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf", "table": "Table 8, Scope 3 Category 4, row 'Waterborne Craft' (short ton-mile)", "retrieved": "2026-10-31", "snapshot": "/carbon/sources/2026-10-31/epa-ghg-hub-2025-table8-scope3-cat4.csv", "boundary": "combustion only; a U.S. average for all waterborne freight, not container ships specifically" }
+    },
+    "gwp": {
+      "label": "100-year global warming potentials (IPCC AR5)",
+      "co2": 1, "ch4": 28, "n2o": 265,
+      "source": { "title": "U.S. EPA, GHG Emission Factors Hub, January 2025 edition", "url": "https://www.epa.gov/climateleadership/ghg-emission-factors-hub", "file": "https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf", "table": "Table 11, Global Warming Potential (GWP), rows CO2, CH4, N2O", "retrieved": "2026-10-31", "snapshot": "/carbon/sources/2026-10-31/epa-ghg-hub-2025-table11-gwp.csv" }
+    }
+  },
+  "circuity": {
+    "factor": 1.22,
+    "use": "truck miles = great-circle miles x factor",
+    "source": { "title": "Qureshi, Hwang & Chin (2002), Comparison of Distance Estimates for Commodity Flow Survey: Great Circle Distances Versus Network-Based Distances", "url": "https://journals.sagepub.com/doi/full/10.3141/1804-28", "table": "Transportation Research Record 1804, 212-216: a constant circuity factor of 1.22 gave unbiased distance estimates (single trips can differ widely)", "retrieved": "2026-10-31" }
+  },
+  "density": {
+    "breakeven_lb_per_cuft": 11.6,
+    "derivation": "payload_lb / trailer_cuft = 44000 / 3800 = 11.58, rounded to 11.6: the density at which a 53 ft dry van fills by weight and by space together. Billable weight = max(actual lb, cubic ft x 11.6).",
+    "payload_lb": 44000, "trailer_cuft": 3800,
+    "source": { "title": "Hale Trailer, Dry Van Dimensions & Capacity Guide", "url": "https://haletrailer.com/blog/dry-van-dimensions-capacities/", "table": "53 ft dry van: about 3,800-4,000 cu ft and 44,000-45,000 lb payload (lower ends used)", "retrieved": "2026-10-31" }
+  },
+  "geometry": {
+    "earth_radius_miles": 3958.8,
+    "method": "great-circle (haversine) distance between coordinates",
+    "points": {
+      "houston": { "lat": 29.768297, "lon": -95.308971, "what": "ZCTA 77020 internal point, our Houston warehouse", "source": { "title": "U.S. Census Bureau 2026 Gazetteer, ZCTA file", "url": "https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.html", "table": "row 77020, INTPTLAT / INTPTLONG", "retrieved": "2026-10-31", "snapshot": "/carbon/sources/2026-10-31/census-gazetteer-2026-zcta.txt" } },
+      "port": { "lat": 33.754, "lon": -118.216, "what": "Port of Long Beach, CA (approximate port coordinates)", "source": { "title": "approximate coordinates, set by us", "retrieved": "2026-10-31" } },
+      "shanghai": { "lat": 31.23, "lon": 121.47, "what": "Shanghai (assumed origin port of an import)", "source": { "title": "approximate city coordinates, set by us", "retrieved": "2026-10-31" } }
+    },
+    "buyer_table": {
+      "file": "/carbon/zip3.json",
+      "derivation": "Per 3-digit ZIP prefix: mean of the Census ZCTA internal points (INTPTLAT, INTPTLONG), weighted by land area (ALAND), rounded to 2 decimals.",
+      "source": { "title": "U.S. Census Bureau, 2026 Gazetteer Files, ZIP Code Tabulation Areas (2026_Gaz_zcta_national.zip)", "url": "https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.html", "file": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2026_Gazetteer/2026_Gaz_zcta_national.zip", "sha256": "f1e9046b91f6e60686a99343cb2752834c02b0764939403b331c78c017e2c54c", "retrieved": "2026-10-31", "snapshot": "/carbon/sources/2026-10-31/census-gazetteer-2026-zcta.txt" }
+    },
+    "no_truck_prefixes": ["006", "007", "008", "009", "967", "968", "969", "995", "996", "997", "998", "999"],
+    "no_truck_why": "Lower 48 only: trucks do not reach AK, HI, PR or Guam; APO/FPO prefixes are not in the table."
+  },
+  "cube": {
+    "reference_lf": 25,
+    "reference_what": "typical 10x10 kitchen = 25 linear feet (about 12 ft base + 13 ft wall): SB36, B36, B30, B24, B18 and wall cabinets 2xW3630, 2xW3030, W2430. Other sizes scale per linear foot.",
+    "flat": { "lb": 694, "cuft": 44.8, "how": "One pallet of ready-to-assemble cartons. From our freight sizing model (cube.py in our operations code), checked against closed orders' bills of lading: weight within 3%, space within 11%." },
+    "assembled": {
+      "box_cuft": 127.6, "efficiency": 0.85, "deck": 1.1, "cabinet_lb": 634, "pallet_lb": 60, "pallet_cuft": 73.3,
+      "how": "box_cuft = sum of each cabinet's outside box with 2 in added each way (catalog dimensions). Space = box_cuft / efficiency (stacking gaps) x deck (10% for the pallet deck) = about 165 cu ft. Weight = cabinet_lb + pallet_lb x space / pallet_cuft = about 770 lb. Our assumption, not a measured shipment."
+    },
+    "size_buttons_lf": [12, 25, 40]
+  },
+  "import_route": {
+    "from": "shanghai", "to": "port",
+    "legs": "container ship Shanghai to Port of Long Beach (great-circle distance, about 6,500 miles, a minimum: ships sail further), then truck Long Beach to the buyer (distance x circuity).",
+    "ship_weight": "actual weight (flat-pack lb), not billable weight",
+    "not_counted": "the leg from the factory to the Chinese port; transport to Houston for the Houston routes",
+    "supplier": "generic import, not any particular supplier's cabinets or ours",
+    "distance_source": "great-circle between the two ports' coordinates; we did not find a published port-to-port table we could verify"
+  },
+  "example": { "prefix": "303", "label": "Atlanta, GA (ZIP prefix 303)" },
+  "disclosures": [
+    "Starts at our Houston warehouse (77020); transport to Houston is not counted.",
+    "Transport only: not making the cabinets, packaging production, factory-to-Houston, assembly, disposal or your own trips.",
+    "Estimates, roughly +/-10-20% from the sizing alone and more from the factors and routes.",
+    "The ship factor is an all-waterborne U.S. average (could be high for container ships); the ship distance is a straight-line minimum (low). We cannot say which effect is larger.",
+    "If weight alone counted, flat-pack and assembled would tie, because the cabinets weigh about the same.",
+    "No claim about total environmental impact, only the transport numbers shown."
+  ],
+  "changelog": [
+    { "version": "2026-10-31", "date": "2026-10-31", "change": "First versioned factors file. Values are those of the first /carbon/ release (2026-10-31): EPA Hub 2025 Tables 8 and 11, circuity 1.22, 11.6 lb per cu ft, Census 2026 gazetteer. Source tables snapshotted under /carbon/sources/2026-10-31/." }
+  ]
+}

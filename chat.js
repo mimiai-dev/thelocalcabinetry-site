@@ -53,7 +53,8 @@
              : { seen: 'Seen', typing: 'is typing', typingUs: 'The Local Cabinetry is typing', unread: 'new message' }
   var CATALOG = '/catalog/The-Local-Cabinetry-Catalog.pdf'
   var CAT_KEY = 'lco_welcome_v1'   // set once the welcome card was shown: it never comes back for this browser (was lco_catalog_pop_v1, the catalog-only popup; owner 2026-10-24 T-261024-23)
-  var ANN_KEY = 'lco_ann_v2'       // the top bar was closed (a new announcement = a new key: v2 = the free-month offer, 2026-10-25, so a visitor who closed v1 still sees it)
+  var BF_KEY = 'lco_ann_bf26_v1'   // the Black Friday 2026 bar was closed (its own key, so closing it does not hide the membership bar when that returns)
+  var ANN_KEY = 'lco_ann_v2'      // the top bar was closed (a new announcement = a new key: v2 = the free-month offer, 2026-10-25, so a visitor who closed v1 still sees it)
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
@@ -263,6 +264,8 @@
     '.lcoann a{color:#e9c983;font-weight:600;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}',
     '.lcoann-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:none;color:#fff;font-size:22px;line-height:1;cursor:pointer}.lcoann-x:hover{background:rgba(255,255,255,.12)}',
     '.lcoann[hidden]{display:none}',
+    // the Black Friday bar (owner 2026-10-31): black, white text, gold link, wraps on phones
+    'div.bfbar{background:#000;flex-wrap:wrap;row-gap:2px;column-gap:12px}div.bfbar a.bfd{font-weight:400;font-size:13px;color:#fff;opacity:.85}',
     '.lcooffer{margin:0 0 14px;padding:12px 14px;border-left:3px solid #e9c983;background:#0e2740;color:#fff;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}',
     '.lcocat-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#0e2740;font-size:26px;line-height:1;cursor:pointer}',
     '.lcocat-go:focus-visible,.lcocat-x:focus-visible{outline:3px solid #0e2740;outline-offset:2px}',
@@ -675,15 +678,24 @@
     f.parentNode.insertBefore(note, f)
     setTimeout(function () { try { note.scrollIntoView({ block: 'center' }) } catch (e) { /* ignore */ } }, 300)
   }
+  // Black Friday 2026 (owner 2026-10-31): "plan your kitchen in advance, get 15-20% off your order". Friday 2026-11-27. The bar takes the top place until 2026-11-30 (the visitor's
+  // calendar day, inclusive); from 2026-12-01 the membership bar comes back. Tiers (owner 2026-10-31): 15% under $5,000, 20% from $5,000, on /black-friday/; the bar states the range and links the terms.
+  var BF = { until: '2026-11-30', text: 'Black Friday, Nov 27: plan your kitchen now and save 15–20% on your order.', link: 'Plan my kitchen →', href: '/design', details: 'Details', detailsHref: '/black-friday/' }
+  function bfActive() {
+    var d = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n }
+    return (d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())) <= BF.until
+  }
   function annShow() {
-    try { if (localStorage.getItem(ANN_KEY)) return } catch (e) { return }
+    var bf = bfActive(), key = bf ? BF_KEY : ANN_KEY
+    try { if (localStorage.getItem(key)) return } catch (e) { return }
     if (document.querySelector('.lcoann')) return
-    var bar = el('div', 'lcoann'); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Announcement')
-    bar.appendChild(el('span', '', ANN.text))
-    var a = el('a', '', ANN.link); a.href = ANN.href; a.setAttribute('data-track', 'announce-member')
+    var bar = el('div', 'lcoann' + (bf ? ' bfbar' : '')); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Announcement')
+    bar.appendChild(el('span', '', bf ? BF.text : ANN.text))
+    var a = el('a', '', bf ? BF.link : ANN.link); a.href = bf ? BF.href : ANN.href; a.setAttribute('data-track', bf ? 'announce-bf' : 'announce-member')
     bar.appendChild(a)
+    if (bf) { var dt = el('a', 'bfd', BF.details); dt.href = BF.detailsHref; dt.setAttribute('data-track', 'announce-bf-details'); bar.appendChild(dt) }
     var x = el('button', 'lcoann-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close the announcement')
-    x.addEventListener('click', function () { bar.hidden = true; try { localStorage.setItem(ANN_KEY, '1') } catch (e) { /* ignore */ } })
+    x.addEventListener('click', function () { bar.hidden = true; try { localStorage.setItem(key, '1') } catch (e) { /* ignore */ } })
     bar.appendChild(x)
     document.body.insertBefore(bar, document.body.firstChild)
   }

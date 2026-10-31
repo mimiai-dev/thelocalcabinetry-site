@@ -204,6 +204,8 @@ async function main() {
     // 5. a first visit (owner 2026-10-24, T-261024-23: "I don't see the first open up banner ever"; "a welcome banner on first visit and a top announcement bar"):
     //    the top bar on the page, closable for good; the welcome card ~5 s in at 1280 (its "Design my room" opens the chat), once per browser
     await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: preset.identifier })
+    // the Black Friday bar (owner 2026-10-31) holds the top place until 2026-11-30: sections 5 and 6 test the membership bar, so they run on a page whose clock is moved to 2026-12-05 (time still flows)
+    const decStub = await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => { const R = Date, off = new R(2026, 11, 5, 12).getTime() - R.now(); class D extends R { constructor(...a) { if (a.length) super(...a); else super(R.now() + off) } static now() { return R.now() + off } } window.Date = D })()` })
     await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false })
     await send('Emulation.setTouchEmulationEnabled', { enabled: false, maxTouchPoints: 0 })
     await send('Page.navigate', { url: base + PAGE }); await sleep(1500)
@@ -229,6 +231,20 @@ async function main() {
     log(!!claim && claim.pid === 'Member application: free first month' && claim.btn === 'Claim my free month' && claim.note && claim.bar && !claim.wide, '390', 'the claim page: offer on the form, note, button; bar fits the phone', `(${JSON.stringify(claim)})`)
     await send('Page.navigate', { url: base + '/member/annual/' }); await sleep(1500)
     log((await ev(`document.querySelector('form.member-form input[name=product_id]').value`)) === 'Member application' && !(await ev(`!!document.querySelector('.lcooffer')`)), '390', 'the plain membership form claims nothing')
+    // 7. the Black Friday bar (owner 2026-10-31), on the real clock, only while it is in force (until 2026-11-30)
+    await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: decStub.identifier })
+    const today = new Date(), ymd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    if (ymd <= '2026-11-30') {
+      await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true })
+      await send('Page.navigate', { url: base + PAGE }); await sleep(1000)
+      await ev(`localStorage.removeItem('lco_ann_bf26_v1'); true`)
+      await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
+      const bf = await ev(`(() => { const b = document.querySelector('.lcoann'); if (!b || b.hidden) return null; const [go, det] = b.querySelectorAll('a'); return { t: b.textContent, bg: getComputedStyle(b).backgroundColor, go: go.getAttribute('href'), det: det && det.getAttribute('href'), wide: document.documentElement.scrollWidth > innerWidth, first: document.body.firstElementChild === b } })()`)
+      log(!!bf && /Black Friday/.test(bf.t) && /15\u201320%/.test(bf.t) && bf.bg === 'rgb(0, 0, 0)' && bf.go === '/design' && bf.det === '/black-friday/' && bf.first && !bf.wide, '390', 'the Black Friday bar: black, 15-20%, Plan my kitchen -> /design, Details -> /black-friday/, no side scroll', `(${JSON.stringify(bf)})`)
+      await ev(`document.querySelector('.lcoann-x').click(); true`)
+      await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
+      log(!(await ev(bar)), '390', 'closed Black Friday bar stays closed (its own key)')
+    }
   } finally { try { ws && ws.close() } catch {} proc.kill('SIGTERM'); if (srv) srv.close() }
   console.log(fails.length ? `test-chat-button: ${fails.length} FAILED` : 'test-chat-button: OK')
   process.exit(fails.length ? 1 : 0)

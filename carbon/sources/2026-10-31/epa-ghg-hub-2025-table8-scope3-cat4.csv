@@ -1,0 +1,12 @@
+# Source: U.S. EPA, GHG Emission Factors Hub, January 2025 edition, Table 8 "Scope 3 Category 4: Upstream Transportation and Distribution and Category 9: Downstream Transportation and Distribution"
+# URL: https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf (SHA-256 of the file as retrieved: 5d07c678fae6783623acb1e23faa4a7c46268ee6c5a0654c9e49c50de7caf924)
+# Retrieved: 2026-10-31. U.S. Government work, public domain. Transcribed from the PDF text layer; the text below is the table as printed.
+# Notes printed under the table: factors are combustion emissions only (tank-to-wheel); ton-mile factors are for vehicles shared with other companies' products.
+vehicle_type,co2_kg_per_unit,ch4_g_per_unit,n2o_g_per_unit,unit
+Medium- and Heavy-Duty Truck,1.298,0.0115,0.0376,vehicle-mile
+Passenger Car,0.297,0.0059,0.0053,vehicle-mile
+Light-Duty Truck,0.394,0.0109,0.0088,vehicle-mile
+Medium- and Heavy-Duty Truck (used here),0.186,0.0016,0.0054,short ton-mile
+Rail,0.021,0.0016,0.0005,short ton-mile
+Waterborne Craft (used here),0.077,0.0310,0.0020,short ton-mile
+Aircraft,1.086,0,0.0334,short ton-mile

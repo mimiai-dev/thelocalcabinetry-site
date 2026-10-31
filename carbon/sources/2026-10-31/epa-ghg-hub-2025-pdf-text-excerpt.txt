@@ -1,0 +1,42 @@
+# Raw text layer (pdftotext -layout) of the Hub PDF, 2025 edition, retrieved 2026-10-31: Table 8 (lines 435-462) and the top of Table 11 (lines 615-626). Unedited except that long lines are cut at 260 characters.
+                     Table 8           Scope 3 Category 4: Upstream Transportation and Distribution and Category 9: Downstream Transportation and Distribution
+                                   These factors are intended for use in the distance-based method defined in the Scope 3 Calculation Guidance. If fuel data are available, then the fuel-based method should be used, with factors from Tables 2 through 5.
+
+                                                                                                 CO2 Factor                           CH4 Factor                      N2O Factor
+                                                   Vehicle Type                                                                                                                                          Units
+                                                                                               (kg CO2 / unit)                       (g CH4 / unit)                  (g N2O / unit)
+                                   Medium- and Heavy-Duty Truck                                                        1.298                        0.0115                          0.0376 vehicle-mile
+                                   Passenger Car A                                                                     0.297                        0.0059                          0.0053 vehicle-mile
+                                   Light-Duty Truck B                                                                  0.394                        0.0109                          0.0088 vehicle-mile
+                                   Medium- and Heavy-Duty TruckC                                                       0.186                        0.0016                          0.0054 short ton-mile
+                                   Rail                                                                                0.021                        0.0016                          0.0005 short ton-mile
+                                   Waterborne Craft                                                                    0.077                        0.0310                          0.0020 short ton-mile
+                                   Aircraft                                                                            1.086                              0                         0.0334 short ton-mile
+                                   Source:
+                                   CO2, CH4, and N2O emissions data for on-road vehicles are from Table 2-13 of the EPA (2024) Inventory of U.S. Greenhouse Gas Emissions and Sinks: 1990-2022.
+                                   Vehicle-miles data for on-road vehicles are from Tables A-71 - A-73 of the EPA (2024) Inventory of U.S. Greenhouse Gas Emissions and Sinks: 1990–2022 (Annexes).
+                                   CO2e emissions data for non-road vehicles are based on Table A-93 of the EPA (2024) Inventory of U.S. Greenhouse Gas Emissions and Sinks: 1990-2022 (Annexes), which are distributed into CO 2, CH4, and N2O emissions based on f
+                                   Freight ton-mile data are from Table 1-50 of the Bureau of Transportation Statistics, National Transportation Statistics (2024): 2022 data.
+                                   Notes:
+                                   Vehicle-mile factors are appropriate to use when the entire vehicle is dedicated to transporting the reporting company's product. Ton-mile factors are appropriate when the vehicle is shared with products from other companies.
+                                   The factors represented in the table above represent combustion emissions only (tank-to-wheel) and do not represent upstream emissions or well-to-wheel emissions.
+                                   A
+                                     Passenger cars are automobiles used primarily to transport 12 people or less for personal travel, and are less than 8,500 lbs in gross vehicle weight.
+                                   B
+                                     Light-duty trucks are vehicles that primarily transport passengers such as sport utility vehicles (SUVs) and minivans. This category also includes vehicles used for transporting light-weight cargo which are equipped with sp
+                                   ranges around 8,500 pounds or less.
+                                   C
+                                     Medium- and heavy-duty trucks are vehicles with a gross vehicle weight of more than around 8,500 pounds, such as single unit trucks, combination trucks, tractor-trailers, and box trucks used for freight transportation. In a
+
+                                                                                                                                                                    Global Warming Potential
+
+                    Table 11     Global Warming Potential (GWP)
+
+                                    Industrial Designation or
+                                                                                       Chemical Formula                          100-Year GWP
+                                         Common Name
+                               Carbon dioxide                                CO2                                                                      1
+                               Methane                                       CH4                                                                    28
+                               Nitrous oxide                                 N2O                                                                   265
+                               HFC-23                                        CHF3                                                              12,400
+                               HFC-32                                        CH2F2                                                                 677
