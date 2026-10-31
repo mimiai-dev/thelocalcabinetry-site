@@ -1,6 +1,6 @@
 /* Shipping footprint estimate. Runs entirely in the browser; nothing is sent anywhere and the ZIP is not stored or logged.
    EVERY number comes from the dated factors file below (FACTORS_FILE). A change = a new dated file and a new name here, never an edit of the old file.
-   Sources and method: see "Method & sources" on /carbon/. */
+   Sources and method: the dated factors file (/carbon/factors-2026-10-31.json), linked as "Sources" on /carbon/. */
 (function (root) {
   "use strict";
   var FACTORS_FILE = "/carbon/factors-2026-10-31.json";
