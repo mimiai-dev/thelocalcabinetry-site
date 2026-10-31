@@ -678,9 +678,9 @@
     f.parentNode.insertBefore(note, f)
     setTimeout(function () { try { note.scrollIntoView({ block: 'center' }) } catch (e) { /* ignore */ } }, 300)
   }
-  // Black Friday 2026 (owner 2026-10-31): "plan your kitchen in advance, get 15-20% off your order". Friday 2026-11-27. The bar takes the top place until 2026-11-30 (the visitor's
+  // Black Friday 2026 (owner 2026-10-31): "plan your kitchen in advance, get 15-20% off your order". Friday 2026-11-27. The bar takes the top place until 2026-11-27 (the sale is that day only, owner 2026-10-31) (the visitor's
   // calendar day, inclusive); from 2026-12-01 the membership bar comes back. Tiers (owner 2026-10-31): 15% under $5,000, 20% from $5,000, on /black-friday/; the bar states the range and links the terms.
-  var BF = { until: '2026-11-30', text: 'Black Friday, Nov 27: plan your kitchen now and save 15–20% on your order.', link: 'Plan my kitchen →', href: '/design', details: 'Details', detailsHref: '/black-friday/' }
+  var BF = { until: '2026-11-27', text: 'Black Friday, Nov 27: plan your kitchen now and save 15–20% on your order.', link: 'Plan my kitchen →', href: '/design', details: 'Details', detailsHref: '/black-friday/' }
   function bfActive() {
     var d = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n }
     return (d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())) <= BF.until
