@@ -8,7 +8,10 @@
  * Query strings are never logged by the click events. The one exception is the first-touch source below: only the three campaign labels
  * utm_source / utm_medium / utm_campaign (marketing labels, not personal data) are read from the landing URL.
  * First-touch source (T-261019-2): the first page of the tab is kept in sessionStorage (tlc_src, never a cookie or localStorage) as
- * {l landing path, r referrer HOST if not this site, us/um/uc utm labels, ck google|meta if the landing URL had an ad click id (the id itself is never read into src), f time, v m|d}; window.__tlcSrc() returns it plus p = the current path.
+ * {l landing path, r referrer HOST if not this site, us/um/uc utm labels, ck google|meta|tiktok if the landing URL had a click id (gclid / fbclid / ttclid; the id itself is never read into src;
+ * fbclid and ttclid are on EVERY outbound Facebook / Instagram / TikTok link, so they say "social", not "ad"), ia the in-app browser KIND, f time, v m|d}; window.__tlcSrc() returns it plus p = the current path.
+ * In-app browser kind (2026-11-01): Facebook / Instagram / TikTok / LinkedIn / Pinterest / Snapchat open links in their own browser and usually send no referrer. appKind() tests the
+ * user agent against a short list and keeps ONLY one fixed word (facebook | instagram | tiktok | linkedin | pinterest | snapchat). The user agent string itself and any id in it are never stored or sent.
  * It is attached ONLY when someone sends a form, opens a chat or goes to /design sign-in (see chat.js, the /design stubs). None with DNT/GPC.
  * Sends nothing at all when Do-Not-Track or Global Privacy Control is on.
  * CSP (meta tag, default-src 'self'): this file is script-src 'self'; the beacon is connect-src / img-src 'self'. No change needed. */
@@ -20,6 +23,18 @@
     if (!/(^|\.)thelocalcabinetry\.com$/.test(location.hostname)) return; // previews, file://, mirrors: silent
 
     // ---- first-touch source (T-261019-2), see the header
+    // in-app browser kind off the user agent: a fixed word or "". Instagram first (its UA can also carry FB tokens). Nothing but the word leaves this function.
+    function appKind(ua) {
+      ua = String(ua || "");
+      if (/Instagram/i.test(ua)) return "instagram";
+      if (/musical_ly|BytedanceWebview|TikTok|trill_/i.test(ua)) return "tiktok";
+      if (/FBAN|FBAV|FB_IAB|FBIOS/.test(ua)) return "facebook";
+      if (/LinkedInApp/i.test(ua)) return "linkedin";
+      if (/Pinterest/i.test(ua)) return "pinterest";
+      if (/Snapchat/i.test(ua)) return "snapchat";
+      return "";
+    }
+    var APP = ""; try { APP = appKind(nav.userAgent); } catch (e) {}
     function lab(v) { return String(v == null ? "" : v).toLowerCase().replace(/[^a-z0-9._+ -]/g, "").trim().slice(0, 60); }
     try {
       if (!sessionStorage.getItem("tlc_src")) {
@@ -28,8 +43,9 @@
         if (rh && !/(^|\.)thelocalcabinetry\.com$/.test(rh)) o.r = rh.slice(0, 80);
         var sp = new URLSearchParams(location.search);
         [["us", "utm_source"], ["um", "utm_medium"], ["uc", "utm_campaign"]].forEach(function (k) { var v = lab(sp.get(k[1])); if (v) o[k[0]] = v; });
-        // ad click KIND only (never the click id itself): google (gclid) or meta (fbclid)
-        if (sp.has("gclid")) o.ck = "google"; else if (sp.has("fbclid")) o.ck = "meta";
+        // click-id KIND only (never the click id itself): google (gclid), meta (fbclid) or tiktok (ttclid). fbclid / ttclid are on every outbound link of those apps: social, not proof of an ad
+        if (sp.has("gclid")) o.ck = "google"; else if (sp.has("fbclid")) o.ck = "meta"; else if (sp.has("ttclid")) o.ck = "tiktok";
+        if (APP) o.ia = APP;
         sessionStorage.setItem("tlc_src", JSON.stringify(o));
       }
     } catch (e) {}
@@ -183,7 +199,7 @@
         else new Image().src = url;
       } catch (e) {}
     }
-    function pv() { newView(); send("pv", { w: w }); }
+    function pv() { newView(); send("pv", { w: w, ia: APP }); }   // ia: the in-app browser kind (a fixed word) so the VPS can name the source of a visit with no referrer
 
     // capture phase: runs even when a page handler stops propagation
     document.addEventListener("click", onClick, true);
