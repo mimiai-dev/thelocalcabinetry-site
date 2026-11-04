@@ -161,6 +161,8 @@
     '.lcochat-r.us .lcochat-m{background:#fff;color:#14273f;border:1px solid #e7e5df;border-bottom-left-radius:6px;box-shadow:0 1px 2px rgba(14,39,64,.05)}',
     '.lcochat-m small{display:block;margin-top:4px;opacity:.75;font-size:12px}',
     '.lcochat-t{font-size:12px;color:#7a7468;padding:0 6px}',
+    '.lcochat-f{display:block;margin-top:8px;color:#0e2740;font-weight:600;text-decoration:underline}',
+    '.lcochat-img{display:block;max-width:100%;max-height:260px;border-radius:12px;border:1px solid #e7e5df;background:#f6f4ef}',
     // suggestion chips: 48 px tall, 8 px apart, whole chip is the button
     '.lcochat-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;max-width:100%}',
     '.lcochat-guide{display:inline-flex;align-items:center;gap:6px;margin-top:8px;min-height:40px;padding:8px 14px;border:1px solid #e7e5df;border-radius:20px;background:#fff;color:#0e2740;font-size:14px;text-decoration:none}',
@@ -341,14 +343,29 @@
     else if (typeof v === 'string' && v) d = new Date(v)
     return d && !isNaN(d.getTime()) ? d : new Date()
   }
-  function row(from, textNode, time, photos, human, name) {
+  // the files WE sent (server: files [{ name, type, url }], url = a same-origin link signed for that one file; BT-261027-568, 2026-11-04: these used to show as a bare
+  // "Photo sent: Plan.png" with nothing to open). A picture shows as a tap-to-open thumbnail, a PDF as a link; nothing without a url is drawn
+  function ourFiles(b, files) {
+    files.forEach(function (f) {
+      var url = String(f && f.url || '')
+      if (!/^\/design\/api\/visit\/file\/[\w-]+\?s=[0-9a-f]+$/.test(url)) return
+      var a = el('a', 'lcochat-f'); a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'
+      if (/^image\//.test(String(f.type || ''))) { var im = el('img', 'lcochat-img'); im.src = url; im.alt = String(f.name || 'picture'); im.loading = 'lazy'; a.appendChild(im) }
+      else a.textContent = 'Open ' + String(f.name || 'file')
+      b.appendChild(a)
+    })
+  }
+  function row(from, textNode, time, photos, human, name, files) {
     var r = el('div', 'lcochat-r ' + from)
     if (from === 'us') r.appendChild(avatar(true, !human))
     var c = el('div', 'lcochat-c')
     if (from === 'us' && human && name) c.appendChild(el('span', 'lcochat-nm', String(name).split(/\s+/)[0].slice(0, 24)))
     var b = el('div', 'lcochat-m')
-    if (textNode != null) b.appendChild(document.createTextNode(String(textNode)))
-    if (photos && photos.length) b.appendChild(el('small', '', 'Photo sent: ' + photos.map(function (p) { return String(p && p.name || 'photo') }).join(', ')))
+    var ours = from === 'us' && files && files.length
+    // a line that is only our file ("[File] Plan.png (398687 B)") shows the file, not that label
+    if (textNode != null && !(ours && /^\[File\] /.test(String(textNode)))) b.appendChild(document.createTextNode(String(textNode)))
+    if (ours) ourFiles(b, files)
+    if (from === 'you' && photos && photos.length) b.appendChild(el('small', '', 'Photo sent: ' + photos.map(function (p) { return String(p && p.name || 'photo') }).join(', ')))
     c.appendChild(b)
     if (time) c.appendChild(el('span', 'lcochat-t', time))
     r.appendChild(c)
@@ -442,7 +459,7 @@
     clearChips(); hotUpload(false)
     if (from === 'us' && m.holding !== true) { hideTyping(); state.owedSince = 0 }
     daySep(toDate(at))
-    var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human' || m.team === true, m.name)   // team: the server's human-mode line, the team's avatar (never the AI's)
+    var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human' || m.team === true, m.name, Array.isArray(m.files) ? m.files : null)   // team: the server's human-mode line, the team's avatar (never the AI's)
     if (from === 'you') r.setAttribute('data-seq', String(m.seq))
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.lastFrom = from

@@ -199,6 +199,16 @@ async function main() {
       const tt = await ev(`window.__t`)
       log(!!(tt.typing && tt.line && tt.line - tt.typing >= 600), vp.name, 'a fresh scripted reply shows the typing line first, then the question', `(${tt.line && tt.typing ? Math.round(tt.line - tt.typing) : '?'} ms)`)
       log(await ev(`!!document.querySelector('.lcochat-chips') && !document.querySelector('.lcochat-typing')`), vp.name, 'its chips are there and the typing line is gone')
+      // 4c. the files WE send (BT-261027-568, 2026-11-04: Plan.png and the 3D views showed as "Photo sent: Plan.png", nothing to open): a picture is a tap-to-open thumbnail
+      //     from its signed same-origin link, a PDF is a link, the "[File] …" label is not shown, and a link that is not ours is never drawn
+      api.lines.push({ seq: 8, from: 'us', text: '[File] Plan.png (398687 B)', files: [
+        { name: 'Plan.png', type: 'image/png', url: '/design/api/visit/file/f7cd022e-148d?s=0123abcd' },
+        { name: 'Quote.pdf', type: 'application/pdf', url: '/design/api/visit/file/0a1b2c3d-4e5f?s=4567ef01' },
+        { name: 'x.png', type: 'image/png', url: 'https://example.com/x.png' }], at: new Date().toISOString() })
+      await sleep(5000)
+      const ff = await ev(`(() => { const im = [...document.getElementsByClassName('lcochat-img')].map((i) => i.getAttribute('src')); const ln = [...document.getElementsByClassName('lcochat-f')].map((a) => a.textContent + '|' + a.getAttribute('href') + '|' + a.getAttribute('target')); const lg = document.getElementsByClassName('lcochat-log')[0].textContent; return { im, ln, label: lg.includes('[File] Plan.png'), sent: lg.includes('Photo sent: Plan.png') } })()`)
+      log(ff.im.length === 1 && ff.im[0] === '/design/api/visit/file/f7cd022e-148d?s=0123abcd' && ff.ln.length === 2 && ff.ln[1] === 'Open Quote.pdf|/design/api/visit/file/0a1b2c3d-4e5f?s=4567ef01|_blank' && !ff.label && !ff.sent,
+        vp.name, 'our files: a picture thumbnail and a PDF link from their signed links; no "[File]" label, no "Photo sent", no foreign link', `(${JSON.stringify(ff)})`)
       await clickSel('.lcochat-panel .lcochat-hb button.lcochat-x'); await sleep(300)
     }
     // 5. a first visit (owner 2026-10-24, T-261024-23: "I don't see the first open up banner ever"; "a welcome banner on first visit and a top announcement bar"):
