@@ -1,9 +1,9 @@
 /* Shipping footprint estimate. Runs entirely in the browser; nothing is sent anywhere and the ZIP is not stored or logged.
    EVERY number comes from the dated factors file below (FACTORS_FILE). A change = a new dated file and a new name here, never an edit of the old file.
-   Sources and method: the dated factors file (/carbon/factors-2026-10-31.json), linked as "Sources" on /carbon/. */
+   Sources and method: the dated factors file (/carbon/factors-2026-11-06.json), linked as "Sources" on /carbon/. */
 (function (root) {
   "use strict";
-  var FACTORS_FILE = "/carbon/factors-2026-10-31.json";
+  var FACTORS_FILE = "/carbon/factors-2026-11-06.json";
 
   // Build the working constants from the parsed factors file.
   function build(f) {
@@ -73,8 +73,6 @@
     $("b-sea").style.width = w(r.sea); $("b-imt").style.width = w(r.impTruck);
     ["flat", "asm", "imp"].forEach(function (k) { $("v-" + k).textContent = kg(r[k]); });
     $("t-sea").textContent = kg(r.sea); $("t-imt").textContent = kg(r.impTruck);
-    $("s-flat").textContent = fmt(r.flatChg); $("s-asm").textContent = fmt(r.asmChg);
-    $("mi-line").textContent = fmt(r.houMi) + " road miles from Houston, " + fmt(r.portMi) + " from Long Beach (for this delivery)";
     $("res-sub").textContent = label + " · " + lf + " linear feet";
     var n = nearest(r), order = ["flat", "asm", "imp"], others = order.filter(function (k) { return k !== n; });
     var next = others[0], nv = r[next]; if (r[others[1]] < nv) { next = others[1]; nv = r[next]; }
@@ -109,11 +107,17 @@
       b.addEventListener("click", function () { setLf(b.getAttribute("data-lf")); });
     });
     $("zip-form").addEventListener("submit", function (e) { e.preventDefault(); if (K && table) update(); });
-    fetch(FACTORS_FILE).then(function (r) { return r.json(); }).then(function (f) {
+    // "didn't load" only for a real load failure (network, HTTP error, bad JSON); a bug in the drawing code is logged, not blamed on the network
+    var get = function (url) { return fetch(url).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status + " " + url); return r.json(); }); };
+    get(FACTORS_FILE).then(function (f) {
       K = build(f);
-      return fetch(K.zipTable).then(function (r) { return r.json(); });
-    }).then(function (j) { table = j.p; update(); })
-      .catch(function () { $("zip-msg").textContent = "The data didn't load. Reload the page to try again."; });
+      return get(K.zipTable);
+    }).then(function (j) { table = j.p; }).then(function () {
+      try { update(); } catch (e) { console.error("carbon: could not draw the result", e); }
+    }, function (e) {
+      console.error("carbon: data did not load", e);
+      $("zip-msg").textContent = "The data didn't load. Reload the page to try again.";
+    });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })(typeof window !== "undefined" ? window : globalThis);
