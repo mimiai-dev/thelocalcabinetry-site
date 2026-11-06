@@ -4,6 +4,9 @@
  * Each event carries ONLY: page path, element id (data-track or a CSS-path-like id), the element's visible text
  * (40 chars; never from inputs), link host + path (no query, no hash; mailto:/tel: only the scheme), mobile/desktop,
  * a random per-tab session id (sessionStorage, gone when the tab closes), a random page-view id, and the active seconds on page.
+ * Outbound link clicks (2026-11-06): a click on a link to another site is the same click event with h = the other site's HOST only (no path, no query), p = this page.
+ * Scroll depth (2026-11-06): the leave event also carries d = the deepest point reached on this page view, as 0 / 25 / 50 / 75 / 100 (percent of the page height; a number, nothing else).
+ * Engaged time is the leave event's a (active seconds, see above). All three go through /_t with event types and fields the nginx map already accepts (e=click|leave, h, d, a): no server change is needed to LOG them.
  * Never: input values, typed text, form data, cookies, localStorage ids, fingerprinting, click ids (gclid, fbclid), full URLs.
  * Query strings are never logged by the click events. The one exception is the first-touch source below: only the three campaign labels
  * utm_source / utm_medium / utm_campaign (marketing labels, not personal data) are read from the landing URL.
@@ -128,6 +131,7 @@
       try {
         var u = new URL(raw, location.href);
         if (u.protocol !== "http:" && u.protocol !== "https:") return u.protocol;
+        if (!/(^|\.)thelocalcabinetry\.com$/.test(u.hostname)) return u.host.slice(0, 120); // outbound: the other site's host only, never its path
         return (u.host + u.pathname).slice(0, 120);
       } catch (e) { return ""; }
     }
@@ -171,39 +175,49 @@
     // Each page view has a random id w (6 chars, sent with pv and every leave); a leave carries a = the active seconds since the last
     // leave of the same w, the server sums them per w and caps a view at 30 minutes. Wall-clock time is never sent.
     var IDLE_MS = 30000, CAP_S = 1800;
-    var w = "", activeMs = 0, sentS = 0, leaves = 0;
+    var w = "", activeMs = 0, sentS = 0, leaves = 0, maxD = 0, sentD = -1;
     var vis = document.visibilityState !== "hidden";
     var mark = Date.now(), lastIn = mark;
     function newView() {
       w = "";
       try { var b = new Uint8Array(6); crypto.getRandomValues(b); for (var j = 0; j < 6; j++) w += (b[j] % 36).toString(36); }
       catch (e) { w = Math.random().toString(36).slice(2, 8).padEnd(6, "0"); }
-      activeMs = 0; sentS = 0; leaves = 0; mark = lastIn = Date.now(); vis = document.visibilityState !== "hidden";
+      activeMs = 0; sentS = 0; leaves = 0; maxD = 0; sentD = -1; mark = lastIn = Date.now(); vis = document.visibilityState !== "hidden";
     }
     function account(now) { // credit [mark, now] up to 30 s after the last input, only while visible
       if (vis) { var to = Math.min(now, lastIn + IDLE_MS); if (to > mark) activeMs += to - mark; }
       mark = now;
     }
     function touch() { var n = Date.now(); account(n); lastIn = n; }
+    // scroll depth: how far down the page this view got, in 25% steps (0, 25, 50, 75, 100). A page that fits the screen counts as 100.
+    function depth() {
+      try {
+        var de = document.documentElement, h = Math.max(de.scrollHeight, document.body ? document.body.scrollHeight : 0, 1);
+        var pct = (window.pageYOffset + (window.innerHeight || de.clientHeight)) / h * 100;
+        var d = pct >= 98 ? 100 : pct >= 75 ? 75 : pct >= 50 ? 50 : pct >= 25 ? 25 : 0;
+        if (d > maxD) maxD = d;
+      } catch (e) {}
+    }
     function leave() {
-      account(Date.now());
+      account(Date.now()); depth();
       var total = Math.min(CAP_S, Math.floor(activeMs / 1000)), delta = total - sentS;
-      if (delta <= 0 && leaves > 0) return; // nothing new; one leave (even 0 s) per view so a bounce is measured
+      if (delta <= 0 && leaves > 0 && maxD <= sentD) return; // nothing new; one leave (even 0 s) per view so a bounce is measured
       if (delta < 0) delta = 0;
-      sentS += delta; leaves++; seq++;
+      sentS += delta; leaves++; seq++; sentD = maxD;
       var url = ENDPOINT + "?e=leave&p=" + enc(location.pathname.slice(0, 120)) + "&v=" + (window.innerWidth < 768 ? "m" : "d") +
-        "&s=" + sid + "&n=" + seq + "&w=" + w + "&a=" + delta;
+        "&s=" + sid + "&n=" + seq + "&w=" + w + "&a=" + delta + "&d=" + maxD;
       try {
         if (nav.sendBeacon && nav.sendBeacon(url)) return;
         if (window.fetch) fetch(url, { method: "GET", keepalive: true, credentials: "omit", cache: "no-store" }).catch(function () {});
         else new Image().src = url;
       } catch (e) {}
     }
-    function pv() { newView(); send("pv", { w: w, ia: APP }); }   // ia: the in-app browser kind (a fixed word) so the VPS can name the source of a visit with no referrer
+    function pv() { newView(); depth(); send("pv", { w: w, ia: APP }); }   // ia: the in-app browser kind (a fixed word) so the VPS can name the source of a visit with no referrer
 
     // capture phase: runs even when a page handler stops propagation
     document.addEventListener("click", onClick, true);
     document.addEventListener("submit", onSubmit, true);
+    window.addEventListener("scroll", depth, { passive: true });
     ["pointerdown", "keydown", "scroll", "touchstart", "mousemove", "wheel"].forEach(function (t) {
       document.addEventListener(t, touch, { capture: true, passive: true });
     });
