@@ -1,4 +1,5 @@
 // Tiny, dependency-free helpers for the news generator: front matter, a small markdown subset, escaping.
+import { kindOf } from '../link-attrs.mjs'
 export const SITE = 'https://thelocalcabinetry.com'
 export const CATEGORIES = [
   { slug: 'guides', name: 'Guides', blurb: 'Plain guides to planning, measuring and choosing cabinets.' },
@@ -38,8 +39,8 @@ export function inline(s) {
   out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, t, u) => {
     const url = u.replace(/&amp;/g, '&')
     if (!/^(\/|#|https?:\/\/|mailto:)/.test(url)) return t
-    const ext = /^https?:\/\//.test(url) && !url.startsWith(SITE)
-    return `<a href="${esc(url)}"${ext ? ' rel="noopener"' : ''}>${t}</a>`
+    const ext = kindOf(url) === 'external'
+    return `<a href="${esc(url)}"${ext ? ' target="_blank" rel="noopener noreferrer"' : ''}>${t}</a>`
   })
   return out
 }

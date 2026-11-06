@@ -6,13 +6,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
+import { fixLinks } from '../link-attrs.mjs'
 import { SITE, CATEGORIES, esc, parseFrontMatter, markdown, stripTags, wordCount, fmtDate, slugify } from './lib.mjs'
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..')
 const CHECK = process.argv.includes('--check')
 const PER_PAGE = 9
 const OUT = new Map()           // repo-relative path -> content (strings), everything this script owns
-const put = (p, c) => OUT.set(p, c)
+const put = (p, c) => OUT.set(p, p.endsWith('.html') ? fixLinks(c) : c)   // link policy (scripts/link-attrs.mjs): internal = same tab, external = new tab + noopener noreferrer
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8')
 const exists = (p) => fs.existsSync(path.join(ROOT, p))
 
