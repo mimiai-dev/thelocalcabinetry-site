@@ -161,8 +161,17 @@
     '.lcochat-r.us .lcochat-m{background:#fff;color:#14273f;border:1px solid #e7e5df;border-bottom-left-radius:6px;box-shadow:0 1px 2px rgba(14,39,64,.05)}',
     '.lcochat-m small{display:block;margin-top:4px;opacity:.75;font-size:12px}',
     '.lcochat-t{font-size:12px;color:#7a7468;padding:0 6px}',
-    '.lcochat-f{display:block;margin-top:8px;color:#0e2740;font-weight:600;text-decoration:underline}',
+    // our pictures: one = as wide as the bubble; two or more = a two-column grid of square tiles (like a phone's photo message); each tile opens the picture full size
+    '.lcochat-pics{display:grid;gap:6px;margin-top:8px}',
+    '.lcochat-pics.n2{grid-template-columns:1fr 1fr}',
+    '.lcochat-pic{display:block;min-width:0;-webkit-tap-highlight-color:transparent}',
     '.lcochat-img{display:block;max-width:100%;max-height:260px;border-radius:12px;border:1px solid #e7e5df;background:#f6f4ef}',
+    '.lcochat-pics.n2 .lcochat-img{width:100%;max-height:none;aspect-ratio:1;object-fit:cover}',
+    // a PDF: a file card (badge, name, "Tap to open"), the whole card is the link, 48 px tall at least
+    '.lcochat-file{display:flex;align-items:center;gap:10px;margin-top:8px;min-height:48px;padding:8px 12px 8px 8px;border:1px solid #e7e5df;border-radius:12px;background:#f6f4ef;color:#0e2740;text-decoration:none;white-space:normal;-webkit-tap-highlight-color:transparent}',
+    '.lcochat-fi{flex:0 0 40px;height:40px;border-radius:8px;background:#b3261e;color:#fff;font:700 12px/40px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center}',
+    '.lcochat-fn{display:block;font-weight:600;font-size:14px;line-height:1.3;overflow-wrap:anywhere}',
+    '.lcochat-file small{display:block;margin-top:2px;font-size:12px;opacity:.75}',
     // suggestion chips: 48 px tall, 8 px apart, whole chip is the button
     '.lcochat-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;max-width:100%}',
     '.lcochat-guide{display:inline-flex;align-items:center;gap:6px;margin-top:8px;min-height:40px;padding:8px 14px;border:1px solid #e7e5df;border-radius:20px;background:#fff;color:#0e2740;font-size:14px;text-decoration:none}',
@@ -344,14 +353,27 @@
     return d && !isNaN(d.getTime()) ? d : new Date()
   }
   // the files WE sent (server: files [{ name, type, url }], url = a same-origin link signed for that one file; BT-261027-568, 2026-11-04: these used to show as a bare
-  // "Photo sent: Plan.png" with nothing to open). A picture shows as a tap-to-open thumbnail, a PDF as a link; nothing without a url is drawn
+  // "Photo sent: Plan.png" with nothing to open). Pictures show in the bubble itself, each tap opens it full size; a PDF is a file card; nothing without our url is drawn
+  var OUR_FILE = /^\/design\/api\/visit\/file\/[\w-]+\?s=[0-9a-f]+$/
   function ourFiles(b, files) {
-    files.forEach(function (f) {
-      var url = String(f && f.url || '')
-      if (!/^\/design\/api\/visit\/file\/[\w-]+\?s=[0-9a-f]+$/.test(url)) return
-      var a = el('a', 'lcochat-f'); a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'
-      if (/^image\//.test(String(f.type || ''))) { var im = el('img', 'lcochat-img'); im.src = url; im.alt = String(f.name || 'picture'); im.loading = 'lazy'; a.appendChild(im) }
-      else a.textContent = 'Open ' + String(f.name || 'file')
+    var mine = files.filter(function (f) { return OUR_FILE.test(String(f && f.url || '')) })
+    var pics = mine.filter(function (f) { return /^image\//.test(String(f.type || '')) })
+    if (pics.length) {
+      var g = el('div', 'lcochat-pics' + (pics.length > 1 ? ' n2' : ''))
+      pics.forEach(function (f) {
+        var nm = String(f.name || 'picture'), a = el('a', 'lcochat-pic'); a.href = f.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.setAttribute('aria-label', 'Open ' + nm + ' full size')
+        var im = el('img', 'lcochat-img'); im.alt = nm; im.decoding = 'async'
+        // not lazy: the newest line is the one on screen, and a lazy picture inside a scrolled box can stay blank. A picture that loads under a reader at the bottom keeps him there
+        im.addEventListener('load', function () { if (log.scrollHeight - log.scrollTop - log.clientHeight - im.offsetHeight < 160) scrollDown() })
+        im.src = f.url
+        a.appendChild(im); g.appendChild(a)
+      })
+      b.appendChild(g)
+    }
+    mine.filter(function (f) { return pics.indexOf(f) < 0 }).forEach(function (f) {
+      var nm = String(f.name || 'file'), a = el('a', 'lcochat-file'); a.href = f.url; a.target = '_blank'; a.rel = 'noopener noreferrer'
+      a.appendChild(el('span', 'lcochat-fi', /pdf/i.test(String(f.type || '')) ? 'PDF' : 'FILE'))
+      var t = el('span', ''); t.appendChild(el('span', 'lcochat-fn', nm)); t.appendChild(el('small', '', 'Tap to open')); a.appendChild(t)
       b.appendChild(a)
     })
   }

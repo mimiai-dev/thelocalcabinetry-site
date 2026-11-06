@@ -75,7 +75,10 @@ async function main() {
       if (m.id && pending.has(m.id)) { pending.get(m.id)(m.result || {}); pending.delete(m.id) }
       if (process.env.DEBUG && m.method === 'Runtime.exceptionThrown') console.log('page error:', m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text)
       if (process.env.DEBUG && m.method === 'Fetch.requestPaused') console.log('api', m.params.request.method, m.params.request.url.replace(/^.*visit\//, ''))
-      if (m.method === 'Fetch.requestPaused') {
+      // our signed file links (visit/file/<id>?s=…) answer with a real picture, so the bubble's <img> loads and lays out as on the site
+      if (m.method === 'Fetch.requestPaused' && /\/visit\/file\/[\w-]+\?s=/.test(m.params.request.url)) {
+        send('Fetch.fulfillRequest', { requestId: m.params.requestId, responseCode: 200, responseHeaders: [{ name: 'content-type', value: 'image/jpeg' }], body: fs.readFileSync(path.join(ROOT, 'og-home.jpg')).toString('base64') })
+      } else if (m.method === 'Fetch.requestPaused') {
         const body = Buffer.from(JSON.stringify(stub(m.params.request.url, m.params.request.method))).toString('base64')
         send('Fetch.fulfillRequest', { requestId: m.params.requestId, responseCode: 200, responseHeaders: [{ name: 'content-type', value: 'application/json' }], body })
       }
@@ -199,16 +202,34 @@ async function main() {
       const tt = await ev(`window.__t`)
       log(!!(tt.typing && tt.line && tt.line - tt.typing >= 600), vp.name, 'a fresh scripted reply shows the typing line first, then the question', `(${tt.line && tt.typing ? Math.round(tt.line - tt.typing) : '?'} ms)`)
       log(await ev(`!!document.querySelector('.lcochat-chips') && !document.querySelector('.lcochat-typing')`), vp.name, 'its chips are there and the typing line is gone')
-      // 4c. the files WE send (BT-261027-568, 2026-11-04: Plan.png and the 3D views showed as "Photo sent: Plan.png", nothing to open): a picture is a tap-to-open thumbnail
-      //     from its signed same-origin link, a PDF is a link, the "[File] …" label is not shown, and a link that is not ours is never drawn
+      // 4c. the files WE send (BT-261027-568, 2026-11-04: Plan.png and the 3D views showed as "Photo sent: Plan.png", nothing to open; 2026-11-06 the owner: "like a person
+      //     sending photos"): one picture as wide as the bubble, several in a two-column grid of square tiles, each loaded from its signed same-origin link and opening it full size;
+      //     a PDF is a file card (badge, name, "Tap to open", 48 px tall); the "[File] …" label is not shown, a link that is not ours is never drawn, nothing scrolls sideways
       api.lines.push({ seq: 8, from: 'us', text: '[File] Plan.png (398687 B)', files: [
         { name: 'Plan.png', type: 'image/png', url: '/design/api/visit/file/f7cd022e-148d?s=0123abcd' },
         { name: 'Quote.pdf', type: 'application/pdf', url: '/design/api/visit/file/0a1b2c3d-4e5f?s=4567ef01' },
         { name: 'x.png', type: 'image/png', url: 'https://example.com/x.png' }], at: new Date().toISOString() })
+      api.lines.push({ seq: 9, from: 'us', text: "Here's your layout: 3D views.", files: ['top wall', 'whole room', 'right wall', 'bottom wall'].map((w, i) => (
+        { name: `3D view, ${w}.jpg`, type: 'image/jpeg', url: `/design/api/visit/file/3d0${i}-aaaa?s=89ab${i}` })), at: new Date().toISOString() })
       await sleep(5000)
-      const ff = await ev(`(() => { const im = [...document.getElementsByClassName('lcochat-img')].map((i) => i.getAttribute('src')); const ln = [...document.getElementsByClassName('lcochat-f')].map((a) => a.textContent + '|' + a.getAttribute('href') + '|' + a.getAttribute('target')); const lg = document.getElementsByClassName('lcochat-log')[0].textContent; return { im, ln, label: lg.includes('[File] Plan.png'), sent: lg.includes('Photo sent: Plan.png') } })()`)
-      log(ff.im.length === 1 && ff.im[0] === '/design/api/visit/file/f7cd022e-148d?s=0123abcd' && ff.ln.length === 2 && ff.ln[1] === 'Open Quote.pdf|/design/api/visit/file/0a1b2c3d-4e5f?s=4567ef01|_blank' && !ff.label && !ff.sent,
-        vp.name, 'our files: a picture thumbnail and a PDF link from their signed links; no "[File]" label, no "Photo sent", no foreign link', `(${JSON.stringify(ff)})`)
+      const ff = await ev(`(() => {
+        const lg = document.getElementsByClassName('lcochat-log')[0], r = (e) => e.getBoundingClientRect()
+        const groups = [...lg.getElementsByClassName('lcochat-pics')].map((g) => {
+          const bub = r(g.closest('.lcochat-m'))
+          return { grid: g.classList.contains('n2'), pics: [...g.getElementsByTagName('a')].map((a) => { const im = a.getElementsByTagName('img')[0], b = r(im); return { href: a.getAttribute('href'), target: a.getAttribute('target'), alt: im.alt, loaded: im.complete && im.naturalWidth > 0, w: Math.round(b.width), h: Math.round(b.height), x: Math.round(b.left), inside: b.left >= bub.left - 1 && b.right <= bub.right + 1 } }) }
+        })
+        const cards = [...lg.getElementsByClassName('lcochat-file')].map((a) => ({ text: a.textContent, href: a.getAttribute('href'), target: a.getAttribute('target'), h: Math.round(r(a).height) }))
+        return { groups, cards, foreign: !!lg.querySelector('img[src^="https:"]'), label: lg.textContent.includes('[File] Plan.png'), sent: lg.textContent.includes('Photo sent: Plan.png'),
+          side: lg.scrollWidth > lg.clientWidth + 1, bottom: lg.scrollHeight - lg.scrollTop - lg.clientHeight < 80 }
+      })()`)
+      const [one, four] = ff.groups
+      log(ff.groups.length === 2 && one && !one.grid && one.pics.length === 1 && one.pics[0].href === '/design/api/visit/file/f7cd022e-148d?s=0123abcd' && one.pics[0].target === '_blank' && one.pics[0].loaded && one.pics[0].w >= (vp.mobile ? 150 : 200) && one.pics[0].inside,
+        vp.name, 'one picture of ours: drawn in the bubble from its signed link, loaded, as wide as the bubble, tap opens it full size', `(${JSON.stringify(one)})`)
+      log(!!four && four.grid && four.pics.length === 4 && four.pics.every((p) => p.loaded && p.inside && p.target === '_blank' && Math.abs(p.w - p.h) <= 2 && p.w >= (vp.mobile ? 90 : 110)) && new Set(four.pics.map((p) => p.x)).size === 2 && four.pics[1].alt === '3D view, whole room.jpg',
+        vp.name, 'four 3D views: a two-column grid of square tiles, all loaded, each opens its picture', `(${JSON.stringify(four)})`)
+      log(ff.cards.length === 1 && /^PDF/.test(ff.cards[0].text) && ff.cards[0].text.includes('Quote.pdf') && ff.cards[0].text.includes('Tap to open') && ff.cards[0].href === '/design/api/visit/file/0a1b2c3d-4e5f?s=4567ef01' && ff.cards[0].target === '_blank' && ff.cards[0].h >= 48,
+        vp.name, 'our PDF: a file card (PDF badge, its name, Tap to open, 48 px tall) on its signed link', `(${JSON.stringify(ff.cards)})`)
+      log(!ff.foreign && !ff.label && !ff.sent && !ff.side && ff.bottom, vp.name, 'no foreign link, no "[File]" label, no "Photo sent", no sideways scroll; the pictures loading keep the reader at the bottom', `(${JSON.stringify({ foreign: ff.foreign, label: ff.label, sent: ff.sent, side: ff.side, bottom: ff.bottom })})`)
       await clickSel('.lcochat-panel .lcochat-hb button.lcochat-x'); await sleep(300)
     }
     // 5. a first visit (owner 2026-10-24, T-261024-23: "I don't see the first open up banner ever"; "a welcome banner on first visit and a top announcement bar"):
