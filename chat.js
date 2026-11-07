@@ -54,6 +54,7 @@
   var CATALOG = '/catalog/The-Local-Cabinetry-Catalog.pdf'
   var CAT_KEY = 'lco_welcome_v1'   // set once the welcome card was shown: it never comes back for this browser (was lco_catalog_pop_v1, the catalog-only popup; owner 2026-10-24 T-261024-23)
   var BF_KEY = 'lco_ann_bf26_v1'   // the Black Friday 2026 bar was closed (its own key, so closing it does not hide the membership bar when that returns)
+  var FS_KEY = 'lco_ann_fs26_v1'   // the Free shipping bar was closed (its own key: closing it hides neither the Black Friday nor the membership bar)
   var ANN_KEY = 'lco_ann_v2'      // the top bar was closed (a new announcement = a new key: v2 = the free-month offer, 2026-10-25, so a visitor who closed v1 still sees it)
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
@@ -276,6 +277,10 @@
     '.lcoann-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:none;color:#fff;font-size:22px;line-height:1;cursor:pointer}.lcoann-x:hover{background:rgba(255,255,255,.12)}',
     '.lcoann[hidden]{display:none}',
     // the Black Friday bar (owner 2026-10-31): black, white text, gold link, wraps on phones
+    // the Free shipping bar (owner 2026-11-07): one slim line under the Black Friday / membership bar; its own class, so the announcement-bar tests and the first-bar rule stay as they are
+    '.fsbar{position:relative;z-index:2147483000;display:flex;align-items:center;justify-content:center;gap:12px;padding:5px 48px 5px 16px;background:#0e2740;color:#fff;font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center}',
+    '.fsbar a{color:#e9c983;font-weight:400;font-size:13px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}.fsbar b{font-weight:600}',
+    '.fsbar[hidden]{display:none}',
     'div.bfbar{background:#000;flex-wrap:wrap;row-gap:2px;column-gap:12px}div.bfbar a.bfd{font-weight:400;font-size:13px;color:#fff;opacity:.85}',
     '.lcooffer{margin:0 0 14px;padding:12px 14px;border-left:3px solid #e9c983;background:#0e2740;color:#fff;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}',
     '.lcocat-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#0e2740;font-size:26px;line-height:1;cursor:pointer}',
@@ -738,6 +743,19 @@
     bar.appendChild(x)
     document.body.insertBefore(bar, document.body.firstChild)
   }
+  // Free shipping (owner 2026-11-07: "yes add free shipping banner"): the bar says only "Free shipping"; the terms (over $5,000, up to $500, one offer per order) are on /policies/#free-shipping.
+  function fsShow() {
+    try { if (localStorage.getItem(FS_KEY)) return } catch (e) { return }
+    if (document.querySelector('.fsbar')) return
+    var bar = el('div', 'fsbar'); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Free shipping')
+    bar.appendChild(el('b', '', 'Free shipping'))
+    var a = el('a', '', 'Details'); a.href = '/policies/#free-shipping'; a.setAttribute('data-track', 'announce-free-shipping'); bar.appendChild(a)
+    var x = el('button', 'lcoann-x', '\u00d7'); x.type = 'button'; x.setAttribute('aria-label', 'Close the free shipping bar')
+    x.addEventListener('click', function () { bar.hidden = true; try { localStorage.setItem(FS_KEY, '1') } catch (e) { /* ignore */ } })
+    bar.appendChild(x)
+    var top = document.querySelector('div[role=region][aria-label=Announcement]')
+    if (top && top.parentNode === document.body) document.body.insertBefore(bar, top.nextSibling); else document.body.insertBefore(bar, document.body.firstChild)
+  }
   function catClose() { if (!cat || cat.hidden) return; cat.hidden = true; if (!catBar && catFrom && catFrom.focus) { try { catFrom.focus() } catch (e) { /* ignore */ } } }
   function catShow() {
     try { if (localStorage.getItem(CAT_KEY)) return } catch (e) { return }   // storage blocked: never nag
@@ -968,7 +986,7 @@
     resumeFromLink()
     window.addEventListener('hashchange', resumeFromLink)   // the link pasted into a tab that is already on the site
     greet(); applyMode()
-    annShow(); memberOffer(); catArm()
+    annShow(); fsShow(); memberOffer(); catArm()
 
     btn.addEventListener('click', function () { if (state.open) close(); else open() })
     if (window.__lcoQ) { window.__lcoQ = 0; open() }   // a tap that came before this file was ready
