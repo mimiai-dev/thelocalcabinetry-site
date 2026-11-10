@@ -44,7 +44,7 @@ Count these separately:
 
 Drawers are the part of the plan that people tend to underestimate. Bob Vila points out that banks of drawers cost more than standard door cabinets, so it is worth deciding how many you truly need. This Old House lists dovetail joints and soft-close hardware among the features that raise the price of cabinets.
 
-On our kitchen lines, the cabinet box is 1/2 inch cabinet-grade plywood with a UV-coated interior, and the drawer boxes are solid-wood and dovetailed. If you want more drawers, expect that line of the budget to grow.
+On our shaker kitchen lines, the cabinet box is 1/2 inch cabinet-grade plywood with a UV-coated interior, and the drawer boxes are solid-wood and dovetailed. On the frameless line, the box and drawer boxes are 3/4 inch plywood in white melamine. If you want more drawers, expect that line of the budget to grow.
 
 A practical split: put drawers where you reach for pots, pans and utensils, and use doors with a shelf for the rest.
 
