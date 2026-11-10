@@ -51,4 +51,4 @@ Send the sketch, the measurements and the photos by chat, or [start your design]
 - Forgetting the ceiling height or a soffit.
 - Rounding to the nearest foot. A few inches decide whether a cabinet fits.
 
-When you are ready to pick cabinets, browse our [kitchen cabinets](/c/kitchen-cabinets/) and [door styles](/door-styles). Our kitchen lines use a 1/2 inch cabinet-grade plywood box with a UV-coated interior and solid-wood dovetailed drawer boxes. Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location.
+When you are ready to pick cabinets, browse our [kitchen cabinets](/c/kitchen-cabinets/) and [door styles](/door-styles). Our shaker kitchen lines use a 1/2 inch cabinet-grade plywood box with a UV-coated interior and solid-wood dovetailed drawer boxes; the frameless line uses a 3/4 inch plywood box and drawer boxes in white melamine. Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location.

@@ -23,7 +23,7 @@ If you are comparing kitchen cabinets, you will see two words again and again: *
 
 RTA means the cabinet ships flat or in parts, and the boxes are put together after delivery. We supply RTA cabinets and we do not assemble them ourselves. Many homeowners put them together with basic tools, and a local handyman can do it for you if you prefer.
 
-The cabinet itself is the same product either way. Our kitchen lines use a 1/2 inch cabinet-grade plywood box with a UV-coated interior, and solid-wood drawer boxes with dovetail joints. Whether it arrives in parts or built, those are the materials you get.
+The cabinet itself is the same product either way. Our shaker kitchen lines use a 1/2 inch cabinet-grade plywood box with a UV-coated interior, and solid-wood drawer boxes with dovetail joints; the frameless line uses a 3/4 inch plywood box and drawer boxes in white melamine. Whether it arrives in parts or built, those are the materials you get.
 
 ## What "assembled" means
 

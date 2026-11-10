@@ -96,7 +96,7 @@ To get started, send us:
 - Photos of the floor, counter and walls in daylight.
 - The color or finish you are leaning toward, and the runner-up.
 
-You can browse the full range on our [kitchen cabinets](/c/kitchen-cabinets/) page. Our cabinets are RTA, ready to assemble. We do not assemble or install them. Our kitchen lines use a 1/2 inch cabinet-grade plywood box with a UV-coated interior, and solid-wood dovetailed drawer boxes. Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location. For custom work we confirm the production time when the order is placed.
+You can browse the full range on our [kitchen cabinets](/c/kitchen-cabinets/) page. Our cabinets are RTA, ready to assemble. We do not assemble or install them. Our shaker kitchen lines use a 1/2 inch cabinet-grade plywood box with a UV-coated interior, and solid-wood dovetailed drawer boxes; the frameless line uses a 3/4 inch plywood box and drawer boxes in white melamine. Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location. For custom work we confirm the production time when the order is placed.
 
 So get your samples, give them a full day of light, and send us the photos. We will help you work out the layout from there.
 

@@ -83,7 +83,7 @@ A few notes on how we work:
 - Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location. For custom work we confirm the production time when the order is placed.
 - Our cabinets are KCMA, CARB2 and TSCA Title VI certified.
 - We ship from Houston and U.S. warehouses.
-- On our kitchen lines, the box is 1/2 inch cabinet-grade plywood with a UV-coated interior, and the drawer boxes are solid wood and dovetailed.
+- On our shaker kitchen lines, the box is 1/2 inch cabinet-grade plywood with a UV-coated interior, and the drawer boxes are solid wood and dovetailed. On the frameless line, the box and drawer boxes are 3/4 inch plywood in white melamine.
 
 To get started, send us the room measurements, a few photos, and the door style you are leaning toward. If you are not sure, send two and we will draw both. You can also browse the full range of [kitchen cabinets](/c/kitchen-cabinets/).
 
