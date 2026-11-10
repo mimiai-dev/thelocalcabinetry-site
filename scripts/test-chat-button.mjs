@@ -40,7 +40,7 @@ function serve() {
 
 // canned API answers (the page only needs ok shapes)
 // `api` is the scripted server state the test moves through (section 3)
-const api = { typing: false, read: 0, lines: [] }
+const api = { typing: false, read: 0, lines: [], posts: [] }
 function stub(url, method) {
   const u = new URL(url)
   const p = u.pathname.replace('/design/api/visit/', '')
@@ -79,6 +79,7 @@ async function main() {
       if (m.method === 'Fetch.requestPaused' && /\/visit\/file\/[\w-]+\?s=/.test(m.params.request.url)) {
         send('Fetch.fulfillRequest', { requestId: m.params.requestId, responseCode: 200, responseHeaders: [{ name: 'content-type', value: 'image/jpeg' }], body: fs.readFileSync(path.join(ROOT, 'og-home.jpg')).toString('base64') })
       } else if (m.method === 'Fetch.requestPaused') {
+        if (m.params.request.method === 'POST' && /\/visit\/message$/.test(m.params.request.url)) { try { api.posts.push(JSON.parse(m.params.request.postData || '{}')) } catch {} }
         const body = Buffer.from(JSON.stringify(stub(m.params.request.url, m.params.request.method))).toString('base64')
         send('Fetch.fulfillRequest', { requestId: m.params.requestId, responseCode: 200, responseHeaders: [{ name: 'content-type', value: 'application/json' }], body })
       }
@@ -230,6 +231,43 @@ async function main() {
       log(ff.cards.length === 1 && /^PDF/.test(ff.cards[0].text) && ff.cards[0].text.includes('Quote.pdf') && ff.cards[0].text.includes('Tap to open') && ff.cards[0].href === '/design/api/visit/file/0a1b2c3d-4e5f?s=4567ef01' && ff.cards[0].target === '_blank' && ff.cards[0].h >= 48,
         vp.name, 'our PDF: a file card (PDF badge, its name, Tap to open, 48 px tall) on its signed link', `(${JSON.stringify(ff.cards)})`)
       log(!ff.foreign && !ff.label && !ff.sent && !ff.side && ff.bottom, vp.name, 'no foreign link, no "[File]" label, no "Photo sent", no sideways scroll; the pictures loading keep the reader at the bottom', `(${JSON.stringify({ foreign: ff.foreign, label: ff.label, sent: ff.sent, side: ff.side, bottom: ff.bottom })})`)
+      // 4d. the finish step as /design draws it (web-portal CR finish-preview-other, owner 2026-11-10): a finish chip (it has `line`) shows its door picture from the signed same-origin
+      //     link in `img`, with a magnifier beside it; hover (1280) or the magnifier (390) opens a large preview card (picture, name, line, "Choose …") above the chips, and Choose picks
+      //     it like the chip; a finish with no picture keeps its colour dot; an img on another host is never drawn (the page allows img-src 'self'); Other colour / Skip stay plain chips
+      api.lines.push({ seq: 10, from: 'us', text: 'Shaker it is. Which finish?', chips: [
+        { label: 'Floral Espresso', value: 'finish:floral-espresso', swatch: '#4a3426', line: 'Essential shaker', img: '/design/api/visit/file/fin-espresso-01?s=a1b2c3d4' },
+        { label: 'Pure White', value: 'finish:pure-white', swatch: '#f4f3ef', line: 'Essential shaker' },
+        { label: 'Sage Green', value: 'finish:sage-green', swatch: '#8a9a7b', line: 'Essential shaker', img: 'https://example.com/sage.jpg' },
+        { label: 'Other colour', value: 'finish:other' }, { label: 'Skip', value: 'finish:skip' }], at: new Date().toISOString() })
+      await sleep(5500)
+      const fc = await ev(`(() => {
+        const box = document.getElementsByClassName('lcochat-chips'), b = box[box.length - 1]
+        if (!b) return null
+        return [...b.getElementsByClassName('lcochat-chip')].map((c) => { const im = c.getElementsByTagName('img')[0]; return { t: c.textContent, img: im ? im.getAttribute('src') : null, loaded: !!im && im.complete && im.naturalWidth > 0, dot: !!c.getElementsByClassName('lcochat-sw')[0], zoom: !!(c.parentNode.classList.contains('lcochat-qkw') && c.parentNode.getElementsByClassName('lcochat-qkz')[0]) } })
+      })()`)
+      log(Array.isArray(fc) && fc.length === 5 && fc[0].img === '/design/api/visit/file/fin-espresso-01?s=a1b2c3d4' && fc[0].loaded && !fc[0].dot && fc[0].zoom,
+        vp.name, 'a finish chip with a picture: drawn from its signed link, loaded, with a magnifier', `(${JSON.stringify(fc)})`)
+      log(!!fc && fc[1].img === null && fc[1].dot && fc[1].zoom && fc[2].img === null && fc[2].dot && fc[2].zoom && !fc[3].zoom && !fc[3].dot && !fc[4].zoom,
+        vp.name, 'no picture keeps the colour dot; a picture on another host is never drawn; Other colour / Skip are plain chips')
+      const fz = await ev(`(() => { const z = document.getElementsByClassName('lcochat-qkz'), e = z[z.length - 3], c = e.parentNode.firstChild, r = c.getBoundingClientRect(), q = e.getBoundingClientRect(); return { cx: r.x + r.width / 2, cy: r.y + r.height / 2, zx: q.x + q.width / 2, zy: q.y + q.height / 2 } })()`)
+      if (vp.touch) await tap(fz.zx, fz.zy); else await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: fz.cx, y: fz.cy })
+      await sleep(400)
+      const pv = await ev(`(() => { const p = document.getElementsByClassName('lcochat-qkp')[0]; if (!p) return null; const im = p.getElementsByTagName('img')[0], r = p.getBoundingClientRect(), lg = document.getElementsByClassName('lcochat-log')[0]
+        return { label: p.getAttribute('aria-label'), name: p.getElementsByTagName('b')[0].textContent, line: p.getElementsByTagName('span')[0].textContent, img: im && im.getAttribute('src'), loaded: !!im && im.complete && im.naturalWidth > 0, w: im ? Math.round(im.getBoundingClientRect().width) : 0,
+          go: p.getElementsByClassName('lcochat-qkp-go')[0].textContent, above: r.bottom <= p.nextSibling.getBoundingClientRect().top + 1, side: lg.scrollWidth > lg.clientWidth + 1 } })()`)
+      log(!!pv && pv.label === 'Floral Espresso preview' && pv.name === 'Floral Espresso' && pv.line === 'Essential shaker' && pv.img === '/design/api/visit/file/fin-espresso-01?s=a1b2c3d4' && pv.loaded && pv.w >= 100 && pv.go === 'Choose Floral Espresso' && pv.above && !pv.side,
+        vp.name, vp.touch ? 'the magnifier opens the preview card: door picture, name, line, Choose; above the chips, no sideways scroll' : 'hovering the chip opens the preview card: door picture, name, line, Choose; above the chips, no sideways scroll', `(${JSON.stringify(pv)})`)
+      if (process.env.SHOT_DIR) { const s = await send('Page.captureScreenshot', { format: 'png' }); fs.writeFileSync(path.join(process.env.SHOT_DIR, `finish-preview-${vp.name}.png`), Buffer.from(s.data, 'base64')) }
+      if (!vp.touch) {   // Escape closes the card, not the chat
+        await ev(`document.getElementsByClassName('lcochat-qkp-go')[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); true`); await sleep(200)
+        log(!(await ev(`!!document.getElementsByClassName('lcochat-qkp')[0]`)) && (await ev(`document.querySelector('button[data-lco-chat]').getAttribute('aria-expanded')`)) === 'true', vp.name, 'Escape closes the preview card and leaves the chat open')
+        await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 5, y: 5 }); await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: fz.cx, y: fz.cy }); await sleep(300)
+      }
+      const n0 = api.posts.length
+      await clickSel('.lcochat-qkp-go'); await sleep(800)
+      const last = api.posts[api.posts.length - 1]
+      log(api.posts.length === n0 + 1 && !!last && last.chip === 'finish:floral-espresso' && last.text === 'Floral Espresso' && !(await ev(`!!document.getElementsByClassName('lcochat-qkp')[0]`)),
+        vp.name, '"Choose Floral Espresso" picks it like the chip (one post, its chip value) and closes the card', `(${JSON.stringify(last)})`)
       await clickSel('.lcochat-panel .lcochat-hb button.lcochat-x'); await sleep(300)
     }
     // 5. a first visit (owner 2026-10-24, T-261024-23: "I don't see the first open up banner ever"; "a welcome banner on first visit and a top announcement bar"):
@@ -271,7 +309,7 @@ async function main() {
       await ev(`localStorage.removeItem('lco_ann_bf26_v1'); true`)
       await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
       const bf = await ev(`(() => { const b = document.querySelector('.lcoann'); if (!b || b.hidden) return null; const [go, det] = b.querySelectorAll('a'); return { t: b.textContent, bg: getComputedStyle(b).backgroundColor, go: go.getAttribute('href'), det: det && det.getAttribute('href'), wide: document.documentElement.scrollWidth > innerWidth, first: document.body.firstElementChild === b } })()`)
-      log(!!bf && /Black Friday/.test(bf.t) && /15\u201320%/.test(bf.t) && bf.bg === 'rgb(0, 0, 0)' && bf.go === '/design' && bf.det === '/black-friday/' && bf.first && !bf.wide, '390', 'the Black Friday bar: black, 15-20%, Plan my kitchen -> /design, Details -> /black-friday/, no side scroll', `(${JSON.stringify(bf)})`)
+      log(!!bf && /Black Friday/.test(bf.t) && /save 10% on your order/.test(bf.t) && bf.bg === 'rgb(0, 0, 0)' && bf.go === '/design' && bf.det === '/black-friday/' && bf.first && !bf.wide, '390', 'the Black Friday bar: black, a fixed 10% (fbfba5e, #125, owner 2026-10-31), Plan my kitchen -> /design, Details -> /black-friday/, no side scroll', `(${JSON.stringify(bf)})`)
       await ev(`document.querySelector('.lcoann-x').click(); true`)
       await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
       log(!(await ev(bar)), '390', 'closed Black Friday bar stays closed (its own key)')
