@@ -309,7 +309,7 @@ async function main() {
       await ev(`localStorage.removeItem('lco_ann_bf26_v1'); true`)
       await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
       const bf = await ev(`(() => { const b = document.querySelector('.lcoann'); if (!b || b.hidden) return null; const [go, det] = b.querySelectorAll('a'); return { t: b.textContent, bg: getComputedStyle(b).backgroundColor, go: go.getAttribute('href'), det: det && det.getAttribute('href'), wide: document.documentElement.scrollWidth > innerWidth, first: document.body.firstElementChild === b } })()`)
-      log(!!bf && /Black Friday/.test(bf.t) && /15\u201320%/.test(bf.t) && bf.bg === 'rgb(0, 0, 0)' && bf.go === '/design' && bf.det === '/black-friday/' && bf.first && !bf.wide, '390', 'the Black Friday bar: black, 15-20%, Plan my kitchen -> /design, Details -> /black-friday/, no side scroll', `(${JSON.stringify(bf)})`)
+      log(!!bf && /Black Friday/.test(bf.t) && /save 10% on your order/.test(bf.t) && bf.bg === 'rgb(0, 0, 0)' && bf.go === '/design' && bf.det === '/black-friday/' && bf.first && !bf.wide, '390', 'the Black Friday bar: black, a fixed 10% (fbfba5e, #125, owner 2026-10-31), Plan my kitchen -> /design, Details -> /black-friday/, no side scroll', `(${JSON.stringify(bf)})`)
       await ev(`document.querySelector('.lcoann-x').click(); true`)
       await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
       log(!(await ev(bar)), '390', 'closed Black Friday bar stays closed (its own key)')
