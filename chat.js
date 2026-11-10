@@ -181,6 +181,19 @@
     '.lcochat-chip:active:not(:disabled){background:#f3f0ea;border-color:#b4862f}',
     '@media (hover:hover){.lcochat-chip:hover:not(:disabled){border-color:#0e2740;background:#f8f6f1}}',
     '.lcochat-chip:disabled{opacity:.55;cursor:default}',
+    // finish chips (web-portal CR finish-preview-other): the door picture in the chip, a magnifier beside it, and the large preview card above the chips
+    '.lcochat-qarea{position:relative;max-width:100%}',
+    '.lcochat-qkw{display:inline-flex;align-items:center;gap:2px}',
+    '.lcochat-qki{flex:0 0 32px;width:32px;height:32px;margin:0 0 0 -10px;border-radius:10px;object-fit:cover;border:1px solid #e7e5df;background:#f3f0ea}',
+    '.lcochat-qkz{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:0;border-radius:20px;background:transparent;color:#51606f;cursor:pointer;touch-action:manipulation}',
+    '.lcochat-qkz:hover,.lcochat-qkz:focus-visible{color:#0e2740;background:#f3f0ea}.lcochat-qkz:disabled{opacity:.55;cursor:default}',
+    '.lcochat-qkp{display:flex;gap:14px;align-items:flex-start;position:absolute;left:0;right:0;bottom:100%;margin-bottom:8px;z-index:2;padding:12px;border:1px solid #e7e5df;border-radius:16px;background:#fff;box-shadow:0 6px 24px rgba(20,39,63,.12)}',
+    '.lcochat-qkp-img{flex:0 0 auto;width:132px;height:176px;border-radius:10px;object-fit:contain;border:1px solid #e7e5df;background:#fff;display:block}',
+    '.lcochat-qkp-tx{display:flex;flex-direction:column;gap:4px;min-width:0;padding-right:28px}',
+    '.lcochat-qkp-tx b{font-size:16px;color:#0e2740}.lcochat-qkp-tx span{font-size:13px;color:#51606f}',
+    '.lcochat-qkp-go{margin-top:10px;align-self:flex-start;min-height:44px;padding:0 16px}',
+    '.lcochat-qkp-x{position:absolute;top:6px;right:6px;width:32px;height:32px;border:0;border-radius:16px;background:transparent;color:#51606f;font-size:20px;line-height:1;cursor:pointer}',
+    '@media (max-width:420px){.lcochat-qkp-img{width:104px;height:140px}}',
     '.lcochat-sw{display:inline-block;width:18px;height:18px;border-radius:50%;border:1px solid rgba(14,39,64,.35);flex:0 0 18px}',
     '.lcochat-nm{font-size:12px;font-weight:600;color:#51606f;margin:0 6px 2px}',
     // first screen: two big cards (the whole card is the button), then the person options
@@ -430,7 +443,7 @@
   function resetLog() { state.seenRow = null; state.seenLabel = null; setTimeout(applyGate, 0); hideTyping(); state.maxUs = 0; state.seenSent = 0; state.needEmail = false; state.emailCard = null; clearChips(); hotUpload(false); state.owedSince = 0; state.ackSeen = false; clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
   function setPhoto() { photoB.setAttribute('aria-disabled', state.id ? 'false' : 'true'); photoB.title = state.id ? 'Add a photo' : 'Send a message first, then add photos' }
   // Quick replies: optional `chips: [{label, value, swatch?}]` on OUR lines. Shown only under the LAST 'us' line; any newer line or a tap removes them.
-  function clearChips() { if (state.chipsEl && state.chipsEl.parentNode) state.chipsEl.parentNode.removeChild(state.chipsEl); state.chipsEl = null }
+  function clearChips() { if (state.chipsEl && state.chipsEl.parentNode) state.chipsEl.parentNode.removeChild(state.chipsEl); state.chipsEl = null; state.peekClose = null }
   function setChipsDisabled(on) { if (state.chipsEl) Array.prototype.forEach.call(state.chipsEl.querySelectorAll('button'), function (b) { b.disabled = !!on }) }
   function hotUpload(on) { if (!photoB) return; photoB.classList.toggle('hot', !!on); if (on) photoB.title = 'Add a photo or sketch' }
   // The how-to-measure guide under our measure question (server field link: { label, url }; owner 2026-10-24, T-261024-13): a link button that stays, our own site only
@@ -441,20 +454,58 @@
     var a = el('a', 'lcochat-guide', lbl); a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('data-track', 'chat-measure-guide')
     c.appendChild(a)
   }
+  // A finish chip (it has `line`, the door line) shows the finish the same way /design does (web-portal CR finish-preview-other): its door picture in the chip (`img`, a signed link to
+  // visit/file on this same host, the page allows img-src 'self' only; anything else is dropped and the colour dot stays), and a large preview card above the chips: the picture (or the
+  // colour), the name, the line and its own Choose button. Hover or keyboard focus opens it; on touch the small magnifier beside the chip opens it (the chip stays one tap = the pick).
+  function chipImg(ch) { var u = typeof ch.img === 'string' ? ch.img : ''; return OUR_FILE.test(u) ? u : '' }
   function renderChips(r, chips) {
     var c = r.querySelector('.lcochat-c'); if (!c) return
+    var area = el('div', 'lcochat-qarea'), peek = null, pinned = false
     var box = el('div', 'lcochat-chips'); box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Quick replies')
+    function pick(ch) { if (state.busy) return; closePeek(); setChipsDisabled(true); post({ text: ch.label.slice(0, 40), chip: ch.value.slice(0, 64) }) }
+    function closePeek() { if (peek && peek.parentNode) peek.parentNode.removeChild(peek); peek = null; pinned = false; state.peekClose = null }
+    function openPeek(ch, pin) {
+      if (pinned && !pin) return
+      closePeek(); pinned = !!pin
+      var lbl = ch.label.slice(0, 40), u = chipImg(ch)
+      var p = el('div', 'lcochat-qkp'); p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', lbl + ' preview')
+      var im
+      if (u) { im = el('img', 'lcochat-qkp-img'); im.src = u; im.alt = lbl + ' door sample' }
+      else { im = el('span', 'lcochat-qkp-img'); im.setAttribute('aria-hidden', 'true'); if (/^#[0-9a-fA-F]{3,8}$/.test(String(ch.swatch || ''))) im.style.background = ch.swatch }
+      p.appendChild(im)
+      var tx = el('div', 'lcochat-qkp-tx'); tx.appendChild(el('b', '', lbl)); tx.appendChild(el('span', '', String(ch.line).slice(0, 60)))
+      var go = el('button', 'lcochat-chip lcochat-qkp-go', 'Choose ' + lbl); go.type = 'button'; if (state.needEmail || state.busy) go.disabled = true
+      go.addEventListener('click', function () { pick(ch) }); tx.appendChild(go); p.appendChild(tx)
+      var x = el('button', 'lcochat-qkp-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close preview'); x.addEventListener('click', closePeek); p.appendChild(x)
+      area.insertBefore(p, box); peek = p; state.peekClose = closePeek
+    }
     chips.slice(0, 8).forEach(function (ch) {
       if (!ch || typeof ch.label !== 'string' || typeof ch.value !== 'string' || !ch.label || !ch.value) return
+      var fin = typeof ch.line === 'string' && !!ch.line, u = chipImg(ch)
       var b = el('button', 'lcochat-chip'); b.type = 'button'
-      if (typeof ch.swatch === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(ch.swatch)) { var sw = el('i', 'lcochat-sw'); sw.style.background = ch.swatch; b.appendChild(sw) }
+      var sw = null
+      if (typeof ch.swatch === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(ch.swatch)) { sw = el('i', 'lcochat-sw'); sw.style.background = ch.swatch }
+      if (u) {   // the picture replaces the dot; a picture that fails to load falls back to the dot
+        var ci = el('img', 'lcochat-qki'); ci.src = u; ci.alt = ''; ci.loading = 'lazy'
+        ci.addEventListener('error', function () { if (ci.parentNode) { if (sw) ci.parentNode.replaceChild(sw, ci); else ci.parentNode.removeChild(ci) } })
+        b.appendChild(ci)
+      } else if (sw) b.appendChild(sw)
       b.appendChild(document.createTextNode(ch.label.slice(0, 40)))
       if (state.needEmail) b.disabled = true   // chips that arrive while the mandatory email card is open wait for it too
-      b.addEventListener('click', function () { if (state.busy) return; setChipsDisabled(true); post({ text: ch.label.slice(0, 40), chip: ch.value.slice(0, 64) }) })
-      box.appendChild(b)
+      b.addEventListener('click', function () { pick(ch) })
+      if (!fin) { box.appendChild(b); return }
+      b.addEventListener('mouseenter', function () { openPeek(ch, false) })
+      b.addEventListener('focus', function () { if (lastPtr === 'key') openPeek(ch, false) })
+      var w = el('span', 'lcochat-qkw'); w.appendChild(b)
+      var z = el('button', 'lcochat-qkz'); z.type = 'button'; z.setAttribute('aria-label', 'Preview ' + ch.label.slice(0, 40)); z.setAttribute('data-track', 'chat-finish-preview')
+      z.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>'
+      if (state.needEmail) z.disabled = true
+      z.addEventListener('click', function () { openPeek(ch, true) })
+      w.appendChild(z); box.appendChild(w)
     })
     if (!box.childNodes.length) return
-    c.appendChild(box); state.chipsEl = box
+    area.addEventListener('mouseleave', function () { if (!pinned) closePeek() })
+    area.appendChild(box); c.appendChild(area); state.chipsEl = area
   }
   function addMsg(m) {
     if (state.seen[m.seq]) return
@@ -488,10 +539,11 @@
     daySep(toDate(at))
     var r = row(from, String(m.text || ''), stamp(at), m.photos, m.human === true || m.by === 'human' || m.team === true, m.name, Array.isArray(m.files) ? m.files : null)   // team: the server's human-mode line, the team's avatar (never the AI's)
     if (from === 'you') r.setAttribute('data-seq', String(m.seq))
+    var nearEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 160   // measured before the line goes in: a tall line (picture chips) still follows the reader down
     if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
     state.lastFrom = from
     if (from === 'us') { if (Array.isArray(m.chips) && m.chips.length) renderChips(r, m.chips); if (m.upload === true) hotUpload(true); if (m.link) renderGuide(r, m.link) }
-    if (log.scrollHeight - log.scrollTop - log.clientHeight < 160) scrollDown()
+    if (nearEnd) scrollDown()
   }
   // GET visit/messages carries read_seq = the highest VISITOR seq our side has read (the system picked it up, or a person did). Under that line a small 'Seen'.
   function applyRead(n) {
@@ -1003,7 +1055,7 @@
     ta.addEventListener('input', grow)
     photoIn.addEventListener('change', pickPhoto)
     panel.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') { e.stopPropagation(); close(); return }
+      if (e.key === 'Escape') { e.stopPropagation(); if (state.peekClose) { state.peekClose(); return } close(); return }
       if (e.key !== 'Tab') return
       var f = Array.prototype.filter.call(panel.querySelectorAll('button,a[href],textarea,input:not([hidden])'), function (n) { return !n.disabled && n.offsetParent !== null })
       if (!f.length) return
