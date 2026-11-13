@@ -776,7 +776,7 @@
   }
   // Black Friday 2026 (owner 2026-10-31): "plan your kitchen in advance, get 15-20% off your order". Friday 2026-11-27. The bar takes the top place until 2026-11-27 (the sale is that day only, owner 2026-10-31) (the visitor's
   // calendar day, inclusive); from 2026-12-01 the membership bar comes back. Fixed 10% off (owner 2026-10-31: "make it 10% instead", "fixed"; replaced the 15% / 20% tiers); the bar links the terms on /black-friday/.
-  var BF = { until: '2026-11-30', text: 'Black Friday sale, Nov 11–30: 10% off your cabinets (freight and tax excluded).', link: 'Plan my kitchen →', href: '/design', details: 'Details', detailsHref: '/black-friday/' }
+  var BF = { until: '2026-11-30', text: 'Black Friday sale, Nov 11–30: 10% off your cabinets.', link: 'Plan my kitchen →', href: '/design', details: 'Details', detailsHref: '/black-friday/' }
   function bfActive() {
     var d = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n }
     return (d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())) <= BF.until
