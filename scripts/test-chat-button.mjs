@@ -306,13 +306,17 @@ async function main() {
     if (ymd <= '2026-11-30') {
       await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true })
       await send('Page.navigate', { url: base + PAGE }); await sleep(1000)
-      await ev(`localStorage.removeItem('lco_ann_bf26_v1'); true`)
+      await ev(`localStorage.removeItem('lco_ann_bf26_v1'); sessionStorage.removeItem('lco_ann_bf26_v1'); true`)
       await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
       const bf = await ev(`(() => { const b = document.querySelector('.lcoann'); if (!b || b.hidden) return null; const [go, det] = b.querySelectorAll('a'); return { t: b.textContent, bg: getComputedStyle(b).backgroundColor, go: go.getAttribute('href'), det: det && det.getAttribute('href'), wide: document.documentElement.scrollWidth > innerWidth, first: document.body.firstElementChild === b } })()`)
-      log(!!bf && /Black Friday/.test(bf.t) && /save 10% on your order/.test(bf.t) && bf.bg === 'rgb(0, 0, 0)' && bf.go === '/design' && bf.det === '/black-friday/' && bf.first && !bf.wide, '390', 'the Black Friday bar: black, a fixed 10% (fbfba5e, #125, owner 2026-10-31), Plan my kitchen -> /design, Details -> /black-friday/, no side scroll', `(${JSON.stringify(bf)})`)
+      log(!!bf && /Black Friday/.test(bf.t) && /10% off your cabinets/.test(bf.t) && bf.bg === 'rgb(0, 0, 0)' && bf.go === '/design' && bf.det === '/black-friday/' && bf.first && !bf.wide, '390', 'the Black Friday bar: black, a fixed 10% (fbfba5e, #125, owner 2026-10-31), Plan my kitchen -> /design, Details -> /black-friday/, no side scroll', `(${JSON.stringify(bf)})`)
       await ev(`document.querySelector('.lcoann-x').click(); true`)
       await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
-      log(!(await ev(bar)), '390', 'closed Black Friday bar stays closed (its own key)')
+      log(!(await ev(bar)), '390', 'closed Black Friday bar stays closed for this visit (its own key)')
+      // a new visit (owner 2026-11-14: "show more frequently"): the visit's sessionStorage is gone, the bar is back
+      await ev(`sessionStorage.removeItem('lco_ann_bf26_v1'); true`)
+      await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
+      log(!!(await ev(bar)), '390', 'the Black Friday bar shows again on a new visit')
     }
   } finally { try { ws && ws.close() } catch {} proc.kill('SIGTERM'); if (srv) srv.close() }
   console.log(fails.length ? `test-chat-button: ${fails.length} FAILED` : 'test-chat-button: OK')

@@ -845,7 +845,10 @@
   }
   function annShow() {
     var bf = bfActive(), key = bf ? BF_KEY : ANN_KEY
-    try { if (localStorage.getItem(key)) return } catch (e) { return }
+    // the Black Friday bar shows on every new visit (owner 2026-11-14: "show more frequently"): closing it hides it for this visit only
+    // (sessionStorage); the membership bar stays closed for good (localStorage). ponytail: once per visit; a "every N days" cap would be the next step
+    var store = function () { try { return bf ? sessionStorage : localStorage } catch (e) { return null } }()
+    try { if (!store || store.getItem(key)) return } catch (e) { return }
     if (document.querySelector('.lcoann')) return
     var bar = el('div', 'lcoann' + (bf ? ' bfbar' : '')); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Announcement')
     bar.appendChild(el('span', '', bf ? BF.text : ANN.text))
@@ -853,7 +856,7 @@
     bar.appendChild(a)
     if (bf) { var dt = el('a', 'bfd', BF.details); dt.href = BF.detailsHref; dt.setAttribute('data-track', 'announce-bf-details'); bar.appendChild(dt) }
     var x = el('button', 'lcoann-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close the announcement')
-    x.addEventListener('click', function () { bar.hidden = true; try { localStorage.setItem(key, '1') } catch (e) { /* ignore */ } })
+    x.addEventListener('click', function () { bar.hidden = true; try { store.setItem(key, '1') } catch (e) { /* ignore */ } })
     bar.appendChild(x)
     document.body.insertBefore(bar, document.body.firstChild)
   }
