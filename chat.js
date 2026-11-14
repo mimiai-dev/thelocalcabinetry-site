@@ -4,7 +4,7 @@
  *
  * It replaces the old floating contact link script. The corner button looks and sits the same (bottom right, dark navy pill,
  * chat-bubble icon) but opens a panel. Lines go to OUR server (same origin, /design/api/visit/*) and land with the team; the
- * replies come back into the panel (polling). No link from the panel to the design page (/design): they are different things (owner 2026-10-21).
+ * replies come back into the panel (pushed over GET visit/stream since 2026-11-14; polling only when the stream is off or fails). No link from the panel to the design page (/design): they are different things (owner 2026-10-21).
  *
  * EMAIL STEP (owner 2026-10-20, mandatory): right after the AI-or-person choice, one small step asks for the visitor's email (field, one-line privacy note, Start chat). The server
  * config switches it (email_gate first, the default | after_chip | off = the kill switch, or the older email_required). The address stays in this browser (localStorage, optional) and is
@@ -614,37 +614,97 @@
     var idle = Date.now() - state.idleSince
     return idle < 120000 ? 4000 : idle < 600000 ? 8000 : 15000
   }
+  // one answer of the server (the poll's or the stream's: the same shape) drawn into the panel
+  function applyAnswer(j) {
+    showErr('')
+    if (j.mode === 'human' || j.mode === 'ai') applyMode(j.mode)
+    var fresh = (j.messages || []).length
+    var usBefore = state.maxUs || 0
+    ;(j.messages || []).forEach(addMsg)
+    if (!state.open && (state.maxUs || 0) > usBefore) setUnread(true)
+    if (j.need_email === true && state.emailMode !== 'off') emailCard(true)   // this conversation has no email yet (begun before the step): ask in the thread, under its lines
+    applyRead(j.read_seq)
+    // the real step while a reply is owed (server `working`: reading, checking your sizes, drawing, rendering the 3D view …; owner 2026-10-24, T-261024-11) is the typing line's words
+    var step = j.working && typeof j.working.text === 'string' ? j.working.text.slice(0, 80) : ''
+    var cap = j.typing_name ? String(j.typing_name).slice(0, 30) + ' ' + T.typing : (step || T.typingUs)
+    if ((j.typing === true || step) && !state.humanTyping) showTyping(cap)
+    else if ((j.typing === true || step) && state.typing && !state.drawQ) setTypingCaption(cap)
+    else if (j.typing !== true && !step && state.humanTyping && !state.drawQ) hideTyping()   // a scripted reply still pausing keeps its typing line
+    maybeSeen()
+    if (fresh) { state.idleSince = Date.now(); scrollDown() }
+  }
+  function forget() { // the server does not know this conversation (any more): start clean on the next message
+    liveStop(); state.id = null; state.last = 0; state.seen = {}; state.lastFrom = ''; remember(); resetLog()
+  }
+  // The live stream (owner 2026-11-14: "realtime trigger and interaction instead of check every N seconds"; ops repo web-portal realtime-chat). GET visit/stream pushes the visit/messages
+  // answer whenever the conversation changes: our reply the moment it is released, the typing dots the moment a teammate starts. Read with fetch, because EventSource cannot send the
+  // x-lco-visit header and the conversation id never goes in a URL (the URL carries only the last seq). The server closes it every 5 minutes and we reopen it with Last-Event-ID, so nothing
+  // is lost or shown twice. Open while the panel is open or a reply is owed, as the poll was. The poll below runs only when there is no stream: config says stream false (an older server,
+  // or VISIT_STREAM=off), the browser cannot read a stream, or it failed three times in a minute.
+  var live = { ctl: null, fails: [], off: false }
+  function liveStop() { var c = live.ctl; live.ctl = null; if (c) { try { c.abort() } catch (e) { /* gone */ } } }
+  function liveFail() { var now = Date.now(); live.fails = live.fails.filter(function (x) { return now - x < 60000 }); live.fails.push(now); if (live.fails.length >= 3) live.off = true }
+  function liveOpen() {
+    if (!state.stream || live.off || typeof ReadableStream === 'undefined' || typeof TextDecoder === 'undefined' || typeof AbortController === 'undefined') return false
+    if (live.ctl) return true
+    var ctl = new AbortController(), id = state.id, ended = '', gotAny = false, done = false
+    live.ctl = ctl
+    function mine() { return live.ctl === ctl && state.id === id }
+    function block(raw) {
+      var ev = '', data = ''
+      raw.split('\n').forEach(function (ln) { if (ln.indexOf('event:') === 0) ev = ln.slice(6).trim(); else if (ln.indexOf('data:') === 0) data += ln.slice(5).trim() })
+      gotAny = true
+      if (ev === 'chat' && data) { try { applyAnswer(JSON.parse(data)) } catch (e) { /* one bad block: the next one carries the state again */ } }
+      else if (ev === 'end') ended = data
+      // the answer is in and the panel is closed (dot shown): stop until it opens, as the poll did
+      if (!state.open && !state.owedSince) { done = true; liveStop() }
+    }
+    fetch(API + 'stream?after=' + state.last, { headers: headers({ accept: 'text/event-stream', 'last-event-id': String(state.last) }), cache: 'no-store', signal: ctl.signal }).then(function (r) {
+      if (r.status === 404 || r.status === 400) {
+        return r.json().catch(function () { return null }).then(function (j0) {
+          if (j0 && j0.error === 'unknown_conversation') { done = true; if (live.ctl === ctl) live.ctl = null; forget(); return }
+          live.off = true; throw new Error('stream off')
+        })
+      }
+      if (r.status === 429) live.fails = [Date.now(), Date.now()]
+      if (!r.ok || !r.body) throw new Error('stream ' + r.status)
+      var rd = r.body.getReader(), dec = new TextDecoder(), buf = ''
+      function pump() {
+        return rd.read().then(function (x) {
+          if (x.done || !mine()) return
+          buf += dec.decode(x.value, { stream: true })
+          var i
+          while ((i = buf.indexOf('\n\n')) >= 0 && !done && mine()) { var raw = buf.slice(0, i); buf = buf.slice(i + 2); block(raw) }
+          if (done || !mine()) return
+          return pump()
+        })
+      }
+      return pump()
+    }).catch(function () { if (!ctl.signal.aborted) liveFail() }).then(function () {
+      if (done || live.ctl !== ctl) return
+      live.ctl = null
+      if (ended.indexOf('unknown_conversation') >= 0) { forget(); return }
+      if (!gotAny && !ended) liveFail()
+      // reopen at once after the server's 5-minute close, after 30 s when a newer tab of this chat took the place, after a short pause on a failure (the poll once it is off)
+      clearTimeout(state.timer); state.timer = setTimeout(poll, ended.indexOf('replaced') >= 0 ? 30000 : live.off ? 0 : live.fails.length ? 2000 * live.fails.length : 300)
+    })
+    return true
+  }
   function poll() {
     clearTimeout(state.timer)
-    if (!state.id) return
+    if (!state.id) { liveStop(); return }
     // panel open: always; panel closed or tab hidden: only while a reply is owed, slower, so the answer still arrives (and shows a dot)
-    if ((!state.open || document.hidden) && !state.owedSince) return
+    if ((!state.open || document.hidden) && !state.owedSince) { liveStop(); return }
+    if (liveOpen()) return
     fetch(API + 'messages?after=' + state.last + (state.longPoll ? '&wait=25' : ''), { headers: headers(), cache: 'no-store' }).then(function (r) {
-      if (r.status === 404 || r.status === 400) { // the server does not know this conversation (any more): start clean on the next message
-        state.id = null; state.last = 0; state.seen = {}; state.lastFrom = ''; remember(); resetLog(); return null
-      }
+      if (r.status === 404 || r.status === 400) { forget(); return null }
       if (r.status === 429) { state.timer = setTimeout(poll, 30000); return null }
       if (r.status === 503) { fallback(); return null }
       if (!r.ok) throw new Error('x')
       return r.json()
     }).then(function (j) {
       if (!j) return
-      showErr('')
-      if (j.mode === 'human' || j.mode === 'ai') applyMode(j.mode)
-      var fresh = (j.messages || []).length
-      var usBefore = state.maxUs || 0
-      ;(j.messages || []).forEach(addMsg)
-      if (!state.open && (state.maxUs || 0) > usBefore) setUnread(true)
-      if (j.need_email === true && state.emailMode !== 'off') emailCard(true)   // this conversation has no email yet (begun before the step): ask in the thread, under its lines
-      applyRead(j.read_seq)
-      // the real step while a reply is owed (server `working`: reading, checking your sizes, drawing, rendering the 3D view …; owner 2026-10-24, T-261024-11) is the typing line's words
-      var step = j.working && typeof j.working.text === 'string' ? j.working.text.slice(0, 80) : ''
-      var cap = j.typing_name ? String(j.typing_name).slice(0, 30) + ' ' + T.typing : (step || T.typingUs)
-      if ((j.typing === true || step) && !state.humanTyping) showTyping(cap)
-      else if ((j.typing === true || step) && state.typing && !state.drawQ) setTypingCaption(cap)
-      else if (j.typing !== true && !step && state.humanTyping && !state.drawQ) hideTyping()   // a scripted reply still pausing keeps its typing line
-      maybeSeen()
-      if (fresh) { state.idleSince = Date.now(); scrollDown() }
+      applyAnswer(j)
       if (!state.open && !state.owedSince) return   // the answer is in (dot shown): stop until the panel opens
       state.timer = setTimeout(poll, nextDelay())
     }).catch(function () { state.timer = setTimeout(poll, 15000) })
@@ -733,6 +793,8 @@
       if (j) {   // the email step is switched from the server: email_gate 'first' | 'after_chip' | 'off', or the older email_required true | false
         var g = j.email_gate
         state.longPoll = j.long_poll === true   // the server holds GET visit/messages?wait=25 until a new line or state change
+        var hadStream = state.stream; state.stream = j.stream === true   // GET visit/stream is served: the chat is pushed (the poll only when it is not)
+        if (state.stream && !hadStream && state.id && (state.open || state.owedSince)) poll()
         if (g === 'first' || g === 'after_chip' || g === 'off') state.emailMode = g
         else if (j.email_required === false) state.emailMode = 'off'
         else if (j.email_required === true) state.emailMode = 'first'
@@ -960,7 +1022,7 @@
     maybeSeen()
   }
   function close() {
-    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer); if (state.owedSince) state.timer = setTimeout(poll, nextDelay()); fitViewport(); fitBtn()
+    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer); if (state.owedSince) state.timer = setTimeout(poll, nextDelay()); else liveStop(); fitViewport(); fitBtn()
     lastY = Math.max(0, window.scrollY || 0); closedAt = Date.now()   // the phone keyboard closing moves the page: not a scroll by the visitor
     if (lastPtr !== 'touch') btn.focus()
   }
