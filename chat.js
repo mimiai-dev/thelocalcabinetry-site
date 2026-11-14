@@ -525,7 +525,8 @@
     // person answering, not a form (owner 2026-10-24, T-261024-10). Only for a fresh one (under 15 s old); history draws at once. Lines behind it wait their turn (order kept).
     var scripted = from === 'us' && m.holding !== true && Array.isArray(m.chips) && m.chips.length > 0 && Date.now() - toDate(at).getTime() < 15000
     if (scripted || state.drawQ) {
-      var wait = scripted ? Math.min(1600, 700 + String(m.text || '').length * 12) : 0
+      // 1.2 to 2.5 s by its length, with a little jitter so it is never the same each time (owner 2026-11-14: "have some slight delay even though it's a fixed question")
+      var wait = scripted ? Math.max(1200, Math.min(2500, 1150 + String(m.text || '').length * 14 + Math.round(Math.random() * 450 - 150))) : 0
       if (scripted && !state.typing) showTyping(T.typingUs)
       state.drawQ = (state.drawQ || Promise.resolve()).then(function () { return new Promise(function (ok) { setTimeout(ok, wait) }) }).then(function () { drawMsg(m, from, at) })
       var mine = state.drawQ; mine.then(function () { if (state.drawQ === mine) state.drawQ = null })
