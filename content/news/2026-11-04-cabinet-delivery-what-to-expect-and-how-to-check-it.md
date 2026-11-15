@@ -9,10 +9,10 @@ tags: [cabinet delivery, RTA cabinets, receiving freight, storing cabinets, kitc
 keyword: cabinet delivery what to expect
 intent: informational
 topic: shipping-delivery
-hero: /accessories/boxes.jpg
-hero_alt: Cabinet boxes packed for shipping
-hero_w: 1000
-hero_h: 839
+hero: /accessories/pj-boxes-1.jpg
+hero_alt: Kitchen with tall cabinets, a pull-out drawer and a built-in oven, after installation
+hero_w: 1100
+hero_h: 1467
 links: [kitchen, design]
 draft: false
 facts_verified: true
@@ -55,7 +55,7 @@ Do the check before you sign. Once the driver leaves, it is harder to show that 
 
 You may not have time to open every box at the door. That is fine, and the next section covers it.
 
-![Cabinet boxes ready for storage](/accessories/pj-boxes-1.jpg)
+![Wood-grain wall cabinets after installation](/installs/install-3.jpg)
 
 ## Check the boxes after the driver leaves
 

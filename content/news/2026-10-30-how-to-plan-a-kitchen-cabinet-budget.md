@@ -9,8 +9,8 @@ tags: [kitchen cabinet budget, cabinet costs, RTA cabinets, kitchen planning, fi
 keyword: kitchen cabinet budget
 intent: informational
 topic: cabinet-budget
-hero: /kitchens/kitchen-shaker-grey.jpg
-hero_alt: Grey shaker kitchen cabinets with a full run of base and wall units
+hero: /kitchens/kitchen-shaker-oak.jpg
+hero_alt: Oak shaker kitchen with full base and wall cabinet runs
 hero_w: 1600
 hero_h: 1401
 links: [kitchen, design]
@@ -61,7 +61,7 @@ Fillers are small, but they are easy to forget. So are:
 
 Family Handyman suggests checking, before you finalize an order, that door swings are right, that end cabinets have finished ends, and that toe kicks and fillers are on the list. We agree. Put each one on the budget as its own line.
 
-![White shaker kitchen with matching cabinet runs](/kitchens/kitchen-shaker-white.jpg)
+![Kitchen with white upper cabinets and a dark island](/kitchens/kitchen-modern-white.jpg)
 
 ## Door style, box type and hardware
 

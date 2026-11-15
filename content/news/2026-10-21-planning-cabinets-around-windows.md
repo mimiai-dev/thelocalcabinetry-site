@@ -8,10 +8,10 @@ category: guides
 tags: [closet, kitchen, planning, windows]
 keyword: cabinets around a window
 intent: how-to planning
-hero: /accessories/drawers-run.jpg
-hero_alt: A run of wide handleless drawers, the kind of low unit that fits under a window
-hero_w: 1100
-hero_h: 826
+hero: /kitchens/kitchen-shaker-maple.jpg
+hero_alt: Sunlit maple shaker kitchen with windows beside the cabinet runs
+hero_w: 1600
+hero_h: 1401
 links: [closet, kitchen, measure, design]
 draft: false
 facts_verified: true

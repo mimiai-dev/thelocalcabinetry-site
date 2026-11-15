@@ -60,7 +60,7 @@ Sheen changes things as well. The levels go from flat to satin to semi-gloss to 
 
 If you plan to add under-cabinet lighting, test your sample with those lights on. They hit the door from an angle that daylight does not.
 
-![Shaker kitchen in white with a light counter](/kitchens/kitchen-shaker-white.jpg)
+![Kitchen with navy cabinets and a white island](/kitchens/kitchen-modern-blue.jpg)
 
 ## How to judge samples
 

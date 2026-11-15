@@ -9,10 +9,10 @@ tags: [kitchen cabinet colors, cabinet finish, color samples, kitchen lighting, 
 keyword: kitchen cabinet colors
 intent: informational
 topic: cabinet-colors
-hero: /kitchens/kitchen-shaker-white.jpg
-hero_alt: Kitchen with white shaker cabinets and light counters
+hero: /kitchens/kitchen-shaker-blue-v2.jpg
+hero_alt: Navy shaker kitchen with a white island and pendant lights
 hero_w: 1600
-hero_h: 1292
+hero_h: 1347
 links: [kitchen, doors, design]
 draft: false
 facts_verified: true
@@ -50,7 +50,7 @@ Some practical points:
 
 Before you test anything, decide which bulbs will be in the kitchen. If you plan to change them, change them first. Otherwise your samples will look different after the new bulbs go in.
 
-![Kitchen with grey shaker cabinets](/kitchens/kitchen-shaker-grey.jpg)
+![Kitchen with sage green cabinets and a white island](/kitchens/kitchen-modern-green.jpg)
 
 ## How to judge samples
 

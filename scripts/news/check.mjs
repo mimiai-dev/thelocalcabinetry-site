@@ -2,6 +2,7 @@
 // CI gate for the news: node scripts/news/check.mjs   (also: npm run news:check)
 import fs from 'node:fs'
 import path from 'node:path'
+import crypto from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { parseFrontMatter, markdown, CATEGORIES, slugify, stripTags, wordCount } from './lib.mjs'
 import { gatePost } from './gate.mjs'
@@ -41,6 +42,18 @@ for (const f of files) {
   for (const l of body.matchAll(/\]\((\/[^)\s#]*)/g)) { const p = l[1].replace(/\/$/, ''); const ok = ['', '/design', '/points', '/member', '/policies', '/contact'].includes(p) || fs.existsSync(path.join(ROOT, p.slice(1))) || fs.existsSync(path.join(ROOT, p.slice(1), 'index.html')); if (!ok) fail(f, 'internal link target not found: ' + l[1]) }
   if (/<!--[\s\S]*CHECKLIST/.test(body)) fail(f, 'delete the CHECKLIST comment when it is done')
   if (/\$\s?\d/.test(stripTags(html)) && fm.prices_verified !== true) fail(f, 'a price appears but prices_verified is not true (prices only from our saved price list)')
+}
+// no two published posts may share a picture (hero or in-text): same path, or the same file content under another name (owner 2026-11-16)
+const used = new Map()
+for (const f of files) {
+  const { fm, body } = parseFrontMatter(fs.readFileSync(path.join(dir, f), 'utf8')); if (fm.draft !== false) continue
+  const srcs = new Set([fm.hero, ...[...body.matchAll(/!\[[^\]]*\]\((\/[^)\s]+)/g)].map((m) => m[1])].filter(Boolean))
+  for (const src of srcs) {
+    const abs = path.join(ROOT, src.replace(/^\//, '')); if (!fs.existsSync(abs)) continue
+    const key = crypto.createHash('sha1').update(fs.readFileSync(abs)).digest('hex')
+    if (used.has(key) && used.get(key).f !== f) fail(f, `picture ${src} is already used by ${used.get(key).f} (${used.get(key).src}); every post needs its own pictures`)
+    else used.set(key, { f, src })
+  }
 }
 // generated output must match the content, and drafts must not leak anywhere
 try { execFileSync('node', [path.join(ROOT, 'scripts/news/build.mjs'), '--check'], { stdio: 'pipe' }) } catch (e) { errs.push('build --check failed:\n' + String(e.stderr || e.stdout || e.message).trim()) }
