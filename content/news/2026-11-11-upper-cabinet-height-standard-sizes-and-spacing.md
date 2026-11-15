@@ -9,10 +9,10 @@ tags: [upper cabinet height, wall cabinets, crown moulding, kitchen layout, kitc
 keyword: upper cabinet height
 intent: informational
 topic: upper-cabinet-height
-hero: /kitchens/kitchen-shaker-white.jpg
-hero_alt: White shaker kitchen with wall cabinets above the counter
+hero: /kitchens/kitchen-modern-walnut.jpg
+hero_alt: White kitchen with wall cabinets above the counter and a wood-toned island
 hero_w: 1600
-hero_h: 1292
+hero_h: 1401
 links: [kitchen, measure, design]
 draft: false
 facts_verified: true
@@ -58,7 +58,7 @@ The space above a stove is its own rule. Bob Vila gives these clearances for a c
 
 These clearances apply whether or not there is a hood. Your range or hood manual can call for more, and local code applies, so read both before you place a cabinet there.
 
-![Grey shaker kitchen with upper cabinets](/kitchens/kitchen-shaker-grey.jpg)
+![Tall wood cabinets running up to the ceiling](/installs/install-6.jpg)
 
 ## Going to the ceiling and crown moulding
 

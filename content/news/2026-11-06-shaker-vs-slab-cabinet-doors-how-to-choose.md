@@ -9,10 +9,10 @@ tags: [shaker vs slab cabinet doors, cabinet doors, slim shaker, kitchen cabinet
 keyword: shaker vs slab cabinet doors
 intent: comparison
 topic: door-styles
-hero: /doors/shaker-slim.jpg
-hero_alt: Slim shaker cabinet door with a narrow frame and flat center panel
-hero_w: 603
-hero_h: 760
+hero: /kitchens/kitchen-modern-handleless.jpg
+hero_alt: Modern handleless kitchen with flat slab doors
+hero_w: 1500
+hero_h: 1197
 links: [doors, kitchen, design]
 draft: false
 facts_verified: true
@@ -31,7 +31,7 @@ Below we cover how each door looks, how it cleans, what it costs you over time, 
 
 **Slab.** A slab door is one flat piece. No frame, no recess. Bob Vila says wood tones lean traditional on this profile, while bold paint gives a modern look. Slab works well with handleless or minimal hardware. It also puts all the attention on the finish, so a wood grain or a solid color has to be good.
 
-![Shaker kitchen with white doors](/kitchens/kitchen-shaker-white.jpg)
+![Shaker kitchen with framed doors](/kitchens/kitchen-shaker-plata.jpg)
 
 ## Cleaning each door
 
@@ -63,7 +63,7 @@ We do not quote prices in articles, and our standard price list is the same for 
 
 **Kitchen.** Shaker is the default and works in nearly every layout. Choose slim shaker if the kitchen is modern but you want a bit of detail. Choose slab for a handleless, minimal or midcentury kitchen, or if you want the least cleaning near the range.
 
-![Modern handleless kitchen with flat doors](/kitchens/kitchen-modern-handleless.jpg)
+![Handleless kitchen with flat white doors](/installs/install-2.jpg)
 
 **Bathroom vanity.** Slab is a good fit. Bathrooms have steam and splashes, and a flat door dries off in one pass. Shaker looks fine too. Just keep the frame edges dry, because that is where water will sit.
 
