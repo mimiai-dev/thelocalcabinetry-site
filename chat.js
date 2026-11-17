@@ -314,8 +314,15 @@
     // (navy #0e2740, gold #b4862f, panel #f3f0ea, Fraunces / Hanken Grotesk already served from /fonts); inputs 16 px (no iOS zoom), targets 48 px; fits 320 px.
     '.lcobf {position:fixed;inset:0;z-index:2147483002;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,20,34,.55)}',
     '[hidden].lcobf {display:none}',
-    '.lcobf-card {position:relative;width:440px;max-width:100%;max-height:calc(100dvh - 32px);overflow:auto;background:#fff;color:var(--ink,#14273f);border-radius:14px;box-shadow:0 12px 40px rgba(8,20,34,.35);font:16px/1.5 var(--sans,"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif);outline:none}',
+    '.lcobf-card {position:relative;display:flex;width:780px;max-width:100%;max-height:calc(100dvh - 32px);overflow:auto;background:#fff;color:var(--ink,#14273f);border-radius:14px;box-shadow:0 12px 40px rgba(8,20,34,.35);font:16px/1.5 var(--sans,"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif);outline:none}',
     '.lcobf-top {padding:26px 56px 20px 24px;background:#000;color:#fff}',
+    '.lcobf-pic {flex:0 0 40%;min-height:100%;background:#0e2740 url(/hero-kitchen-800.webp) center/cover no-repeat}',
+    '.lcobf-main {flex:1 1 auto;min-width:0}',
+    '@media (max-width:719px){.lcobf-pic {display:none}.lcobf-card {width:440px}}',
+    // slow, soft entrance (owner 2026-11-17: "have a slow display animation"); none for people who ask for less motion
+    '.lcobf {animation:lcobf-fade .7s ease both}.lcobf-card {animation:lcobf-rise .9s cubic-bezier(.2,.7,.2,1) .1s both}',
+    '@keyframes lcobf-fade{from{opacity:0}to{opacity:1}}@keyframes lcobf-rise{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}',
+    '@media (prefers-reduced-motion:reduce){.lcobf,.lcobf-card {animation:none}}',
     '.lcobf-eye {margin:0 0 6px;color:var(--gold-lt,#cfa44e);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}',
     '.lcobf-top h2{margin:0;font:500 30px/1.1 var(--serif,"Fraunces",Georgia,"Times New Roman",serif);color:#fff}',
     '.lcobf-body {padding:18px 24px 22px}',
@@ -1004,8 +1011,7 @@
     var h = el('h2', '', '10% off your cabinets'); h.id = 'lcobf-h'; top.appendChild(h)
     var x = el('button', 'lcobf-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close')
     var body = el('div', 'lcobf-body')
-    var p = el('p', '', 'Leave your details and we will help you plan your order while the sale is on. ')
-    var terms = el('a', '', 'See the terms'); terms.href = BF.detailsHref; terms.setAttribute('data-track', 'bfpop-terms'); p.appendChild(terms)
+    var p = el('p', '', 'Leave your details and we will help you plan your order while the sale is on.')
     body.appendChild(p)
     var form = el('form', 'lcobf-f'); form.noValidate = true; form.method = 'POST'; form.action = INQUIRY; form.setAttribute('data-track', 'bfpop-form')
     lcoField(form, 'Name', 'name', 'text')
@@ -1013,15 +1019,18 @@
     lcoField(form, 'Phone', 'phone', 'tel', true)
     var go = el('button', 'lcof-go', 'Send'); go.type = 'submit'; go.setAttribute('data-track', 'bfpop-send'); form.appendChild(go)
     var msg = el('p', 'lcof-msg'); msg.setAttribute('role', 'alert'); form.appendChild(msg)
+    // one link, not two (owner 2026-11-17): the sale page carries the terms and links the privacy policy
     var priv = el('p', 'lcobf-priv', 'We only use your details to reply about your project. ')
-    var pa = el('a', '', 'Privacy policy'); pa.href = PRIVACY; priv.appendChild(pa); form.appendChild(priv)
+    var pa = el('a', '', 'Sale terms & privacy'); pa.href = BF.detailsHref; pa.setAttribute('data-track', 'bfpop-terms'); priv.appendChild(pa); form.appendChild(priv)
     body.appendChild(form)
     if (n >= 2 && kept) {
       var never = el('button', 'lcobf-never', 'Don’t show this again'); never.type = 'button'; never.setAttribute('data-track', 'bfpop-never')
       never.addEventListener('click', function () { bfpOff('never'); bfPopClose() })
       body.appendChild(never)
     }
-    card.appendChild(top); card.appendChild(body); card.appendChild(x); bfp.appendChild(card); document.body.appendChild(bfp)
+    var main = el('div', 'lcobf-main'); main.appendChild(top); main.appendChild(body)
+    var pic = el('div', 'lcobf-pic'); pic.setAttribute('aria-hidden', 'true')   // a real kitchen of ours on the left (owner 2026-11-17)
+    card.appendChild(pic); card.appendChild(main); card.appendChild(x); bfp.appendChild(card); document.body.appendChild(bfp)
     form.addEventListener('submit', function (e) {
       e.preventDefault()
       lcoPost(form, msg, go, 'Black Friday sale', function () {

@@ -114,8 +114,8 @@ async function main() {
     const first = await ev(`(() => { const p = ${pop}; if (!p) return null; return { role: p.getAttribute('role'), modal: p.getAttribute('aria-modal'), label: document.getElementById(p.getAttribute('aria-labelledby'))?.textContent,
       text: p.textContent, labelled: [...p.querySelectorAll('input')].every((i) => i.closest('label') && i.closest('label').textContent.trim().length > 0), fields: [...p.querySelectorAll('input')].map((i) => i.name + (i.required ? '*' : '')),
       priv: p.querySelector('.lcobf-priv a')?.getAttribute('href'), terms: p.querySelector('.lcobf-body > p a')?.getAttribute('href'), never: !!p.querySelector('.lcobf-never'), focus: p.contains(document.activeElement), n: localStorage.getItem('${N}') } })()`)
-    log(!!first && first.role === 'dialog' && first.modal === 'true' && first.label === '10% off your cabinets' && /Nov 11–30/.test(first.text) && first.labelled && first.fields.join() === 'name*,email*,phone' && first.priv === '/policies#privacy' && first.terms === '/black-friday/' && first.focus,
-      'first display: role=dialog, labelled fields Name / Email / Phone (optional), the bar\'s sale facts, terms + privacy links, focus inside', `(${JSON.stringify(first)})`)
+    log(!!first && first.role === 'dialog' && first.modal === 'true' && first.label === '10% off your cabinets' && /Nov 11–30/.test(first.text) && first.labelled && first.fields.join() === 'name*,email*,phone' && first.priv === '/black-friday/' && !first.terms && first.focus,
+      'first display: role=dialog, labelled fields Name / Email / Phone (optional), the bar\'s sale facts, one terms & privacy link, focus inside', `(${JSON.stringify(first)})`)
     log(first && !first.never && first.n === '1', 'first display: no "Don\'t show this again" button, counted 1')
     await ev(`document.querySelector('.lcobf-x').click(); true`)
     log(!(await popOn()), 'x closes it')
