@@ -309,7 +309,44 @@
     '.lcocat-bar .lcocat-tx p{display:none}',
     '.lcocat-bar .lcocat-go{min-height:40px;padding:0 14px;font-size:14px}',
     '.lcocat-bar .lcocat-x{top:0;right:0;background:none}',
-    '@media print{.lcocat{display:none}.lcochat-btn,.lcochat-panel{display:none}}'
+    '@media print{.lcocat{display:none}.lcochat-btn,.lcochat-panel{display:none}}',
+    // The Black Friday popup (lcobf) and the contact band before the footer (lcoband), owner 2026-11-17. The site's own tokens with their values as fallbacks
+    // (navy #0e2740, gold #b4862f, panel #f3f0ea, Fraunces / Hanken Grotesk already served from /fonts); inputs 16 px (no iOS zoom), targets 48 px; fits 320 px.
+    '.lcobf {position:fixed;inset:0;z-index:2147483002;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,20,34,.55)}',
+    '[hidden].lcobf {display:none}',
+    '.lcobf-card {position:relative;width:440px;max-width:100%;max-height:calc(100dvh - 32px);overflow:auto;background:#fff;color:var(--ink,#14273f);border-radius:14px;box-shadow:0 12px 40px rgba(8,20,34,.35);font:16px/1.5 var(--sans,"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif);outline:none}',
+    '.lcobf-top {padding:26px 56px 20px 24px;background:#000;color:#fff}',
+    '.lcobf-eye {margin:0 0 6px;color:var(--gold-lt,#cfa44e);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}',
+    '.lcobf-top h2{margin:0;font:500 30px/1.1 var(--serif,"Fraunces",Georgia,"Times New Roman",serif);color:#fff}',
+    '.lcobf-body {padding:18px 24px 22px}',
+    '.lcobf-body>p{margin:0 0 14px;color:var(--soft,#51606f)}',
+    '.lcobf-body>p a,.lcobf-priv a,.lcoband a{color:var(--navy,#0e2740);text-decoration:underline;text-underline-offset:2px}',
+    '.lcobf-x {position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:none;color:#fff;font-size:28px;line-height:1;cursor:pointer}',
+    '.lcobf label,.lcoband label.lcof-l {display:block;margin:0 0 12px;font-size:14px;font-weight:600;color:var(--ink,#14273f)}',
+    '.lcobf input,.lcoband input:not([type=checkbox]),.lcoband select,.lcoband textarea{display:block;box-sizing:border-box;width:100%;min-height:48px;margin-top:4px;padding:10px 12px;border:1px solid #c9ccd1;border-radius:8px;background:#fff;color:var(--ink,#14273f);font-size:16px;line-height:1.4;font-weight:400;font-family:inherit}',
+    '.lcoband textarea{min-height:96px;resize:vertical}',
+    '.lcobf input:focus,.lcoband input:focus,.lcoband select:focus,.lcoband textarea:focus{outline:2px solid var(--gold,#b4862f);outline-offset:1px;border-color:var(--gold,#b4862f)}',
+    '.lcobf [aria-invalid=true],.lcoband [aria-invalid=true]{border-color:#b3261e}',
+    '.lcof-go {display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin-top:4px;padding:0 20px;border:0;border-radius:8px;background:var(--navy,#0e2740);color:#fff;font-size:16px;font-weight:600;line-height:1;font-family:inherit;cursor:pointer}',
+    '.lcof-go:hover{background:#14365a}.lcof-go:disabled{opacity:.6;cursor:default}',
+    '.lcof-msg {margin:10px 0 0;font-size:14px;color:#b3261e}.lcof-msg:empty{display:none}',
+    '.lcof-ok {margin:0;padding:14px 16px;border-radius:8px;background:#eef5ee;color:#1d4d2b;font-weight:600}',
+    '.lcobf-priv {margin:10px 0 0;font-size:13px;color:var(--soft,#51606f)}',
+    '.lcobf-never {display:block;min-height:44px;margin:8px auto 0;padding:0 12px;border:0;background:none;color:var(--soft,#51606f);font-size:14px;line-height:1;font-family:inherit;text-decoration:underline;cursor:pointer}',
+    '.lcobf-x:focus-visible,.lcobf-never:focus-visible,.lcof-go:focus-visible{outline:3px solid var(--gold,#b4862f);outline-offset:2px}',
+    '.lcoband {padding:56px 16px 64px;background:var(--panel,#f3f0ea);color:var(--ink,#14273f);font-family:var(--sans,"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif)}',
+    '.lcoband-in {max-width:620px;margin:0 auto}',
+    '.lcoband h2{margin:0;text-align:center;font:500 clamp(28px,4vw,38px)/1.15 var(--serif,"Fraunces",Georgia,"Times New Roman",serif);color:var(--navy,#0e2740)}',
+    '.lcoband-sub {margin:10px auto 0;max-width:520px;text-align:center;color:var(--soft,#51606f);font-size:16px;line-height:1.55}',
+    '.lcoband-div {display:flex;align-items:center;gap:14px;margin:22px auto 26px;max-width:320px}',
+    '.lcoband-div::before,.lcoband-div::after{content:"";flex:1;height:1px;background:var(--gold,#b4862f);opacity:.55}',
+    '.lcoband-div img{display:block;width:40px;height:40px;border-radius:50%}',
+    '.lcoband-row {display:grid;grid-template-columns:1fr 1fr;gap:0 14px}',
+    '@media (max-width:560px){.lcoband-row {grid-template-columns:1fr}.lcoband {padding:44px 16px 52px}}',
+    '.lcoband label.lcof-c {display:flex;align-items:flex-start;gap:10px;margin:2px 0 16px;font-size:14px;font-weight:400;color:var(--soft,#51606f);line-height:1.45}',
+    '.lcoband label.lcof-c input{flex:0 0 20px;width:20px;height:20px;margin:1px 0 0;accent-color:var(--navy,#0e2740)}',
+    '.lcof-opt {font-weight:400;color:var(--muted,#97a1ad)}',
+    '@media print{.lcobf,.lcoband {display:none}}'
   ].join('')
 
   var modeLine
@@ -874,10 +911,186 @@
     var top = document.querySelector('div[role=region][aria-label=Announcement]')
     if (top && top.parentNode === document.body) document.body.insertBefore(bar, top.nextSibling); else document.body.insertBefore(bar, document.body.firstChild)
   }
+  // ---- Lead forms (owner 2026-11-17): the Black Friday popup and the contact band before the footer. Both post to OUR /api/inquiry (the ops server,
+  // services/conversations/channels/web/web-inquiry.ts inquiryOf) as FormData, like the /contact form: name, email, phone (optional), message (optional), product_id.
+  // Never company or business_type, and product_id never says "member" (either turns the post into a membership application). Each post becomes a form thread
+  // the web desk answers by email. action="/api/inquiry" so t.js adds the first-touch src field on submit. No honeypot: the /contact form has none.
+  var INQUIRY = '/api/inquiry', PRIVACY = '/policies#privacy', INFO_MAIL = 'info@thelocalcabinetry.com'
+  var PHONE_RE = /^[0-9+()\-.\s#xXextEXT]+$/   // the server's rule (web-inquiry.ts inquiryOf)
+  function isContactPage() { return /^\/contact\/?$/.test(location.pathname) }
+  function lcoField(form, label, name, type, opt) {
+    var l = el('label', 'lcof-l'); l.appendChild(document.createTextNode(label))
+    if (opt) { l.appendChild(document.createTextNode(' ')); l.appendChild(el('span', 'lcof-opt', '(optional)')) }
+    var i = el(type === 'textarea' ? 'textarea' : 'input'); i.name = name
+    if (type !== 'textarea') i.type = type
+    if (type === 'email') { i.autocomplete = 'email'; i.maxLength = 254; i.setAttribute('inputmode', 'email') }
+    else if (type === 'tel') { i.autocomplete = 'tel'; i.maxLength = 40 }
+    else if (name === 'name') { i.autocomplete = 'name'; i.maxLength = 80 }
+    else if (type === 'textarea') { i.rows = 3; i.maxLength = 2000 }
+    if (!opt) i.required = true
+    l.appendChild(i); form.appendChild(l)
+    return i
+  }
+  // the visitor's mistakes in plain words, before anything is sent; returns the first bad field or null
+  function lcoCheck(form, msg) {
+    var bad = null, say = ''
+    function mark(n, ok, words) { if (!n) return; n.setAttribute('aria-invalid', ok ? 'false' : 'true'); if (!ok && !bad) { bad = n; say = words } }
+    var f = form.elements
+    mark(f.name, !!f.name.value.trim(), 'Please tell us your name.')
+    mark(f.email, validEmail(f.email.value.trim()), 'Please enter a valid email address.')
+    var ph = f.phone ? f.phone.value.trim() : ''
+    mark(f.phone, !ph || (ph.length <= 40 && PHONE_RE.test(ph)), 'Please check the phone number.')
+    if (f.project) mark(f.project, !!f.project.value, 'Please choose your project.')
+    if (f.agree) mark(f.agree, f.agree.checked, 'Please tick the box to agree to our privacy policy.')
+    msg.textContent = say
+    if (bad) { try { bad.focus() } catch (e) { /* ignore */ } }
+    return bad
+  }
+  // POST the form; ok() on { ok: true }, the server's plain words for the errors it writes for people, one fixed line otherwise
+  var SERVER_WORDS = { 200: 1, 413: 1, 429: 1, 500: 1, 503: 1 }
+  function lcoPost(form, msg, go, product, ok) {
+    if (lcoCheck(form, msg)) return
+    var fd = new FormData(form)
+    fd.delete('agree'); fd.delete('project')
+    fd.set('product_id', product)
+    if (!fd.get('phone')) fd.delete('phone')
+    if (fd.has('message') && !String(fd.get('message')).trim()) fd.delete('message')
+    var fallback = 'Something went wrong. Please try again, or email us at ' + INFO_MAIL + '.'
+    go.disabled = true; msg.textContent = ''
+    fetch(INQUIRY, { method: 'POST', body: fd, credentials: 'same-origin' }).then(function (r) {
+      return r.json().catch(function () { return null }).then(function (j) {
+        if (r.ok && j && j.ok === true) { ok(); return }
+        msg.textContent = (j && typeof j.error === 'string' && j.error && SERVER_WORDS[r.status]) ? j.error : fallback
+      })
+    }).catch(function () { msg.textContent = 'We could not send it. Please check your connection and try again, or email us at ' + INFO_MAIL + '.' })
+      .then(function () { go.disabled = false })
+  }
+
+  // The Black Friday popup (owner 2026-11-17: "a black friday sale banner and have form to input Name, email and phone(optional) that showing everytime user access
+  // the page (display banner after 3-5 seconds random of access a page, display on every page, have a button to click don't show this again on the second time it display)").
+  // Every page that loads this file except /contact, 3-5 s (random) after load. The x, Escape or a click outside close it for this page only. Displays are counted in
+  // localStorage; from the 2nd display on a "Don't show this again" button hides it for good; a sent form hides it for good too (so does the contact band below).
+  // Storage blocked = it shows (as a first display, without the button it could not keep): it never hides by error. Never over the open chat panel or the welcome card.
+  // Never after the end of BF.until (Nov 30) in US Central (CST, UTC-6 after Nov 1): one instant for every visitor, unlike the bar's local calendar day.
+  // The words are the bar's facts (Nov 11–30, 10% off your cabinets); the terms (freight and tax excluded, one discount at a time) stay on /black-friday/, linked.
+  var BF_POP_END = Date.parse(BF.until + 'T23:59:59.999-06:00')
+  var BFP_N = 'lco_bfpop26_n', BFP_OFF = 'lco_bfpop26_off'   // displays so far | 'never' (the button) or 'sent' (a form was sent)
+  var bfp = null, bfpFrom = null
+  function bfpOff(v) { try { localStorage.setItem(BFP_OFF, v) } catch (e) { /* memory only */ } }
+  function bfpGone() { try { return !!localStorage.getItem(BFP_OFF) } catch (e) { return false } }
+  function bfPopArm() {
+    if (Date.now() > BF_POP_END || isContactPage() || bfpGone()) return
+    setTimeout(bfPopShow, 3000 + Math.floor(Math.random() * 2001))
+  }
+  function bfPopClose() {
+    if (!bfp) return
+    var n = bfp; bfp = null; if (n.parentNode) n.parentNode.removeChild(n)
+    if (bfpFrom && bfpFrom.focus && document.contains(bfpFrom)) { try { bfpFrom.focus() } catch (e) { /* ignore */ } }
+  }
+  function bfPopShow() {
+    if (bfp || Date.now() > BF_POP_END || isContactPage() || bfpGone()) return
+    if (state.open || (cat && !cat.hidden && !catBar)) return   // never over the chat panel or the welcome card; the next page tries again
+    var n = 1, kept = false
+    try { n = (parseInt(localStorage.getItem(BFP_N), 10) || 0) + 1; localStorage.setItem(BFP_N, String(n)); kept = localStorage.getItem(BFP_N) === String(n) } catch (e) { n = 1; kept = false }
+    bfpFrom = document.activeElement
+    bfp = el('div', 'lcobf'); bfp.setAttribute('role', 'dialog'); bfp.setAttribute('aria-modal', 'true'); bfp.setAttribute('aria-labelledby', 'lcobf-h')
+    var card = el('div', 'lcobf-card'); card.tabIndex = -1
+    var top = el('div', 'lcobf-top')
+    top.appendChild(el('p', 'lcobf-eye', 'Black Friday sale · Nov 11–30'))
+    var h = el('h2', '', '10% off your cabinets'); h.id = 'lcobf-h'; top.appendChild(h)
+    var x = el('button', 'lcobf-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close')
+    var body = el('div', 'lcobf-body')
+    var p = el('p', '', 'Leave your details and we will help you plan your order while the sale is on. ')
+    var terms = el('a', '', 'See the terms'); terms.href = BF.detailsHref; terms.setAttribute('data-track', 'bfpop-terms'); p.appendChild(terms)
+    body.appendChild(p)
+    var form = el('form', 'lcobf-f'); form.noValidate = true; form.method = 'POST'; form.action = INQUIRY; form.setAttribute('data-track', 'bfpop-form')
+    lcoField(form, 'Name', 'name', 'text')
+    lcoField(form, 'Email', 'email', 'email')
+    lcoField(form, 'Phone', 'phone', 'tel', true)
+    var go = el('button', 'lcof-go', 'Send'); go.type = 'submit'; go.setAttribute('data-track', 'bfpop-send'); form.appendChild(go)
+    var msg = el('p', 'lcof-msg'); msg.setAttribute('role', 'alert'); form.appendChild(msg)
+    var priv = el('p', 'lcobf-priv', 'We only use your details to reply about your project. ')
+    var pa = el('a', '', 'Privacy policy'); pa.href = PRIVACY; priv.appendChild(pa); form.appendChild(priv)
+    body.appendChild(form)
+    if (n >= 2 && kept) {
+      var never = el('button', 'lcobf-never', 'Don’t show this again'); never.type = 'button'; never.setAttribute('data-track', 'bfpop-never')
+      never.addEventListener('click', function () { bfpOff('never'); bfPopClose() })
+      body.appendChild(never)
+    }
+    card.appendChild(top); card.appendChild(body); card.appendChild(x); bfp.appendChild(card); document.body.appendChild(bfp)
+    form.addEventListener('submit', function (e) {
+      e.preventDefault()
+      lcoPost(form, msg, go, 'Black Friday sale', function () {
+        bfpOff('sent')
+        body.textContent = ''
+        var done = el('p', 'lcof-ok', 'Thank you! We will reply by email, usually within one business day.'); done.setAttribute('role', 'status'); body.appendChild(done)
+        var c = el('button', 'lcof-go', 'Close'); c.type = 'button'; c.style.marginTop = '14px'; c.addEventListener('click', bfPopClose); body.appendChild(c)
+        try { c.focus() } catch (er) { /* ignore */ }
+      })
+    })
+    x.addEventListener('click', bfPopClose)
+    bfp.addEventListener('click', function (e) { if (e.target === bfp) bfPopClose() })
+    bfp.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.stopPropagation(); bfPopClose(); return }
+      if (e.key !== 'Tab') return
+      var f = Array.prototype.filter.call(card.querySelectorAll('button,a[href],input,select,textarea'), function (q) { return !q.disabled && q.offsetParent !== null })
+      if (!f.length) return
+      var first = f[0], last = f[f.length - 1], a = document.activeElement
+      if (e.shiftKey && (a === first || a === card)) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus() }
+    })
+    try { card.focus({ preventScroll: true }) } catch (e) { /* ignore */ }   // the dialog, not a field: no phone keyboard jumps up
+  }
+
+  // The contact band (owner 2026-11-17: "have a contact form by the end every page a part of the footer … like a part that right before footer"): a soft panel
+  // right before the site footer on every page that loads this file except /contact (which is the form). No footer = nothing added. The subtitle repeats the
+  // site's own promise ("usually within one business day"), never more. product_id = the chosen project (Kitchen, Bathroom vanity, Closet, Other).
+  var PROJECTS = ['Kitchen', 'Bathroom vanity', 'Closet', 'Other']
+  function bandShow() {
+    if (isContactPage() || document.querySelector('.lcoband')) return
+    var foot = document.querySelector('footer.site-footer')
+    if (!foot) { var fs = document.querySelectorAll('body > footer'); foot = fs.length ? fs[fs.length - 1] : null }
+    if (!foot || !foot.parentNode) return
+    var sec = el('section', 'lcoband'); sec.setAttribute('aria-labelledby', 'lcoband-h')
+    var inr = el('div', 'lcoband-in')
+    var h = el('h2', '', 'Get a free design consultation'); h.id = 'lcoband-h'; inr.appendChild(h)
+    inr.appendChild(el('p', 'lcoband-sub', 'Tell us about your room. We will reply with a free 3D design and a no-obligation quote, usually within one business day.'))
+    var dv = el('div', 'lcoband-div'); dv.setAttribute('aria-hidden', 'true')
+    var mk = el('img'); mk.src = MARK; mk.alt = ''; mk.width = 40; mk.height = 40; mk.loading = 'lazy'; mk.decoding = 'async'; dv.appendChild(mk); inr.appendChild(dv)
+    var form = el('form', 'lcoband-f'); form.noValidate = true; form.method = 'POST'; form.action = INQUIRY; form.setAttribute('data-track', 'band-form')
+    lcoField(form, 'Name', 'name', 'text')
+    var row = el('div', 'lcoband-row')
+    lcoField(row, 'Email', 'email', 'email')
+    lcoField(row, 'Phone', 'phone', 'tel', true)
+    form.appendChild(row)
+    var pl = el('label', 'lcof-l'); pl.appendChild(document.createTextNode('Project'))
+    var sel = el('select'); sel.name = 'project'; sel.required = true
+    var o0 = el('option', '', 'Choose your project'); o0.value = ''; sel.appendChild(o0)
+    PROJECTS.forEach(function (p) { var o = el('option', '', p); o.value = p; sel.appendChild(o) })
+    pl.appendChild(sel); form.appendChild(pl)
+    var ta = lcoField(form, 'Message', 'message', 'textarea', true); ta.placeholder = 'Room, sizes, door style or finish, if you have them'
+    var cl = el('label', 'lcof-c'), cb = el('input'); cb.type = 'checkbox'; cb.name = 'agree'; cb.required = true
+    var ct = el('span', '', 'I agree to the '); var ca = el('a', '', 'privacy policy'); ca.href = PRIVACY; ct.appendChild(ca); ct.appendChild(document.createTextNode(' and to be contacted about my project.'))
+    cl.appendChild(cb); cl.appendChild(ct); form.appendChild(cl)
+    var go = el('button', 'lcof-go', 'Get my free design'); go.type = 'submit'; go.setAttribute('data-track', 'band-send'); form.appendChild(go)
+    var msg = el('p', 'lcof-msg'); msg.setAttribute('role', 'alert'); form.appendChild(msg)
+    inr.appendChild(form); sec.appendChild(inr)
+    foot.parentNode.insertBefore(sec, foot)
+    form.addEventListener('submit', function (e) {
+      e.preventDefault()
+      lcoPost(form, msg, go, sel.value, function () {
+        bfpOff('sent'); bfPopClose()   // they gave us their details: the sale popup has nothing more to ask
+        var done = el('p', 'lcof-ok', 'Thank you! We will reply by email, usually within one business day.'); done.setAttribute('role', 'status'); done.tabIndex = -1
+        form.parentNode.replaceChild(done, form)
+        try { done.focus({ preventScroll: true }) } catch (er) { /* ignore */ }
+      })
+    })
+  }
+
   function catClose() { if (!cat || cat.hidden) return; cat.hidden = true; if (!catBar && catFrom && catFrom.focus) { try { catFrom.focus() } catch (e) { /* ignore */ } } }
   function catShow() {
     try { if (localStorage.getItem(CAT_KEY)) return } catch (e) { return }   // storage blocked: never nag
-    if (state.open || cat) return
+    if (state.open || cat || bfp) return   // never over the Black Friday popup; it comes on a later page
     try { localStorage.setItem(CAT_KEY, '1') } catch (e) { return }
     catFrom = document.activeElement
     cat = el('div', 'lcocat' + (catBar ? ' lcocat-bar' : '')); cat.setAttribute('role', 'dialog'); if (!catBar) cat.setAttribute('aria-modal', 'true'); cat.setAttribute('aria-label', 'Welcome to The Local Cabinetry')
@@ -1019,7 +1232,7 @@
     if (atEnd) scrollDown()
   }
   function open() {
-    catClose()
+    catClose(); bfPopClose()
     state.open = true; panel.hidden = false; showBtn(); setUnread(false); btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); checkOnline(); fitViewport()
     if (state.id) poll()   // only re-reads a conversation this browser already has
     if (lastPtr !== 'touch') setTimeout(function () { var f = picking() && routeBox.querySelector('.lcoroute-b'); (f || (panel.classList.contains('gating') ? gateIn : ta)).focus() }, 0)
@@ -1104,7 +1317,7 @@
     resumeFromLink()
     window.addEventListener('hashchange', resumeFromLink)   // the link pasted into a tab that is already on the site
     greet(); applyMode()
-    annShow(); fsShow(); memberOffer(); catArm()
+    annShow(); fsShow(); memberOffer(); catArm(); bandShow(); bfPopArm()
 
     btn.addEventListener('click', function () { if (state.open) close(); else open() })
     if (window.__lcoQ) { window.__lcoQ = 0; open() }   // a tap that came before this file was ready
