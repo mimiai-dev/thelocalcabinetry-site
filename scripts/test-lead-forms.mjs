@@ -38,11 +38,12 @@ function serve() {
 }
 
 // the page-side stubs: clock (an absolute instant that keeps flowing), Math.random, blocked storage, the /api/inquiry answer, and the time the popup appeared
-function initSource({ now = null, rnd = null, blocked = false, reply = { status: 200, body: { ok: true } } } = {}) {
+function initSource({ now = null, rnd = null, blocked = false, welcome = false, popOff = false, reply = { status: 200, body: { ok: true } } } = {}) {
   return `(() => {
     ${now ? `const R = Date, off = R.parse(${JSON.stringify(now)}) - R.now(); class D extends R { constructor(...a) { if (a.length) super(...a); else super(R.now() + off) } static now() { return R.now() + off } } window.Date = D;` : ''}
     ${rnd != null ? `Math.random = () => ${rnd};` : ''}
-    ${blocked ? `Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked') } });` : `try { localStorage.setItem('lco_welcome_v1', '1') } catch (e) {}`}
+    ${blocked ? `Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked') } });` : welcome ? '' : `try { localStorage.setItem('lco_welcome_v1', '1') } catch (e) {}`}
+    ${popOff ? `try { localStorage.setItem('lco_bfpop26_off', 'never') } catch (e) {}` : ''}
     window.__posts = []
     const real = window.fetch.bind(window)
     window.fetch = (url, opt = {}) => {
@@ -188,6 +189,12 @@ async function main() {
     await ev(`document.querySelector('button[data-lco-chat]').click(); true`); await sleep(4400)
     log((await ev(`document.querySelector('button[data-lco-chat]').getAttribute('aria-expanded')`)) === 'true' && !(await popOn()), 'chat panel open: the popup does not show over it')
 
+    // 7b. a first desktop visit: the welcome card (5 s) does not follow right after the popup on the same page
+    await load(PAGE, { now: NOV, rnd: 0, welcome: true }); await sleep(3600)
+    log(await popOn(), 'first visit: the popup shows at 3 s')
+    await ev(`document.querySelector('.lcobf-x').click(); true`); await sleep(2600)
+    log(!(await ev(`!!document.querySelector('.lcocat:not([hidden])')`)) && !(await ev(`localStorage.getItem('lco_welcome_v1')`)), 'the welcome card does not open right after it (it waits for a later page)')
+
     // 8. storage blocked: it shows (never hides by error), without the button it could not keep
     await load(PAGE, { now: NOV, rnd: 0, blocked: true }); await sleep(3600)
     log((await popOn()) && !(await ev(`!!document.querySelector('.lcobf-never')`)), 'storage blocked: it shows, no "Don\'t show" button')
@@ -212,8 +219,8 @@ async function main() {
     log(await ev(`!!document.querySelector('.lcoband') && document.querySelector('.lcoband').nextElementSibling.tagName === 'FOOTER'`), 'home page: the band sits before the footer too')
 
     // 10. phones: 320 px, nothing wider than the screen; the popup fits (scrolls inside when it must)
-    for (const w of [320, 375]) {
-      await viewport(w, 640, true)
+    for (const [w, h] of [[320, 568], [375, 667]]) {
+      await viewport(w, h, true)
       await load(PAGE, { now: NOV, rnd: 0 }); await sleep(3600)
       const fit = await ev(`(() => { const c = document.querySelector('.lcobf-card').getBoundingClientRect(); return { left: c.left, right: c.right, top: c.top, bottom: c.bottom, wide: document.documentElement.scrollWidth > innerWidth, iw: innerWidth, ih: innerHeight } })()`)
       log(fit.left >= 0 && fit.right <= fit.iw && fit.top >= 0 && fit.bottom <= fit.ih && !fit.wide, `${w} px: the popup fits the screen, no side scroll`, `(${JSON.stringify(fit)})`)
@@ -221,8 +228,25 @@ async function main() {
       await ev(`document.querySelector('.lcobf-x').click(); document.querySelector('.lcoband').scrollIntoView(); true`); await sleep(500)
       log(!(await ev(`document.documentElement.scrollWidth > innerWidth`)), `${w} px: the band has no side scroll`)
       if (w === 375) await shot('band-375.png', '.lcoband')
+      // the second display on a small phone: Send and "Don't show this again" are on the screen without scrolling the card
+      await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(3600)
+      const vis = await ev(`(() => { const r = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight } ; return { send: r('.lcobf .lcof-go'), never: r('.lcobf-never') } })()`)
+      log(vis.send === true && vis.never === true, `${w}x${h}: second display, Send and "Don't show this again" in view`, `(${JSON.stringify(vis)})`)
+      if (w === 375) await shot('popup-375-second-display.png')
     }
+    // 11. every page that loads chat.js: one band, right before the footer, full width, no side scroll (popup kept off)
     await viewport(1280, 900, false)
+    const pages = []
+    ;(function walk(dir) { for (const e of fs.readdirSync(dir, { withFileTypes: true })) { const p = path.join(dir, e.name); if (e.isDirectory()) { if (!/^(\.git|node_modules|scripts|docs|deploy|content|logo-src|brand-kit)/.test(e.name)) walk(p) } else if (e.name === 'index.html' && fs.readFileSync(p, 'utf8').includes('src="/chat.js')) pages.push('/' + path.relative(ROOT, path.dirname(p)).split(path.sep).join('/') + (dir === ROOT ? '' : '/')) } })(ROOT)
+    const badPages = []
+    for (const pg of pages.map((x) => x.replace(/^\/\/$/, '/'))) {
+      await load(pg, { now: NOV, popOff: true }); await sleep(600)
+      const r = await ev(`(() => { const b = document.querySelectorAll('.lcoband'); const c = /^\\/contact\\/?$/.test(location.pathname); if (c) return b.length === 0 ? 'ok' : 'band on /contact'; if (b.length !== 1) return 'bands: ' + b.length; const n = b[0].nextElementSibling; if (!n || n.tagName !== 'FOOTER') return 'not before the footer'; if (Math.abs(b[0].getBoundingClientRect().width - document.documentElement.clientWidth) > 1) return 'width ' + b[0].getBoundingClientRect().width; if (document.documentElement.scrollWidth > innerWidth) return 'side scroll'; return 'ok' })()`)
+      if (r !== 'ok') badPages.push(pg + ': ' + r)
+    }
+    log(pages.length >= 50 && badPages.length === 0, `all ${pages.length} pages with chat.js: one band right before the footer, full width, no side scroll (none on /contact)`, badPages.length ? JSON.stringify(badPages) : '')
+
+    await load(PAGE, { now: NOV, rnd: 0 }); await sleep(3600)
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(3600)
     await shot('popup-1280-second-display.png')
     await load(PAGE, { now: NOV, rnd: 0 }); await sleep(3600)

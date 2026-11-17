@@ -346,6 +346,10 @@
     '.lcoband label.lcof-c {display:flex;align-items:flex-start;gap:10px;margin:2px 0 16px;font-size:14px;font-weight:400;color:var(--soft,#51606f);line-height:1.45}',
     '.lcoband label.lcof-c input{flex:0 0 20px;width:20px;height:20px;margin:1px 0 0;accent-color:var(--navy,#0e2740)}',
     '.lcof-opt {font-weight:400;color:var(--muted,#97a1ad)}',
+    // short screens (phones): a tighter card so Send and "Don't show this again" stay in view without scrolling it
+    '@media (max-height:760px){.lcobf {padding:10px}.lcobf-card {max-height:calc(100dvh - 20px)}.lcobf-top {padding:16px 52px 12px 18px}.lcobf-eye {margin-bottom:2px;font-size:12px}.lcobf-top h2{font-size:24px}',
+    '.lcobf-body {padding:12px 18px 12px}.lcobf-body>p{margin-bottom:8px;font-size:15px;line-height:1.4}.lcobf label{margin-bottom:8px}.lcobf input{min-height:44px;padding:8px 12px}',
+    '.lcobf-priv {margin-top:6px;font-size:12px;line-height:1.35}.lcobf-never {min-height:40px;margin-top:2px}}',
     '@media print{.lcobf,.lcoband {display:none}}'
   ].join('')
 
@@ -975,7 +979,7 @@
   // The words are the bar's facts (Nov 11–30, 10% off your cabinets); the terms (freight and tax excluded, one discount at a time) stay on /black-friday/, linked.
   var BF_POP_END = Date.parse(BF.until + 'T23:59:59.999-06:00')
   var BFP_N = 'lco_bfpop26_n', BFP_OFF = 'lco_bfpop26_off'   // displays so far | 'never' (the button) or 'sent' (a form was sent)
-  var bfp = null, bfpFrom = null
+  var bfp = null, bfpFrom = null, bfpShownHere = false   // shown on this page: the welcome card waits for the next one (two modals in a row is too much)
   function bfpOff(v) { try { localStorage.setItem(BFP_OFF, v) } catch (e) { /* memory only */ } }
   function bfpGone() { try { return !!localStorage.getItem(BFP_OFF) } catch (e) { return false } }
   function bfPopArm() {
@@ -992,7 +996,7 @@
     if (state.open || (cat && !cat.hidden && !catBar)) return   // never over the chat panel or the welcome card; the next page tries again
     var n = 1, kept = false
     try { n = (parseInt(localStorage.getItem(BFP_N), 10) || 0) + 1; localStorage.setItem(BFP_N, String(n)); kept = localStorage.getItem(BFP_N) === String(n) } catch (e) { n = 1; kept = false }
-    bfpFrom = document.activeElement
+    bfpFrom = document.activeElement; bfpShownHere = true
     bfp = el('div', 'lcobf'); bfp.setAttribute('role', 'dialog'); bfp.setAttribute('aria-modal', 'true'); bfp.setAttribute('aria-labelledby', 'lcobf-h')
     var card = el('div', 'lcobf-card'); card.tabIndex = -1
     var top = el('div', 'lcobf-top')
@@ -1090,7 +1094,7 @@
   function catClose() { if (!cat || cat.hidden) return; cat.hidden = true; if (!catBar && catFrom && catFrom.focus) { try { catFrom.focus() } catch (e) { /* ignore */ } } }
   function catShow() {
     try { if (localStorage.getItem(CAT_KEY)) return } catch (e) { return }   // storage blocked: never nag
-    if (state.open || cat || bfp) return   // never over the Black Friday popup; it comes on a later page
+    if (state.open || cat || bfp || bfpShownHere) return   // never over, or right after, the Black Friday popup; it comes on a later page
     try { localStorage.setItem(CAT_KEY, '1') } catch (e) { return }
     catFrom = document.activeElement
     cat = el('div', 'lcocat' + (catBar ? ' lcocat-bar' : '')); cat.setAttribute('role', 'dialog'); if (!catBar) cat.setAttribute('aria-modal', 'true'); cat.setAttribute('aria-label', 'Welcome to The Local Cabinetry')
