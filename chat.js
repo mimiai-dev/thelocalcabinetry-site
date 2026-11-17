@@ -916,7 +916,7 @@
   // Never company or business_type, and product_id never says "member" (either turns the post into a membership application). Each post becomes a form thread
   // the web desk answers by email. action="/api/inquiry" so t.js adds the first-touch src field on submit. No honeypot: the /contact form has none.
   var INQUIRY = '/api/inquiry', PRIVACY = '/policies#privacy', INFO_MAIL = 'info@thelocalcabinetry.com'
-  var PHONE_RE = /^[0-9+()\-.\s#xXextEXT]+$/   // the server's rule (web-inquiry.ts inquiryOf)
+  var INQ_PHONE_RE = /^[0-9+()\-.\s#xXextEXT]+$/   // the server's rule (web-inquiry.ts inquiryOf)
   function isContactPage() { return /^\/contact\/?$/.test(location.pathname) }
   function lcoField(form, label, name, type, opt) {
     var l = el('label', 'lcof-l'); l.appendChild(document.createTextNode(label))
@@ -939,7 +939,7 @@
     mark(f.name, !!f.name.value.trim(), 'Please tell us your name.')
     mark(f.email, validEmail(f.email.value.trim()), 'Please enter a valid email address.')
     var ph = f.phone ? f.phone.value.trim() : ''
-    mark(f.phone, !ph || (ph.length <= 40 && PHONE_RE.test(ph)), 'Please check the phone number.')
+    mark(f.phone, !ph || (ph.length <= 40 && INQ_PHONE_RE.test(ph)), 'Please check the phone number.')
     if (f.project) mark(f.project, !!f.project.value, 'Please choose your project.')
     if (f.agree) mark(f.agree, f.agree.checked, 'Please tick the box to agree to our privacy policy.')
     msg.textContent = say
