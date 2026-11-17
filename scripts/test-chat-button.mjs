@@ -86,8 +86,8 @@ async function main() {
     })
     await send('Page.enable'); await send('Runtime.enable')
     await send('Fetch.enable', { patterns: [{ urlPattern: '*/design/api/visit/*' }] })
-    // the catalog popup never appears during the test
-    const preset = await send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('lco_welcome_v1', '1'); localStorage.setItem('lco_ann_v1', '1') } catch (e) {}` })
+    // the catalog popup and the Black Friday popup (scripts/test-lead-forms.mjs tests it) never appear during the test
+    const preset = await send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('lco_welcome_v1', '1'); localStorage.setItem('lco_ann_v1', '1'); localStorage.setItem('lco_bfpop26_off', 'never') } catch (e) {}` })
 
     const btnState = `(() => { const b = document.querySelector('button[data-lco-chat]'); const r = b.getBoundingClientRect(); return { hide: b.classList.contains('lcochat-hide'), sm: b.classList.contains('lcochat-sm'), open: b.getAttribute('aria-expanded') === 'true', x: r.x + r.width / 2, y: r.y + r.height / 2, w: Math.round(b.offsetWidth), end: innerHeight + scrollY >= document.documentElement.scrollHeight - 4 } })()`
     for (const vp of [{ name: '390', width: 390, height: 844, dpr: 2, mobile: true, touch: true }, { name: '1280', width: 1280, height: 900, dpr: 1, mobile: false, touch: false }]) {
