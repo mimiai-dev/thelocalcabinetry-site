@@ -342,7 +342,7 @@
         o = o || {};
         if (k === "popup_shown") fpush({ k: k, fm: "bf_popup", n: Math.max(1, Math.min(999, parseInt(o.n, 10) || 1)) });
         else if (k === "popup_closed") fpush(/^(x|backdrop|esc|done)$/.test(o.h) ? { k: k, fm: "bf_popup", h: o.h } : { k: k, fm: "bf_popup" });
-        else if (k === "popup_never") fpush({ k: k, fm: "bf_popup" });
+        else if (k === "popup_never") fpush({ k: k, fm: "bf_popup" });   // the "Don't show again today" button (since 2026-11-18; the wire name is the ops book's kind)
         else if (k === "invalid" && o.form && leadForm(o.form) && FIELD_OK[o.f]) fev(inst(o.form), "invalid", { f: o.f });
       } catch (e) {}
     };

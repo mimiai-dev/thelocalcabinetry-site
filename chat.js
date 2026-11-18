@@ -291,7 +291,7 @@
     '.lcoann[hidden]{display:none}',
     // the Black Friday bar (owner 2026-10-31): black, white text, gold link, wraps on phones
     // the Free shipping bar (owner 2026-11-07): one slim line under the Black Friday / membership bar; its own class, so the announcement-bar tests and the first-bar rule stay as they are
-    '.fsbar{position:relative;z-index:2147483000;display:flex;align-items:center;justify-content:center;gap:12px;padding:5px 48px 5px 16px;background:#0e2740;color:#fff;font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center}',
+    '.fsbar{position:relative;z-index:2147483000;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 12px;padding:5px 48px 5px 16px;background:#0e2740;color:#fff;font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center}',
     '.fsbar a{color:#e9c983;font-weight:400;font-size:13px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}.fsbar b{font-weight:600}',
     '.fsbar[hidden]{display:none}',
     'div.bfbar{background:#000;flex-wrap:wrap;row-gap:2px;column-gap:12px}div.bfbar a.bfd{font-weight:400;font-size:13px;color:#fff;opacity:.85}',
@@ -888,10 +888,7 @@
   // Black Friday 2026 (owner 2026-10-31): "plan your kitchen in advance, get 15-20% off your order". Friday 2026-11-27. The bar takes the top place until 2026-11-27 (the sale is that day only, owner 2026-10-31) (the visitor's
   // calendar day, inclusive); from 2026-12-01 the membership bar comes back. Fixed 10% off (owner 2026-10-31: "make it 10% instead", "fixed"; replaced the 15% / 20% tiers); the bar links the terms on /black-friday/.
   var BF = { until: '2026-11-30', text: 'Black Friday sale, Nov 11–30: 10% off your cabinets.', link: 'Plan my kitchen →', href: '/design', details: 'Details', detailsHref: '/black-friday/' }
-  function bfActive() {
-    var d = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n }
-    return (d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())) <= BF.until
-  }
+  function bfActive() { return localDay() <= BF.until }
   function annShow() {
     var bf = bfActive(), key = bf ? BF_KEY : ANN_KEY
     // the Black Friday bar shows on every new visit (owner 2026-11-14: "show more frequently"): closing it hides it for this visit only
@@ -909,12 +906,14 @@
     bar.appendChild(x)
     document.body.insertBefore(bar, document.body.firstChild)
   }
-  // Free shipping (owner 2026-11-07: "yes add free shipping banner"): the bar says only "Free shipping"; the terms (over $5,000, up to $500, one offer per order) are on /policies/#free-shipping.
+  // Free shipping (owner 2026-11-07: "yes add free shipping banner"; 2026-11-18: "Free shipping is a voucher and is not allowed to be applied together with another
+  // voucher like Black Friday, and max free shipping is $500"): the bar names the voucher and its cap; the full terms (over $5,000, up to $500, not combined) are on /policies/#free-shipping.
   function fsShow() {
     try { if (localStorage.getItem(FS_KEY)) return } catch (e) { return }
     if (document.querySelector('.fsbar')) return
     var bar = el('div', 'fsbar'); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Free shipping')
-    bar.appendChild(el('b', '', 'Free shipping'))
+    bar.appendChild(el('b', '', 'Free shipping voucher'))
+    bar.appendChild(el('span', '', 'up to $500 on orders over $5,000'))
     var a = el('a', '', 'Details'); a.href = '/policies/#free-shipping'; a.setAttribute('data-track', 'announce-free-shipping'); bar.appendChild(a)
     var x = el('button', 'lcoann-x', '\u00d7'); x.type = 'button'; x.setAttribute('aria-label', 'Close the free shipping bar')
     x.addEventListener('click', function () { bar.hidden = true; try { localStorage.setItem(FS_KEY, '1') } catch (e) { /* ignore */ } })
@@ -983,15 +982,21 @@
   // The Black Friday popup (owner 2026-11-17: "a black friday sale banner and have form to input Name, email and phone(optional) that showing everytime user access
   // the page (display banner after 3-5 seconds random of access a page, display on every page, have a button to click don't show this again on the second time it display)").
   // Every page that loads this file except /contact, 3-5 s (random) after load. The x, Escape or a click outside close it for this page only. Displays are counted in
-  // localStorage; from the 2nd display on a "Don't show this again" button hides it for good; a sent form hides it for good too (so does the contact band below).
+  // localStorage; from the 2nd display on a "Don't show again today" button hides it until the end of the visitor's local day (owner 2026-11-18: "the don't show
+  // this again button should work for a day ... so the next day if the user visits they will still see it, because we sometimes have other sales besides Black
+  // Friday"); it shows again the next day. A sent form hides it for this campaign (so does the contact band below).
+  // Both keys carry the campaign id (POP_ID): a new sale gets a new id, so an opt-out or a sent form from an old sale never hides it.
   // Storage blocked = it shows (as a first display, without the button it could not keep): it never hides by error. Never over the open chat panel or the welcome card.
   // Never after the end of BF.until (Nov 30) in US Central (CST, UTC-6 after Nov 1): one instant for every visitor, unlike the bar's local calendar day.
   // The words are the bar's facts (Nov 11–30, 10% off your cabinets); the terms (freight and tax excluded, one discount at a time) stay on /black-friday/, linked.
   var BF_POP_END = Date.parse(BF.until + 'T23:59:59.999-06:00')
-  var BFP_N = 'lco_bfpop26_n', BFP_OFF = 'lco_bfpop26_off'   // displays so far | 'never' (the button) or 'sent' (a form was sent)
+  var POP_ID = 'bfpop26'   // the campaign id: a new sale's popup = a new id = new keys (displays counted afresh, no old opt-out applies)
+  var BFP_N = 'lco_' + POP_ID + '_n', BFP_OFF = 'lco_' + POP_ID + '_off'   // displays so far | the local day of "Don't show again today" (YYYY-MM-DD) or 'sent'
+  // the visitor's local calendar day; the opt-out holds while it is the same day. ('never', stored by the old button before 2026-11-18, holds no day: it shows again)
+  function localDay() { var d = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n }; return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) }
   var bfp = null, bfpFrom = null, bfpShownHere = false   // shown on this page: the welcome card waits for the next one (two modals in a row is too much)
   function bfpOff(v) { try { localStorage.setItem(BFP_OFF, v) } catch (e) { /* memory only */ } }
-  function bfpGone() { try { return !!localStorage.getItem(BFP_OFF) } catch (e) { return false } }
+  function bfpGone() { try { var v = localStorage.getItem(BFP_OFF); return v === 'sent' || v === localDay() } catch (e) { return false } }
   function bfPopArm() {
     if (Date.now() > BF_POP_END || isContactPage() || bfpGone()) return
     setTimeout(bfPopShow, 3000 + Math.floor(Math.random() * 2001))
@@ -1027,8 +1032,9 @@
     var pa = el('a', '', 'Sale terms & privacy'); pa.href = BF.detailsHref; pa.setAttribute('data-track', 'bfpop-terms'); priv.appendChild(pa); form.appendChild(priv)
     body.appendChild(form)
     if (n >= 2 && kept) {
-      var never = el('button', 'lcobf-never', 'Don’t show this again'); never.type = 'button'; never.setAttribute('data-track', 'bfpop-never')
-      never.addEventListener('click', function () { tlcForm('popup_never'); bfpOff('never'); bfPopClose() })
+      // the funnel step keeps its wire name popup_never (the ops book's event kinds); it now means "not again today"
+      var never = el('button', 'lcobf-never', 'Don’t show again today'); never.type = 'button'; never.setAttribute('data-track', 'bfpop-today')
+      never.addEventListener('click', function () { tlcForm('popup_never'); bfpOff(localDay()); bfPopClose() })
       body.appendChild(never)
     }
     var main = el('div', 'lcobf-main'); main.appendChild(top); main.appendChild(body)
