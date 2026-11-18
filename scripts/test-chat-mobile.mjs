@@ -220,7 +220,7 @@ async function main() {
     log(Math.abs(after.y - y0) <= 2 && after.pos === '' && !after.hide, 'close: the page is back at the same place, unlocked, the chat button shown', `(${JSON.stringify(after)}, was ${y0})`)
 
     // the server needs an address for this chat (need_email): the line opens for editing, no Cancel, no keyboard on its own
-    await load(PAGE, { visit: true, needEmail: true, lines: 2 })
+    await load(PAGE, { visit: true, needEmail: true, lines: 2, gate: 'first' })   // the ask is off under email_gate off
     await tap('button[data-lco-chat]'); await sleep(1500)
     const ne = await ev(`(() => { const m = document.querySelector('.lcochat-mail'); return { editing: !!m && !m.hidden && m.classList.contains('editing'), cancel: !!document.querySelector('.lcochat-mail-c'), card: !!document.querySelector('.lcochat-ask'), chipsOff: [...document.querySelectorAll('.lcochat-chip')].every((c) => c.disabled) } })()`)
     log(ne.editing && !ne.cancel && !ne.card && !(await ev(typing)), 'need_email: the email line asks (no Cancel, no card in the thread), no field focused', `(${JSON.stringify(ne)})`)
