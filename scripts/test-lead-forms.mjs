@@ -6,6 +6,7 @@
 //      Nov 30 2026 end of day US Central (2026-12-01T06:00Z); never on /contact; never over the open chat panel; dialog, labels, focus trap, Esc.
 //   B. the contact band right before the site footer (every page but /contact): fields, consent, product_id = the project.
 // /api/inquiry is stubbed IN THE PAGE (window.fetch): nothing is ever sent to a server. The clock and Math.random are stubbed per case.
+// The form funnel (owner 2026-11-18): chat.js tells window.__tlcForm (stubbed here) the popup shown (which display), closed (x / backdrop / Esc / after sending), "never", and its refused fields.
 // --shots DIR saves the popup and the band at 1280 and 375 px. Exits 1 on any failed check.
 import { spawn } from 'node:child_process'
 import http from 'node:http'
@@ -45,6 +46,8 @@ function initSource({ now = null, rnd = null, blocked = false, welcome = false, 
     ${blocked ? `Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked') } });` : welcome ? '' : `try { localStorage.setItem('lco_welcome_v1', '1') } catch (e) {}`}
     ${popOff ? `try { localStorage.setItem('lco_bfpop26_off', 'never') } catch (e) {}` : ''}
     window.__posts = []
+    // the form funnel hook t.js would define on the real site (t.js is silent on 127.0.0.1): what chat.js reports, [kind, display, how, field]
+    window.__tlc = []; window.__tlcForm = (k, o) => { window.__tlc.push([k, o && o.n || null, o && o.h || null, o && o.f || null]) }
     const real = window.fetch.bind(window)
     window.fetch = (url, opt = {}) => {
       if (String(url).includes('/api/inquiry')) {
@@ -119,6 +122,7 @@ async function main() {
     log(first && !first.never && first.n === '1', 'first display: no "Don\'t show this again" button, counted 1')
     await ev(`document.querySelector('.lcobf-x').click(); true`)
     log(!(await popOn()), 'x closes it')
+    log((await ev(`JSON.stringify(window.__tlc)`)) === JSON.stringify([['popup_shown', 1, null, null], ['popup_closed', null, 'x', null]]), 'funnel: shown (display 1), closed by the x', `(${await ev(`JSON.stringify(window.__tlc)`)})`)
     await sleep(2500)
     log(!(await popOn()), 'closed stays closed on this page')
 
@@ -133,12 +137,15 @@ async function main() {
     log(wrap && back, 'focus trap: Tab from the last goes to the first, Shift+Tab back')
     await key('Escape', 'Escape')
     log(!(await popOn()), 'Escape closes it')
+    log((await ev(`JSON.stringify(window.__tlc)`)) === JSON.stringify([['popup_shown', 2, null, null], ['popup_closed', null, 'esc', null]]), 'funnel: shown (display 2), closed by Escape', `(${await ev(`JSON.stringify(window.__tlc)`)})`)
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(3600)
     await ev(`document.querySelector('.lcobf').dispatchEvent(new MouseEvent('click', { bubbles: true })); true`)
     log(!(await popOn()), 'a click on the backdrop closes it')
+    log((await ev(`JSON.stringify(window.__tlc.map((x) => x[2]))`)) === JSON.stringify([null, 'backdrop']), 'funnel: closed by the backdrop')
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(3600)
     await ev(`document.querySelector('.lcobf-never').click(); true`)
     log(!(await popOn()) && (await ev(`localStorage.getItem('${OFF}')`)) === 'never', '"Don\'t show this again" closes it and keeps it off')
+    log((await ev(`JSON.stringify(window.__tlc.map((x) => x[0]))`)) === JSON.stringify(['popup_shown', 'popup_never']), 'funnel: "never" is its own step, not a close')
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(5600)
     log(!(await popOn()), 'after "Don\'t show this again": never shows again')
 
@@ -146,6 +153,7 @@ async function main() {
     await load(PAGE, { now: NOV, rnd: 0 }); await sleep(3600)
     await ev(`document.querySelector('.lcobf .lcof-go').click(); true`); await sleep(200)
     log((await ev(`document.querySelector('.lcobf .lcof-msg').textContent`)) === 'Please tell us your name.' && (await ev(`window.__posts.length`)) === 0, 'empty form: "Please tell us your name.", nothing sent')
+    log((await ev(`JSON.stringify(window.__tlc.filter((x) => x[0] === 'invalid').map((x) => x[3]))`)) === JSON.stringify(['name', 'email']), 'funnel: every refused field is told (name, email)')
     await fill('.lcobf form', { name: 'Test Buyer', email: 'buyer@example.com', phone: 'abc' })
     await ev(`document.querySelector('.lcobf .lcof-go').click(); true`); await sleep(200)
     log((await ev(`document.querySelector('.lcobf .lcof-msg').textContent`)) === 'Please check the phone number.' && (await ev(`window.__posts.length`)) === 0, 'bad phone: "Please check the phone number.", nothing sent')
@@ -157,6 +165,8 @@ async function main() {
     log(!!post && post.method === 'POST' && post.url === '/api/inquiry' && keys.sort().join() === 'email,name,product_id' && pid === 'Black Friday sale' && !/member/i.test(pid),
       'sent as FormData to /api/inquiry: name, email, product_id "Black Friday sale" (no empty phone, no company / business_type, never "member")', `(${JSON.stringify(post)})`)
     log(/Thank you/.test(await ev(`document.querySelector('.lcobf .lcof-ok')?.textContent || ''`)) && (await ev(`localStorage.getItem('${OFF}')`)) === 'sent', 'sent: thank-you in the popup, kept off')
+    await ev(`document.querySelector('.lcobf .lcof-ok + button').click(); true`)
+    log(!(await popOn()) && (await ev(`JSON.stringify(window.__tlc.at(-1))`)) === JSON.stringify(['popup_closed', null, 'done', null]), 'funnel: the Close after sending is told as "done"')
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(5600)
     log(!(await popOn()), 'after sending: never shows again')
     await load(PAGE, { now: NOV, rnd: 0 }); await sleep(3600)

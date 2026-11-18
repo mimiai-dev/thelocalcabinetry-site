@@ -16,6 +16,14 @@
  * In-app browser kind (2026-11-01): Facebook / Instagram / TikTok / LinkedIn / Pinterest / Snapchat open links in their own browser and usually send no referrer. appKind() tests the
  * user agent against a short list and keeps ONLY one fixed word (facebook | instagram | tiktok | linkedin | pinterest | snapchat). The user agent string itself and any id in it are never stored or sent.
  * It is attached ONLY when someone sends a form, opens a chat or goes to /design sign-in (see chat.js, the /design stubs). None with DNT/GPC.
+ * Form and popup funnel (2026-11-18, owner: "track people interact with the form and popup ... input but not sent ... does they click close how many"; ops
+ * spec web-portal/form-interaction-funnel): on the lead forms (the Black Friday popup and the contact band from chat.js, the /contact and product-page form,
+ * the membership form) this file notes the popup shown (which display) / closed (how) / "don't show again", a field focused, a field filled, a submit tried,
+ * a field refused, the send's outcome (read off the /api/inquiry answer), and on page hide the fields left filled but not sent. For a field it sends ONLY its
+ * NAME (name, email, phone, message, project, company, business_type, agree) and, for a typed field, the LENGTH BUCKET of what is in it (1-3, 4-10, 11-30,
+ * 31+ characters): never the value, never a character of it. What a person types reaches us only when he sends the form, through /api/inquiry as before.
+ * The events go in small JSON batches by navigator.sendBeacon to /design/api/form-event (same origin, Local Ops), every 2 s while a form is used and on hide,
+ * with the same per-tab id and page-view id as the click log. chat.js reports the popup's own steps and its own field checks through window.__tlcForm.
  * Sends nothing at all when Do-Not-Track or Global Privacy Control is on.
  * CSP (meta tag, default-src 'self'): this file is script-src 'self'; the beacon is connect-src / img-src 'self'. No change needed. */
 (function () {
@@ -212,7 +220,7 @@
         else new Image().src = url;
       } catch (e) {}
     }
-    function pv() { newView(); depth(); send("pv", { w: w, ia: APP }); }   // ia: the in-app browser kind (a fixed word) so the VPS can name the source of a visit with no referrer
+    function pv() { fNewView(); newView(); depth(); send("pv", { w: w, ia: APP }); }   // ia: the in-app browser kind (a fixed word) so the VPS can name the source of a visit with no referrer
 
     // capture phase: runs even when a page handler stops propagation
     document.addEventListener("click", onClick, true);
@@ -229,6 +237,115 @@
     // back/forward cache: the page comes back alive, count it as a new view
     window.addEventListener("pageshow", function (e) { if (e.persisted) pv(); });
     // ponytail: no single-page-app route tracking (the site is static pages); input events only feed the 30 s idle window; 'leave' is sent when the tab is hidden / the page is left, with the new active seconds only.
+
+    // ---- form and popup funnel (2026-11-18, see the header). One "instance" per form per page view; its state lives in memory only (the popup's form leaves the
+    // DOM when it closes, so the field elements are kept here to read their LENGTH at page hide). Nothing typed is ever read except .length of the trimmed value.
+    var FORM_EP = "/design/api/form-event";
+    var LEAD_FORMS = 'form[data-lead],form[data-member],form[action="/api/inquiry"]';
+    var FIELD_OK = { name: 1, email: 1, phone: 1, message: 1, project: 1, company: 1, business_type: 1, agree: 1 };
+    var F_MAX = 300, F_BATCH = 20, F_WAIT = 2000;   // events per page view; per beacon; the batch timer
+    var fq = [], fTimer = 0, fCount = 0, insts = [], lastTry = null;
+    function formKind(f) {
+      var dt = f.getAttribute("data-track") || "";
+      if (dt === "bfpop-form") return "bf_popup";
+      if (dt === "band-form") return "band";
+      if (f.hasAttribute("data-member")) return "member";
+      if (f.hasAttribute("data-lead")) return "contact";
+      return "other";
+    }
+    function leadForm(el) { var f = el && (el.tagName === "FORM" ? el : el.form); return f && f.matches && f.matches(LEAD_FORMS) ? f : null; }
+    function inst(f) {
+      if (!f.__tlcF) { f.__tlcF = { el: f, fm: formKind(f), focused: {}, filled: {}, els: {}, order: [], ok: false, left: false, tryAt: 0 }; insts.push(f.__tlcF); }
+      return f.__tlcF;
+    }
+    // how much is in a field, as a number: a ticked box is 1, an empty one 0; the value itself goes nowhere
+    function sizeOf(el) { return el.type === "checkbox" ? (el.checked ? 1 : 0) : String(el.value == null ? "" : el.value).trim().length; }
+    function bucket(n) { return n <= 3 ? "1-3" : n <= 10 ? "4-10" : n <= 30 ? "11-30" : "31+"; }
+    function fpush(e) {
+      if (fCount >= F_MAX) return;
+      fCount++; fq.push(e);
+      if (fq.length >= F_BATCH) fflush(); else if (!fTimer) fTimer = setTimeout(fflush, F_WAIT);
+    }
+    function fev(s, k, x) { var e = { k: k, fm: s.fm }; if (x) for (var q in x) if (x[q] !== "" && x[q] != null) e[q] = x[q]; fpush(e); }
+    function fflush() {
+      if (fTimer) { clearTimeout(fTimer); fTimer = 0; }
+      while (fq.length) {
+        var body = JSON.stringify({ s: sid, w: w, p: location.pathname.slice(0, 120), v: window.innerWidth < 768 ? "m" : "d", ev: fq.splice(0, F_BATCH) });
+        try { if (nav.sendBeacon && nav.sendBeacon(FORM_EP, body)) continue; } catch (e) {}
+        try { if (realFetch) realFetch.call(window, FORM_EP, { method: "POST", body: body, keepalive: true, credentials: "omit", headers: { "content-type": "text/plain" } }).catch(function () {}); } catch (e) {}
+      }
+    }
+    // a field committed (change: blur after typing, a pick, autofill): its name and length bucket, again only when the bucket moved
+    function fill(s, el) {
+      var n = sizeOf(el); if (!n) return;
+      var b = el.tagName === "SELECT" || el.type === "checkbox" ? "y" : bucket(n);
+      if (s.filled[el.name] === b) return;
+      s.filled[el.name] = b; fev(s, "fill", { f: el.name, b: b === "y" ? "" : b });
+    }
+    function fillAll(s) { var els = s.el.elements || []; for (var i = 0; i < els.length; i++) if (FIELD_OK[els[i].name]) { s.els[els[i].name] = els[i]; fill(s, els[i]); } }
+    function tried(s) { var t = Date.now(); if (t - s.tryAt < 300) return; s.tryAt = t; fillAll(s); fev(s, "submit_try"); lastTry = s; }
+    document.addEventListener("focusin", function (e) {
+      var el = e.target, f = leadForm(el); if (!f || !FIELD_OK[el.name]) return;
+      var s = inst(f); s.els[el.name] = el;
+      if (!s.focused[el.name]) { s.focused[el.name] = 1; fev(s, "focus", { f: el.name }); }
+    }, true);
+    function onEdit(e) {
+      var el = e.target, f = leadForm(el); if (!f || !FIELD_OK[el.name]) return;
+      var s = inst(f); s.els[el.name] = el;
+      var i = s.order.indexOf(el.name); if (i >= 0) s.order.splice(i, 1);
+      if (sizeOf(el)) s.order.push(el.name);   // the order fields were last edited in: the last one is where a person stopped
+      if (e.type === "change") fill(s, el);
+    }
+    document.addEventListener("input", onEdit, true);
+    document.addEventListener("change", onEdit, true);
+    document.addEventListener("submit", function (e) { var f = leadForm(e.target); if (f) tried(inst(f)); }, true);
+    // the browser's own check (the Astro forms): a refused field fires 'invalid' and the form is not submitted, so this is the try
+    document.addEventListener("invalid", function (e) {
+      var el = e.target, f = leadForm(el); if (!f) return;
+      var s = inst(f); tried(s);
+      if (FIELD_OK[el.name]) fev(s, "invalid", { f: el.name });
+    }, true);
+    // the send's outcome, read off the /api/inquiry answer of the form tried last ({ ok: true } = sent); the request and its body are not touched
+    var realFetch = typeof window.fetch === "function" ? window.fetch : null;
+    if (realFetch) window.fetch = function (u, o) {
+      var p = realFetch.apply(window, arguments);
+      try {
+        var url = typeof u === "string" ? u : (u && u.url) || "", s = lastTry;
+        if (s && /\/api\/inquiry(?:[?#]|$)/.test(url)) {
+          lastTry = null;
+          p.then(function (r) {
+            if (!r.ok) { fev(s, "submit_fail", { h: r.status === 429 ? "rate" : r.status >= 500 ? "5xx" : "4xx" }); return; }
+            return r.clone().json().then(function (j) {
+              if (j && j.ok === true) { s.ok = true; fev(s, "submit_ok"); fflush(); } else fev(s, "submit_fail", { h: "rejected" });
+            }, function () { fev(s, "submit_fail", { h: "rejected" }); });
+          }, function () { fev(s, "submit_fail", { h: "net" }); });
+        }
+      } catch (e) {}
+      return p;
+    };
+    // page hide: every form with something in it and no send is "left": the fields that hold something (names only) and the last one edited
+    function abandonAll() {
+      for (var i = 0; i < insts.length; i++) {
+        var s = insts[i]; if (s.ok || s.left) continue;
+        var fs = []; for (var k in s.els) if (sizeOf(s.els[k])) { fs.push(k); fill(s, s.els[k]); }
+        if (!fs.length) continue;
+        var last = fs[fs.length - 1]; for (var j = s.order.length - 1; j >= 0; j--) if (fs.indexOf(s.order[j]) >= 0) { last = s.order[j]; break; }
+        s.left = true; fev(s, "abandon", { f: last, fs: fs });
+      }
+    }
+    function fNewView() { fflush(); for (var i = 0; i < insts.length; i++) delete insts[i].el.__tlcF; insts = []; lastTry = null; fCount = 0; }
+    window.addEventListener("pagehide", function () { abandonAll(); fflush(); });
+    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") fflush(); });
+    // chat.js: the popup's steps (it draws the popup) and its own field checks (its forms skip the browser's): window.__tlcForm(kind, { n | h | form, f })
+    window.__tlcForm = function (k, o) {
+      try {
+        o = o || {};
+        if (k === "popup_shown") fpush({ k: k, fm: "bf_popup", n: Math.max(1, Math.min(999, parseInt(o.n, 10) || 1)) });
+        else if (k === "popup_closed") fpush(/^(x|backdrop|esc|done)$/.test(o.h) ? { k: k, fm: "bf_popup", h: o.h } : { k: k, fm: "bf_popup" });
+        else if (k === "popup_never") fpush({ k: k, fm: "bf_popup" });
+        else if (k === "invalid" && o.form && leadForm(o.form) && FIELD_OK[o.f]) fev(inst(o.form), "invalid", { f: o.f });
+      } catch (e) {}
+    };
 
     pv();
   } catch (e) { /* never break the page */ }
