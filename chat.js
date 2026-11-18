@@ -907,13 +907,12 @@
     document.body.insertBefore(bar, document.body.firstChild)
   }
   // Free shipping (owner 2026-11-07: "yes add free shipping banner"; 2026-11-18: "Free shipping is a voucher and is not allowed to be applied together with another
-  // voucher like Black Friday, and max free shipping is $500"): the bar names the voucher and its cap; the full terms (over $5,000, up to $500, not combined) are on /policies/#free-shipping.
+  // voucher like Black Friday, and max free shipping is $500"): the bar just names the voucher (owner 2026-11-18: "remove this text… that is marketing"); the full terms (over $5,000, up to $500, not combined) are on /policies/#free-shipping.
   function fsShow() {
     try { if (localStorage.getItem(FS_KEY)) return } catch (e) { return }
     if (document.querySelector('.fsbar')) return
     var bar = el('div', 'fsbar'); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Free shipping')
     bar.appendChild(el('b', '', 'Free shipping voucher'))
-    bar.appendChild(el('span', '', 'up to $500 on orders over $5,000'))
     var a = el('a', '', 'Details'); a.href = '/policies/#free-shipping'; a.setAttribute('data-track', 'announce-free-shipping'); bar.appendChild(a)
     var x = el('button', 'lcoann-x', '\u00d7'); x.type = 'button'; x.setAttribute('aria-label', 'Close the free shipping bar')
     x.addEventListener('click', function () { bar.hidden = true; try { localStorage.setItem(FS_KEY, '1') } catch (e) { /* ignore */ } })
@@ -1010,7 +1009,9 @@
     if (bfp || Date.now() > BF_POP_END || isContactPage() || bfpGone()) return
     if (state.open || (cat && !cat.hidden && !catBar)) return   // never over the chat panel or the welcome card; the next page tries again
     var n = 1, kept = false
-    try { n = (parseInt(localStorage.getItem(BFP_N), 10) || 0) + 1; localStorage.setItem(BFP_N, String(n)); kept = localStorage.getItem(BFP_N) === String(n) } catch (e) { n = 1; kept = false }
+    // displays are counted per local day (owner 2026-11-18: the opt-out shows only from the 2nd display, the 1st has just the X — every day, since the
+    // opt-out only lasts the day): stored as "YYYY-MM-DD:n"; a new day starts again at 1. An old plain count reads as a past day.
+    try { var raw = String(localStorage.getItem(BFP_N) || ''), d = localDay(), m = /^(\d{4}-\d{2}-\d{2}):(\d+)$/.exec(raw); n = (m && m[1] === d ? parseInt(m[2], 10) : 0) + 1; var v = d + ':' + n; localStorage.setItem(BFP_N, v); kept = localStorage.getItem(BFP_N) === v } catch (e) { n = 1; kept = false }
     bfpFrom = document.activeElement; bfpShownHere = true
     bfp = el('div', 'lcobf'); bfp.setAttribute('role', 'dialog'); bfp.setAttribute('aria-modal', 'true'); bfp.setAttribute('aria-labelledby', 'lcobf-h')
     var card = el('div', 'lcobf-card'); card.tabIndex = -1
