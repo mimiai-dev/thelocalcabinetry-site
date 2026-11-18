@@ -44,6 +44,7 @@ https://thelocalcabinetry.com/sitemap-index.xml
 ## News
 
 - [News](https://thelocalcabinetry.com/news/): guides, projects and product news.
+- [Bathroom vanity sizes: widths, depths, heights](https://thelocalcabinetry.com/news/bathroom-vanity-sizes-widths-depths-heights/): Bathroom vanity sizes explained: common widths, depths and heights, single vs double sinks, and the clearances to check before you order.
 - [Kitchen layout ideas: layouts, spacing and islands](https://thelocalcabinetry.com/news/kitchen-layout-ideas-layouts-spacing-and-islands/): Kitchen layout ideas for planners: the common layouts, aisle and work-zone spacing, corner fixes, and how to tell if an island fits.
 - [Upper cabinet height: standard sizes and spacing](https://thelocalcabinetry.com/news/upper-cabinet-height-standard-sizes-and-spacing/): Standard upper cabinet height, the gap to the counter, going to the ceiling, and crown moulding, with the numbers for 8 and 9 foot ceilings.
 - [How to choose kitchen cabinet colors](https://thelocalcabinetry.com/news/how-to-choose-kitchen-cabinet-colors/): How to choose kitchen cabinet colors that work with your floor, counters and light, and how to judge samples before you order.
@@ -53,5 +54,4 @@ https://thelocalcabinetry.com/sitemap-index.xml
 - [How to plan a kitchen cabinet budget](https://thelocalcabinetry.com/news/how-to-plan-a-kitchen-cabinet-budget/): What drives the cost of a kitchen cabinet budget: linear feet, cabinet count, drawers, fillers, delivery and install. Plus a simple way to plan it.
 - [How to choose kitchen cabinet colors that work](https://thelocalcabinetry.com/news/how-to-choose-kitchen-cabinet-colors-that-work/): How to pick kitchen cabinet colors that suit your floor, counters and light, and how to judge samples at home before you order.
 - [Planning cabinets and closets around a window](https://thelocalcabinetry.com/news/planning-cabinets-around-windows/): A window doesn't have to cost you storage. How to plan drawers, seats and tall units around it, and the four measurements to take first.
-- [How to measure your kitchen in feet: a 5-minute guide](https://thelocalcabinetry.com/news/how-to-measure-your-kitchen-in-feet/): Measure your kitchen wall by wall in feet and inches in about five minutes, with a simple checklist of what to note, so we can draw a layout with you.
 <!-- news:end -->
