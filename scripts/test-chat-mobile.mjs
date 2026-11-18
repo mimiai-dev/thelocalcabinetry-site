@@ -59,7 +59,7 @@ function initSource({ visit = false, email = '', route = '', gate = 'off', needE
       ${route ? `sessionStorage.setItem('lco_route_v1', ${JSON.stringify(route)})` : ''}
     } catch (e) {}
     ${popup ? 'Math.random = () => 0;' : ''}
-    const lines = []; for (let i = 1; i <= ${lines}; i++) lines.push({ seq: i, from: i % 2 ? 'us' : 'you', text: 'Line ' + i + ': a few words about the kitchen, so the bubble has some height.', at: '2026-11-18T10:00:00Z' })
+    const lines = []; for (let i = 1; i <= ${lines}; i++) lines.push({ seq: i, from: i % 2 ? 'us' : 'you', text: 'Line ' + i + ': a few words about the kitchen, so the bubble has some height.', at: '2026-01-05T10:00:00Z' })
     window.__api = { gate: ${JSON.stringify(gate)}, needEmail: ${needEmail}, lines, emails: [], posts: [], inquiries: [], emailDelay: 0, inqDelay: 0 }
     const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'content-type': 'application/json' } })
     const later = (ms, v) => new Promise((r) => setTimeout(() => r(v), ms))
@@ -69,7 +69,7 @@ function initSource({ visit = false, email = '', route = '', gate = 'off', needE
       if (u.pathname.startsWith('/design/api/visit/')) {
         const p = u.pathname.slice('/design/api/visit/'.length)
         if (p === 'config') return Promise.resolve(json({ enabled: true, email_gate: a.gate, stream: false, long_poll: false }))
-        if (p === 'message') { a.posts.push(JSON.parse(opt.body || '{}')); return Promise.resolve(json({ ok: true, conversation: '${VISIT}', seq: 1000 + a.posts.length, mode: 'ai' })) }
+        if (p === 'message') { a.posts.push(JSON.parse(opt.body || '{}')); a.sentAt = performance.now(); if (a.ackOnPost) a.lines.push({ seq: a.lines.length + 1, from: 'us', text: a.ackOnPost, at: new Date().toISOString() }); return Promise.resolve(json({ ok: true, conversation: '${VISIT}', seq: 1000 + a.posts.length, mode: 'ai' })) }
         if (p === 'messages') { const after = Number(u.searchParams.get('after') || 0); return Promise.resolve(json({ messages: a.lines.filter((m) => m.seq > after), last_seq: a.lines.length, mode: 'ai', typing: false, read_seq: 0, need_email: a.needEmail })) }
         if (p === 'email') { a.emails.push(JSON.parse(opt.body || '{}')); return later(a.emailDelay, json({ ok: true })) }
         return Promise.resolve(json({ ok: true }))
@@ -185,9 +185,18 @@ async function main() {
     await phone(); await sleep(400)
     // C. a line arrives: the composer does not move, the line is in view
     const box0 = await rect('.lcochat-box')
-    await ev(`window.__api.lines.push({ seq: 31, from: 'us', text: 'A new reply with a few words in it.', at: new Date().toISOString() }); true`); await sleep(4800)
+    await ev(`window.__api.lines.push({ seq: 31, from: 'us', text: 'A new reply with a few words in it.', at: new Date().toISOString() }); true`); await sleep(7500)
     const box1 = await rect('.lcochat-box'), got = await ev(`[...document.querySelectorAll('.lcochat-r.us .lcochat-m')].some((m) => /A new reply/.test(m.textContent))`)
     log(got && box0.top === box1.top && (await ev(lastIn))?.ok === true, 'a new line arrives: drawn, in view, the composer did not move', `(${JSON.stringify({ got, box0, box1 })})`)
+
+    // I. a fixed acknowledgement right after the visitor's line: typing dots first, the line no sooner than ~1.2 s after Send (owner 2026-11-18: "it's too fast, so unnatural")
+    await ev(`(() => { const a = window.__api; a.ackOnPost = "Got it, I'll get that in! Our designer is working on your layout now and will work it in."; window.__ack = null; window.__dotsBefore = false
+      new MutationObserver(() => { if (window.__ack) return; if (document.querySelector('.lcochat-typing')) window.__dotsBefore = true
+        if ([...document.querySelectorAll('.lcochat-r.us .lcochat-m')].some((m) => /Got it, I'll get that in/.test(m.textContent))) window.__ack = performance.now() }).observe(document.querySelector('.lcochat-log'), { childList: true, subtree: true })
+      const t = document.querySelector('.lcochat-panel textarea'); t.value = 'remove the crown for me'; t.dispatchEvent(new Event('input', { bubbles: true })); return true })()`)
+    await tap('.lcochat-send'); await sleep(4000)
+    const ack = await ev(`({ gap: window.__ack && window.__api.sentAt ? Math.round(window.__ack - window.__api.sentAt) : null, dots: window.__dotsBefore })`)
+    log(ack.gap != null && ack.gap >= 1150 && ack.gap <= 3800 && ack.dots, 'a fixed acknowledgement: typing dots first, then the line 1.2-3 s after Send (never instant)', `(${JSON.stringify(ack)})`)
 
     // H. the email line: Edit, an error without a jump, Save once (replace: true), the new address everywhere
     log(/old@example\.com/.test(await ev(`document.querySelector('.lcochat-mail').textContent`)), 'email line shows the stored address')
@@ -197,7 +206,7 @@ async function main() {
     const m0 = await rect('.lcochat-mail')
     await ev(`(() => { const i = document.querySelector('.lcochat-mail input'); i.value = 'old@'; i.form.requestSubmit(); return true })()`); await sleep(100)
     const m1 = await rect('.lcochat-mail')
-    log((await ev(`document.querySelector('.lcochat-mail-msg').textContent`)) !== '' && m0.height === m1.height, 'email line: the error shows in its reserved slot (no jump)', `(${JSON.stringify({ m0, m1 })})`)
+    log((await ev(`(document.querySelector('.lcochat-mail-msg') || {}).textContent`)) !== '' && !!m0 && !!m1 && m0.height === m1.height, 'email line: the error shows in its reserved slot (no jump)', `(${JSON.stringify({ m0, m1 })})`)
     const dbl = await ev(`(() => { window.__api.emailDelay = 600; const i = document.querySelector('.lcochat-mail input'); i.value = 'New@Example.com'; i.form.requestSubmit(); const b = document.querySelector('.lcochat-mail-s'); const busy = b.getAttribute('aria-busy') === 'true' && b.disabled; i.form.requestSubmit(); i.form.requestSubmit(); return busy })()`)
     log(dbl, 'Save: busy at once (aria-busy, disabled)')
     await sleep(900)
