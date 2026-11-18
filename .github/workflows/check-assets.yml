@@ -3,6 +3,7 @@ on: [pull_request]
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 25   # a hung browser test stops here, not after GitHub's 6 hours
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
