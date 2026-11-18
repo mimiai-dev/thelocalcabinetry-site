@@ -929,6 +929,9 @@
   var INQUIRY = '/api/inquiry', PRIVACY = '/policies#privacy', INFO_MAIL = 'info@thelocalcabinetry.com'
   var INQ_PHONE_RE = /^[0-9+()\-.\s#xXextEXT]+$/   // the server's rule (web-inquiry.ts inquiryOf)
   function isContactPage() { return /^\/contact\/?$/.test(location.pathname) }
+  // the form / popup funnel (owner 2026-11-18): t.js counts how the popup and these forms are used (names and length buckets only, never what is typed) and
+  // defines window.__tlcForm only when it may (not under Do-Not-Track / GPC, only on the site itself). Looked up at call time: a missing t.js costs nothing.
+  function tlcForm(k, o) { try { if (window.__tlcForm) window.__tlcForm(k, o) } catch (e) { /* never break a form */ } }
   function lcoField(form, label, name, type, opt) {
     var l = el('label', 'lcof-l'); l.appendChild(document.createTextNode(label))
     if (opt) { l.appendChild(document.createTextNode(' ')); l.appendChild(el('span', 'lcof-opt', '(optional)')) }
@@ -945,7 +948,7 @@
   // the visitor's mistakes in plain words, before anything is sent; returns the first bad field or null
   function lcoCheck(form, msg) {
     var bad = null, say = ''
-    function mark(n, ok, words) { if (!n) return; n.setAttribute('aria-invalid', ok ? 'false' : 'true'); if (!ok && !bad) { bad = n; say = words } }
+    function mark(n, ok, words) { if (!n) return; n.setAttribute('aria-invalid', ok ? 'false' : 'true'); if (!ok) tlcForm('invalid', { form: form, f: n.name }); if (!ok && !bad) { bad = n; say = words } }
     var f = form.elements
     mark(f.name, !!f.name.value.trim(), 'Please tell us your name.')
     mark(f.email, validEmail(f.email.value.trim()), 'Please enter a valid email address.')
@@ -1025,26 +1028,28 @@
     body.appendChild(form)
     if (n >= 2 && kept) {
       var never = el('button', 'lcobf-never', 'Don’t show this again'); never.type = 'button'; never.setAttribute('data-track', 'bfpop-never')
-      never.addEventListener('click', function () { bfpOff('never'); bfPopClose() })
+      never.addEventListener('click', function () { tlcForm('popup_never'); bfpOff('never'); bfPopClose() })
       body.appendChild(never)
     }
     var main = el('div', 'lcobf-main'); main.appendChild(top); main.appendChild(body)
     var pic = el('div', 'lcobf-pic'); pic.setAttribute('aria-hidden', 'true')   // a real kitchen of ours on the left (owner 2026-11-17)
     card.appendChild(pic); card.appendChild(main); card.appendChild(x); bfp.appendChild(card); document.body.appendChild(bfp)
+    tlcForm('popup_shown', { n: n })   // which display this is for the browser (1 when storage is blocked)
     form.addEventListener('submit', function (e) {
       e.preventDefault()
       lcoPost(form, msg, go, 'Black Friday sale', function () {
         bfpOff('sent')
         body.textContent = ''
         var done = el('p', 'lcof-ok', 'Thank you! We will reply by email, usually within one business day.'); done.setAttribute('role', 'status'); body.appendChild(done)
-        var c = el('button', 'lcof-go', 'Close'); c.type = 'button'; c.style.marginTop = '14px'; c.addEventListener('click', bfPopClose); body.appendChild(c)
+        var c = el('button', 'lcof-go', 'Close'); c.type = 'button'; c.style.marginTop = '14px'; c.addEventListener('click', function () { tlcForm('popup_closed', { h: 'done' }); bfPopClose() }); body.appendChild(c)
         try { c.focus() } catch (er) { /* ignore */ }
       })
     })
-    x.addEventListener('click', bfPopClose)
-    bfp.addEventListener('click', function (e) { if (e.target === bfp) bfPopClose() })
+    // how a person closed it is told here, at each place (bfPopClose is also called by "never", the Close after sending and the band's send)
+    x.addEventListener('click', function () { tlcForm('popup_closed', { h: 'x' }); bfPopClose() })
+    bfp.addEventListener('click', function (e) { if (e.target === bfp) { tlcForm('popup_closed', { h: 'backdrop' }); bfPopClose() } })
     bfp.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') { e.stopPropagation(); bfPopClose(); return }
+      if (e.key === 'Escape') { e.stopPropagation(); tlcForm('popup_closed', { h: 'esc' }); bfPopClose(); return }
       if (e.key !== 'Tab') return
       var f = Array.prototype.filter.call(card.querySelectorAll('button,a[href],input,select,textarea'), function (q) { return !q.disabled && q.offsetParent !== null })
       if (!f.length) return
