@@ -117,7 +117,7 @@ const contact = () => makeForm({ "data-lead": "" }, [["name"], ["email", "email"
   assert.deepEqual(t.events().filter((e) => e.k === "invalid").map((e) => e.f), ["agree"]);
   assert.equal(t.events().filter((e) => e.k === "abandon").length, 1, "never sent: left on hide");
 }
-// 5. other forms are not watched, other fetches are untouched; 30 events are one beacon at once, fewer wait for the 2 s timer
+// 5. other forms are not watched, other fetches are untouched; 20 events are one beacon at once, fewer wait for the 2 s timer
 {
   const t = run();
   const search = makeForm({ action: "/search" }, [["name"]]);
@@ -125,8 +125,8 @@ const contact = () => makeForm({ "data-lead": "" }, [["name"], ["email", "email"
   t.win.fetch("/design/api/visit/message", { method: "POST" }); await t.settle();
   t.runTimers();
   assert.equal(t.events().length, 0);
-  for (let i = 0; i < 31; i++) t.win.__tlcForm("popup_shown", { n: 1 });
-  assert.equal(t.batches().length, 1); assert.equal(t.batches()[0].ev.length, 30);
+  for (let i = 0; i < 21; i++) t.win.__tlcForm("popup_shown", { n: 1 });
+  assert.equal(t.batches().length, 1); assert.equal(t.batches()[0].ev.length, 20);
   t.runTimers();
   assert.equal(t.batches().length, 2); assert.equal(t.batches()[1].ev.length, 1);
 }

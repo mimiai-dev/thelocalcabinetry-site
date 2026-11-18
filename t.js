@@ -243,7 +243,7 @@
     var FORM_EP = "/design/api/form-event";
     var LEAD_FORMS = 'form[data-lead],form[data-member],form[action="/api/inquiry"]';
     var FIELD_OK = { name: 1, email: 1, phone: 1, message: 1, project: 1, company: 1, business_type: 1, agree: 1 };
-    var F_MAX = 300, F_BATCH = 30, F_WAIT = 2000;   // events per page view; per beacon; the batch timer
+    var F_MAX = 300, F_BATCH = 20, F_WAIT = 2000;   // events per page view; per beacon; the batch timer
     var fq = [], fTimer = 0, fCount = 0, insts = [], lastTry = null;
     function formKind(f) {
       var dt = f.getAttribute("data-track") || "";
