@@ -1429,9 +1429,12 @@
   var siteNav = null
   function fitNav() {
     if (!siteNav) return
-    if (!locks.nav) { siteNav.style.maxHeight = ''; siteNav.classList.remove('lco-navscroll'); return }
+    // touch the class only when it changes: classList.add / remove write the attribute even when nothing changes, and the observer on #site-nav's class
+    // would call this again, for ever (it hung the page in CI)
+    var on = siteNav.classList.contains('lco-navscroll')
+    if (!locks.nav) { if (on) { siteNav.style.maxHeight = ''; siteNav.classList.remove('lco-navscroll') } return }
     var v = window.visualViewport, h = v ? v.height : window.innerHeight, top = siteNav.getBoundingClientRect().top - (v ? v.offsetTop : 0)
-    siteNav.style.maxHeight = Math.max(160, h - Math.max(0, top)) + 'px'; siteNav.classList.add('lco-navscroll')
+    siteNav.style.maxHeight = Math.max(160, h - Math.max(0, top)) + 'px'; if (!on) siteNav.classList.add('lco-navscroll')
   }
   function sheetCheck() {
     var phone = mq(SHEET_MQ), navWas = !!locks.nav
@@ -1444,7 +1447,8 @@
   }
   function sheetWatch() {
     siteNav = document.getElementById('site-nav')
-    if (siteNav && window.MutationObserver) new MutationObserver(sheetCheck).observe(siteNav, { attributes: true, attributeFilter: ['class'] })
+    var navWasOpen = !!siteNav && siteNav.classList.contains('is-open')
+    if (siteNav && window.MutationObserver) new MutationObserver(function () { var o = siteNav.classList.contains('is-open'); if (o !== navWasOpen) { navWasOpen = o; sheetCheck() } }).observe(siteNav, { attributes: true, attributeFilter: ['class'] })
     if (window.MutationObserver) new MutationObserver(sheetCheck).observe(document.body, { childList: true })   // the popup and the welcome card are added to / removed from body
     try { window.matchMedia(SHEET_MQ).addEventListener('change', sheetCheck) } catch (e) { /* old Safari: the next open checks again */ }
   }

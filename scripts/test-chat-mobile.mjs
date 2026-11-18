@@ -53,7 +53,7 @@ function initSource({ visit = false, email = '', route = '', gate = 'off', needE
     window.__vv = (h, t) => { vh = h; vt = t || 0; vv.dispatchEvent(new Event('resize')); vv.dispatchEvent(new Event('scroll')) }
     try {
       localStorage.setItem('lco_welcome_v1', '1')
-      ${popup ? '' : `localStorage.setItem('lco_bfpop26_off', 'never')`}
+      ${popup ? '' : `localStorage.setItem('lco_bfpop26_off', 'sent')`}
       ${visit ? `localStorage.setItem('lco_visit_v1', '${VISIT}')` : ''}
       ${email ? `localStorage.setItem('lco_email_v1', ${JSON.stringify(email)})` : ''}
       ${route ? `sessionStorage.setItem('lco_route_v1', ${JSON.stringify(route)})` : ''}
