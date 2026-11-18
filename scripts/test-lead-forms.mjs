@@ -121,7 +121,7 @@ async function main() {
       priv: p.querySelector('.lcobf-priv a')?.getAttribute('href'), terms: p.querySelector('.lcobf-body > p a')?.getAttribute('href'), never: !!p.querySelector('.lcobf-never'), focus: p.contains(document.activeElement), n: localStorage.getItem('${N}') } })()`)
     log(!!first && first.role === 'dialog' && first.modal === 'true' && first.label === '10% off your cabinets' && /Nov 11–30/.test(first.text) && first.labelled && first.fields.join() === 'name*,email*,phone' && first.priv === '/black-friday/' && !first.terms && first.focus,
       'first display: role=dialog, labelled fields Name / Email / Phone (optional), the bar\'s sale facts, one terms & privacy link, focus inside', `(${JSON.stringify(first)})`)
-    log(first && !first.never && first.n === '1', 'first display: no "Don\'t show this again" button, counted 1')
+    log(first && !first.never && String(first.n).endsWith(':1'), 'first display: no "Don\'t show this again" button, counted 1')
     await ev(`document.querySelector('.lcobf-x').click(); true`)
     log(!(await popOn()), 'x closes it')
     log((await ev(`JSON.stringify(window.__tlc)`)) === JSON.stringify([['popup_shown', 1, null, null], ['popup_closed', null, 'x', null]]), 'funnel: shown (display 1), closed by the x', `(${await ev(`JSON.stringify(window.__tlc)`)})`)
@@ -130,7 +130,7 @@ async function main() {
 
     // 3. the second display: the "Don't show again today" button; focus trap and Escape; the button hides it for the rest of the local day
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(3600)
-    log((await popOn()) && (await ev(`document.querySelector('.lcobf-never')?.textContent`)) === 'Don’t show again today' && (await ev(`localStorage.getItem('${N}')`)) === '2', 'second display: "Don\'t show again today" is there (counted 2)')
+    log((await popOn()) && (await ev(`document.querySelector('.lcobf-never')?.textContent`)) === 'Don’t show again today' && String(await ev(`localStorage.getItem('${N}')`)).endsWith(':2'), 'second display: "Don\'t show again today" is there (counted 2)')
     await ev(`(() => { const f = [...document.querySelectorAll('.lcobf-card button, .lcobf-card a[href], .lcobf-card input')]; f[f.length - 1].focus(); return true })()`)
     await key('Tab', 'Tab')
     const wrap = await ev(`(() => { const f = [...document.querySelectorAll('.lcobf-card button, .lcobf-card a[href], .lcobf-card input')]; return document.activeElement === f[0] })()`)
@@ -152,7 +152,7 @@ async function main() {
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(5600)
     log(!(await popOn()), 'after "Don\'t show again today": not again the same day')
     await load(PAGE, { now: '2026-11-21T15:00:00Z', rnd: 0 }, true); await sleep(3600)
-    log((await popOn()) && (await ev(`!!document.querySelector('.lcobf-never')`)), 'the next day: it shows again, with the button')
+    log((await popOn()) && !(await ev(`!!document.querySelector('.lcobf-never')`)), 'the next day: it shows again, first display of the day has only the x (owner 2026-11-18)')
     await load(PAGE, { now: NOV, rnd: 0, legacyNever: true }); await sleep(3600)
     log(await popOn(), 'an old "never" (stored before 2026-11-18) holds no day: it shows')
     await load(PAGE, { now: NOV, rnd: 0 }); await ev(`localStorage.setItem('lco_bfpop25_off', 'sent'); localStorage.setItem('lco_otherpop_off', ${JSON.stringify('2026-11-20')}); true`)
