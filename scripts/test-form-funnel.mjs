@@ -73,7 +73,7 @@ const contact = () => makeForm({ "data-lead": "" }, [["name"], ["email", "email"
   const t = run(), f = band();
   t.type(f.f.name, "Jane Doe");
   t.type(f.f.email, "jane.doe@example.com");
-  t.type(f.f.message, "My kitchen is 10 by 12, white shaker, call me at 713 555 0142 please");
+  t.type(f.f.message, "My kitchen is 10 by 12, white shaker, call me after five on weekdays please");
   f.f.message.value = ""; t.on("input", f.f.message);   // cleared again: not in the abandon list
   f.f.project.value = "Kitchen"; t.on("change", f.f.project);
   t.on("focusin", f.f.name);   // a second focus of the same field is not sent again
@@ -86,7 +86,7 @@ const contact = () => makeForm({ "data-lead": "" }, [["name"], ["email", "email"
     { k: "fill", fm: "band", f: "project" },
     { k: "abandon", fm: "band", f: "project", fs: ["name", "email", "project"] }]);
   const all = t.batches().map((b) => b.raw).join("");
-  for (const bad of ["Jane", "jane", "example", "713", "shaker", "Kitchen"]) assert.ok(!all.includes(bad), `"${bad}" left the page`);
+  for (const bad of ["Jane", "jane", "example", "weekdays", "shaker", "Kitchen"]) assert.ok(!all.includes(bad), `"${bad}" left the page`);
 }
 // 3. the browser's own check refuses a field (the Astro form): one try + the refused field; then a good send: tried, sent, and no abandon on hide
 {
