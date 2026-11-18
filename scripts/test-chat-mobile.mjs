@@ -149,7 +149,7 @@ async function main() {
 
     // B + D. a conversation; the page was scrolled; the panel locks the page and follows the visual viewport
     await load(PAGE, { visit: true, email: 'old@example.com', lines: 30 })
-    await ev(`window.scrollTo({ top: 1500, behavior: 'instant' }); true`); await sleep(300)
+    await ev(`window.scrollTo({ top: 1500, behavior: 'instant' }); true`); await sleep(1100)   // the chat button hides while the page scrolls down and is back ~600 ms later
     const y0 = await ev(`Math.round(scrollY)`)
     await tap('button[data-lco-chat]'); await sleep(1200)
     const lk = await ev(`({ pos: document.body.style.position, top: document.body.style.top, open: document.querySelector('button[data-lco-chat]').getAttribute('aria-expanded') })`)
@@ -264,7 +264,9 @@ async function main() {
 
     // D. the site menu on a phone: the page behind does not scroll, the menu scrolls itself, the place comes back
     await load(PAGE)
+    // down, then a little up: the header (hidden while scrolling down) comes back, as when a visitor reaches for the menu
     await ev(`window.scrollTo({ top: 1500, behavior: 'instant' }); true`); await sleep(300)
+    await ev(`window.scrollTo({ top: 1440, behavior: 'instant' }); true`); await sleep(400)
     const ny = await ev(`Math.round(scrollY)`)
     await tap('#site-nav .nav-toggle'); await sleep(400)
     const nv = await ev(`(() => { const n = document.getElementById('site-nav'), h = document.querySelector('.hdr').getBoundingClientRect(), cs = getComputedStyle(n); return { open: n.classList.contains('is-open'), pos: document.body.style.position, hdrTop: Math.round(h.top), over: cs.overflowY, ob: cs.overscrollBehaviorY, max: parseFloat(n.style.maxHeight) || 0, bottom: Math.round(n.getBoundingClientRect().bottom) } })()`)

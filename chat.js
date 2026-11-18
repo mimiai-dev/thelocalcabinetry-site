@@ -31,6 +31,10 @@
  * file: brand-kit mark (no letter avatar), an "AI-powered design" label, bubbles, suggestion chips, shimmer typing line, jump-to-latest button and one rounded
  * composer box. No in-chat "Talk to a person" in AI mode (the choice is the first screen). Every target is 48 px or more with 8 px gaps; inputs are 16 px
  * (no iOS focus zoom); touch-action: manipulation on the page and the chat; on phones the panel follows visualViewport so the composer stays above the keyboard.
+ * PHONES (owner 2026-11-18): the panel's size comes from visualViewport through CSS variables (once a frame), the page behind the panel, the site menu and the popup is locked
+ * (body position:fixed, the place restored on close), a finger never gets a keyboard it did not ask for, and the newest line stays in view whatever shrinks the log.
+ * Every email field (chat, popup, band, the site's lead forms) has the phone email keyboard; a send shows it is busy at once and cannot fire twice; messages sit in reserved space.
+ * One email per visitor: lco_email_v1, shown under the chat header with Edit (scripts/test-chat-mobile.mjs).
  */
 (function () {
   'use strict'
@@ -74,6 +78,44 @@
   function loadEmail() { try { var v = (localStorage.getItem(EMAIL_LS) || '').trim().toLowerCase(); return validEmail(v) ? v : '' } catch (e) { return '' } }
   function storeEmail(v) { try { if (v) localStorage.setItem(EMAIL_LS, v); else localStorage.removeItem(EMAIL_LS) } catch (e) { /* memory only */ } }
   state.email = loadEmail()
+  // ONE EMAIL PER VISITOR (owner 2026-11-18: he typed a wrong address in the popup, then "corrected" it in the chat's thread card and found it made no sense). The chat, the
+  // Black Friday popup, the contact band and the site's own lead forms read and write the same lco_email_v1: a form that was sent stores its address, the chat shows it in
+  // one line under the header ("we'll remind you at … · Edit"), and Edit saves it here, in every email field on the page and, for a running chat, on the server (POST visit/email
+  // with replace: true). The phone keyboard for every email field: type=email, inputmode=email, autocomplete=email, no capitals, no autocorrect, Enter = send.
+  function emailAttrs(i) {
+    i.type = 'email'; i.autocomplete = 'email'; i.spellcheck = false
+    i.setAttribute('inputmode', 'email'); i.setAttribute('autocapitalize', 'off'); i.setAttribute('autocorrect', 'off'); i.setAttribute('enterkeyhint', 'send')
+    if (!(i.maxLength > 0)) i.maxLength = 254
+  }
+  function syncEmailFields(v) {
+    Array.prototype.forEach.call(document.querySelectorAll('.lcobf input[name=email], .lcoband input[name=email], form[data-lead] input[type=email]'), function (i) { if (document.activeElement !== i) i.value = v })
+  }
+  function setEmail(v) { state.email = v; storeEmail(v); syncEmailFields(v); if (typeof paintMail === 'function') paintMail() }
+  // a form outside the chat was sent with an address: it is the visitor's address now, and a running chat gets it too (the thread's reminder goes there)
+  function shareEmail(v) {
+    v = String(v || '').trim().toLowerCase()
+    if (!validEmail(v) || v === state.email) return
+    setEmail(v)
+    if (state.id) fetch(API + 'email', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify({ email: v, replace: true }), cache: 'no-store' }).catch(function () { /* the next save tries again */ })
+  }
+  // a pressed button shows it is working at once (spinner, aria-busy) and cannot be pressed again until the answer is in
+  function busy(b, on) { b.disabled = !!on; b.classList.toggle('lco-busy', !!on); if (on) b.setAttribute('aria-busy', 'true'); else b.removeAttribute('aria-busy') }
+  // a focused field stays above the phone keyboard: once the keyboard is up (visualViewport resize, or ~350 ms), a field outside the visible part is scrolled to the middle
+  function keepInView(i) {
+    i.addEventListener('focus', function () {
+      var v = window.visualViewport, t = 0
+      function look() {
+        if (document.activeElement !== i) return off()
+        var r = i.getBoundingClientRect(), top = v ? v.offsetTop : 0, h = v ? v.height : window.innerHeight
+        if (r.bottom > top + h - 12 || r.top < top + 8) { try { i.scrollIntoView({ block: 'center' }) } catch (e) { /* ignore */ } }
+      }
+      function soon() { requestAnimationFrame(look) }
+      function off() { clearTimeout(t); if (v) v.removeEventListener('resize', soon); i.removeEventListener('blur', off) }
+      if (v) v.addEventListener('resize', soon)
+      i.addEventListener('blur', off)
+      t = setTimeout(soon, 350)
+    })
+  }
   // The visitor's route choice (AI assistant or a person), remembered for this browser session only.
   var ROUTE_KEY = 'lco_route_v1'
   try { var rr = sessionStorage.getItem(ROUTE_KEY); if (rr === 'ai' || rr === 'human') state.route = rr } catch (e) { /* memory only */ }
@@ -129,7 +171,7 @@
     '@media (prefers-reduced-motion:reduce){button.lcochat-btn{animation:none}}',
     'body .site-footer .copy{padding-bottom:calc(100px + env(safe-area-inset-bottom))}',
     '.lcochat-btn:focus-visible,.lcochat-panel button:focus-visible,.lcochat-panel a:focus-visible,.lcochat-panel input:focus-visible{outline:3px solid #b4862f;outline-offset:2px}',
-    '.lcochat-panel{position:fixed;right:16px;bottom:80px;z-index:2147483001;width:400px;max-width:calc(100vw - 32px);height:min(640px,calc(100dvh - 104px));display:flex;flex-direction:column;background:#fff;color:#14273f;',
+    '.lcochat-panel{position:fixed;right:16px;bottom:80px;z-index:2147483001;width:400px;max-width:calc(100vw - 32px);height:min(640px,calc(100vh - 104px));height:min(640px,calc(100dvh - 104px));display:flex;flex-direction:column;background:#fff;color:#14273f;',
     'border-radius:16px;box-shadow:0 16px 48px rgba(8,20,34,.28);overflow:hidden;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}',
     '.lcochat-panel *,.lcochat-panel *::before,.lcochat-panel *::after{box-sizing:border-box}',
     '.lcochat-panel[hidden]{display:none}',
@@ -357,7 +399,43 @@
     '@media (max-height:760px){.lcobf {padding:10px}.lcobf-card {max-height:calc(100dvh - 20px)}.lcobf-top {padding:16px 52px 12px 18px}.lcobf-eye {margin-bottom:2px;font-size:12px}.lcobf-top h2{font-size:24px}',
     '.lcobf-body {padding:12px 18px 12px}.lcobf-body>p{margin-bottom:8px;font-size:15px;line-height:1.4}.lcobf label{margin-bottom:8px}.lcobf input{min-height:44px;padding:8px 12px}',
     '.lcobf-priv {margin-top:6px;font-size:12px;line-height:1.35}.lcobf-never {min-height:40px;margin-top:2px}}',
-    '@media print{.lcobf,.lcoband {display:none}}'
+    '@media print{.lcobf,.lcoband {display:none}}',
+    // PHONES AND THE KEYBOARD (owner 2026-11-18: "chat experience on mobile is glitchy when the keyboard opens and closes"). The open panel is sized to the VISUAL viewport
+    // through --lco-vvh / --lco-vvt (set on <html> from window.visualViewport, once a frame), so the composer sits right on the keyboard on iOS Safari and Android Chrome alike;
+    // the page behind does not move (html.lco-locked: body position:fixed, restored on close). With the keyboard up the home-bar inset under the composer goes.
+    '@media (max-width:520px){.lcochat-panel.lcochat-vv{top:var(--lco-vvt,0px);bottom:auto;height:var(--lco-vvh,100vh)}.lcochat-panel.lcochat-kb .lcochat-box{padding-bottom:8px}}',
+    '.lcochat-panel{overscroll-behavior:contain}html.lco-locked,html.lco-locked body{overscroll-behavior:none}',
+    // the site's menu on phones while it is open: the page behind is locked, the menu scrolls inside itself when it is taller than the screen
+    '.nav.lco-navscroll{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}',
+    // the popup on a locked phone page fits the visible part (above the keyboard), and scrolls inside
+    'html.lco-locked .lcobf{top:var(--lco-vvt,0px);bottom:auto;height:var(--lco-vvh,100%)}html.lco-locked .lcobf-card{max-height:100%}',
+    // EMAIL ASKS (owner 2026-11-18: "the button asking for email isn't smooth"): pressed at once, a spinner while it works, the message in a reserved slot (no jump), 44 px+ targets
+    '@keyframes lco-spin{to{transform:rotate(360deg)}}',
+    '.lco-busy{cursor:progress}.lco-busy::after{content:"";flex:0 0 16px;width:16px;height:16px;margin-left:10px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:lco-spin .7s linear infinite}',
+    '.lcof-go,.lcochat-gate-go,.lcochat-mail button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:background-color .1s,transform .1s}',
+    '.lcof-go:active:not(:disabled),.lcochat-gate-go:active,.lcochat-mail button:active:not(:disabled){transform:scale(.98);background:#14365a}',
+    '.lcof-go.lco-busy:disabled{opacity:.85}',
+    // the popup: the error takes the privacy line's place (same slot, so nothing below moves); the band: a slot two lines tall
+    '.lcobf .lcof-slot{display:grid;margin-top:10px}.lcobf .lcof-slot>p{grid-area:1/1;margin:0}.lcobf .lcof-slot .lcof-msg{display:block;font-size:13px;line-height:1.35}.lcobf .lcof-slot .lcof-msg:not(:empty)+.lcobf-priv{visibility:hidden}',
+    '.lcoband .lcof-msg{display:block;min-height:2.9em;line-height:1.45}',
+    '.lcochat-gate-msg{min-height:3em;line-height:1.5}',
+    '.lcochat-panel.picking .lcochat-mail,.lcochat-panel.gating .lcochat-mail{display:none}',
+    // the visitor's email, one line under the header: "If you miss our reply, we'll remind you at ... · Edit"; Edit = one field with Save and Cancel, in place
+    '.lcochat-mail{display:flex;align-items:center;gap:8px;min-height:44px;padding:2px 8px 2px 16px;border-bottom:1px solid #e7e5df;background:#fff;font-size:13px;line-height:1.35;color:#51606f}',
+    '.lcochat-mail[hidden]{display:none}',
+    '.lcochat-mail-t{flex:1;min-width:0;overflow-wrap:anywhere}.lcochat-mail-t b{color:#0e2740;font-weight:600}',
+    '.lcochat-mail-e{flex:0 0 auto;min-width:44px;min-height:44px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:#0e2740;font:600 14px/1 system-ui,sans-serif;text-decoration:underline;cursor:pointer}',
+    '.lcochat-mail.editing{display:block;padding:10px 12px 6px}',
+    '.lcochat-mail-l{display:block;margin:0 0 6px;font-size:14px;font-weight:600;color:#0e2740}',
+    '.lcochat-mail-row{display:flex;gap:8px;align-items:center}',
+    '.lcochat-mail-row input{flex:1;min-width:0;min-height:48px;padding:0 14px;border:1px solid #cfc9bd;border-radius:12px;font:inherit;font-size:16px;color:#14273f;background:#fff}',
+    '.lcochat-mail-row input[aria-invalid=true]{border-color:#b3261e}',
+    '.lcochat-mail-s,.lcochat-mail-c{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:64px;min-height:48px;padding:0 14px;border:0;border-radius:12px;font:600 15px/1 system-ui,sans-serif;cursor:pointer}',
+    '.lcochat-mail-s{background:#0e2740;color:#fff}.lcochat-mail-s:disabled{opacity:.85}.lcochat-mail-c{background:#f3f0ea;color:#0e2740}',
+    '.lcochat-mail-slot{display:grid;min-height:2.7em;margin-top:4px;font-size:13px;line-height:1.35}.lcochat-mail-slot>div{grid-area:1/1;margin:0}',
+    '.lcochat-mail-msg{color:#8a1c12}.lcochat-mail-msg:not(:empty)+.lcochat-mail-note{visibility:hidden}.lcochat-mail-note{color:#51606f}',
+    // the site's own lead forms (/contact, product pages, membership) are 15 px: 16 px on phones, so iOS does not zoom into them
+    '@media (max-width:760px){form[data-lead] input,form[data-lead] textarea,form[data-lead] select,form.member-form input,form.member-form textarea,form.member-form select{font-size:16px}}'
   ].join('')
 
   var modeLine
@@ -365,7 +443,7 @@
     if (m) state.mode = m
     var h = humanMode()
     if (modeLine) { modeLine.textContent = h ? 'You are talking with a person' : 'AI-powered design'; modeLine.classList.toggle('ai', !h); modeLine.hidden = !state.id && !state.route; modeLine.style.display = modeLine.hidden ? 'none' : '' }   // .lcochat-st is display:flex, which beats [hidden]
-    paintRoute()
+    paintRoute(); paintMail()
   }
   var gate, gateIn, gateGo, gateMsg
   // Before the first message: the email step (mode 'first', no stored email, no conversation yet). Returning visitors skip it.
@@ -375,8 +453,17 @@
     panel.classList.toggle('gating', need); gate.hidden = !need
     btn.setAttribute('data-track', need ? 'chat-open-gate' : 'chat-open')
     if (need && message) gateMsg.textContent = message
-    if (state.open) setTimeout(function () { (need ? gateIn : ta).focus() }, 0)
+    var step = need ? 'gate' : picking() ? 'pick' : 'chat', changed = step !== gateWas; gateWas = step
+    paintMail()
+    // Focus only when the step really changed, and on a phone only when the keyboard is already up (Start chat moves it from the email field to the message box,
+    // in the same task, so the keyboard stays). It used to focus on EVERY call: the config read that every open makes, and the route tap, popped the phone keyboard
+    // over the room chips right after opening (owner 2026-11-18, "glitchy when the keyboard opens and closes").
+    if (!state.open || !changed || step === 'pick') return
+    var a = document.activeElement, typing = a && panel.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName)
+    if (lastPtr === 'touch' && !typing) return
+    try { (need ? gateIn : ta).focus({ preventScroll: true }) } catch (e) { /* ignore */ }
   }
+  var gateWas = null
   var dot, stText, checked = 0, btn, panel, log, err, ta, sendB, photoIn, photoB, chips, headAv, routeBox, downB
 
   function headers(extra) {
@@ -488,7 +575,7 @@
     // The server never sends the first set: the widget offers the rooms itself, but only for a NEW conversation (a returning visitor sees the thread instead).
     if (!state.id) renderChips(q, [{ label: 'Kitchen', value: 'room:kitchen' }, { label: 'Vanity', value: 'room:vanity' }, { label: 'Closet', value: 'room:closet' }, { label: 'Not sure', value: 'room:unsure' }])
   }
-  function resetLog() { state.seenRow = null; state.seenLabel = null; setTimeout(applyGate, 0); hideTyping(); state.maxUs = 0; state.seenSent = 0; state.needEmail = false; state.emailCard = null; clearChips(); hotUpload(false); state.owedSince = 0; state.ackSeen = false; clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
+  function resetLog() { state.seenRow = null; state.seenLabel = null; setTimeout(applyGate, 0); hideTyping(); state.maxUs = 0; state.seenSent = 0; state.needEmail = false; state.emailCard = null; if (mailBar) mailBar.editing = false; clearChips(); hotUpload(false); state.owedSince = 0; state.ackSeen = false; clearTimeout(state.emailTimer); state.emailAsked = false; state.sentOnce = false; log.textContent = ''; state.day = ''; greet(); if (photoB) setPhoto() }
   function setPhoto() { photoB.setAttribute('aria-disabled', state.id ? 'false' : 'true'); photoB.title = state.id ? 'Add a photo' : 'Send a message first, then add photos' }
   // Quick replies: optional `chips: [{label, value, swatch?}]` on OUR lines. Shown only under the LAST 'us' line; any newer line or a tap removes them.
   function clearChips() { if (state.chipsEl && state.chipsEl.parentNode) state.chipsEl.parentNode.removeChild(state.chipsEl); state.chipsEl = null; state.peekClose = null }
@@ -614,38 +701,67 @@
     btn.setAttribute('aria-label', on ? label + ', ' + T.unread : label)
     if (on) showBtn()
   }
-  function scrollDown() { log.scrollTop = log.scrollHeight; setDown(false) }
+  function scrollDown() { log.scrollTop = log.scrollHeight; state.stick = true; setDown(false) }
   function setDown(on) { if (!downB) return; downB.hidden = !on; log.classList.toggle('has-down', !!on) }
   function grow() { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 140) + 'px' }
 
   // 'after_chip' mode only (switch in the server config): after the first chip step a mandatory email card sits in the thread; chips and the box wait for it.
+  // It used to be a card in the thread with an arrow button, which read like typing the address as a chat message (owner 2026-11-18: "it doesn't make sense"); now it is the
+  // email line under the header, opened for editing, with nothing to cancel to.
   function emailCard(force) {
-    if (!state.id || state.emailCard || (state.email && !force)) return
-    var r = el('div', 'lcochat-r us'); r.appendChild(avatar(true, true))
-    var c = el('div', 'lcochat-c'); var b = el('div', 'lcochat-m lcochat-ask lcochat-ask-need')
-    b.appendChild(el('span', '', ASK_EMAIL))
-    var f = el('form', 'lcochat-ask-f'); f.noValidate = true
-    var inp = el('input'); inp.type = 'email'; inp.placeholder = 'you@example.com'; inp.autocomplete = 'email'; inp.setAttribute('aria-label', 'Your email'); if (state.email) inp.value = state.email
-    var go = el('button'); go.type = 'submit'; go.setAttribute('aria-label', 'Save email'); go.appendChild(svg('M5 12h14M13 6l6 6-6 6'))
-    var msg = el('div', 'lcochat-ask-msg'); msg.setAttribute('role', 'status')
-    f.appendChild(inp); f.appendChild(go); b.appendChild(f); b.appendChild(el('div', 'lcochat-gate-note', EMAIL_NOTE)); b.appendChild(msg)
-    c.appendChild(b); r.appendChild(c)
-    state.needEmail = true; state.emailCard = r; setChipsDisabled(true)
+    if (!state.id || state.needEmail || (state.email && !force)) return
+    state.needEmail = true; setChipsDisabled(true)
+    mailEdit(true)
+  }
+  // The visitor's email under the header once it is known: "If you miss our reply, we'll remind you at <address> · Edit". The whole address, as typed: it is
+  // the visitor's own, on the visitor's own screen, and a typo has to be visible to be caught.
+  var mailBar
+  function paintMail() {
+    if (!mailBar || mailBar.editing) return
+    var show = !!state.email && !picking() && !panel.classList.contains('gating')
+    mailBar.hidden = !show; mailBar.className = 'lcochat-mail'
+    if (!show) return
+    mailBar.textContent = ''
+    var t = el('span', 'lcochat-mail-t'); t.appendChild(document.createTextNode('If you miss our reply, we’ll remind you at ')); t.appendChild(el('b', '', state.email))
+    var e = el('button', 'lcochat-mail-e', 'Edit'); e.type = 'button'; e.setAttribute('aria-label', 'Edit your email ' + state.email); e.setAttribute('data-track', 'chat-email-edit')
+    e.addEventListener('click', function () { mailEdit(false) })
+    mailBar.appendChild(t); mailBar.appendChild(e)
+  }
+  function mailClose() { if (!mailBar) return; mailBar.editing = false; paintMail() }
+  // need: the server has no usable address for this chat yet (chips and the box wait for it; no Cancel)
+  function mailEdit(need) {
+    if (!mailBar) return
+    mailBar.editing = true; mailBar.hidden = false; mailBar.className = 'lcochat-mail editing'; mailBar.textContent = ''
+    var f = el('form', 'lcochat-mail-f'); f.noValidate = true
+    var inp = el('input'); emailAttrs(inp); inp.id = 'lcochat-mail-in'; inp.placeholder = 'you@example.com'; inp.value = state.email || ''; keepInView(inp)
+    var lab = el('label', 'lcochat-mail-l', need ? (state.email ? 'Please check your email, so we can send our reply' : ASK_EMAIL) : 'Your email'); lab.htmlFor = inp.id
+    var row = el('div', 'lcochat-mail-row'); row.appendChild(inp)
+    var save = el('button', 'lcochat-mail-s', 'Save'); save.type = 'submit'; save.setAttribute('data-track', 'chat-email-save'); row.appendChild(save)
+    if (!need) { var cancel = el('button', 'lcochat-mail-c', 'Cancel'); cancel.type = 'button'; cancel.addEventListener('click', function () { mailClose(); if (lastPtr !== 'touch') ta.focus() }); row.appendChild(cancel) }
+    var slot = el('div', 'lcochat-mail-slot'), msg = el('div', 'lcochat-mail-msg'); msg.setAttribute('role', 'status'); msg.setAttribute('aria-live', 'polite')
+    slot.appendChild(msg); slot.appendChild(el('div', 'lcochat-mail-note', EMAIL_NOTE))
+    f.appendChild(lab); f.appendChild(row); f.appendChild(slot); mailBar.appendChild(f)
+    var sending = false
+    function done(v) { setEmail(v); state.needEmail = false; setChipsDisabled(false); mailClose() }
     f.addEventListener('submit', function (e) {
       e.preventDefault()
+      if (sending) return
       var v = inp.value.trim().toLowerCase()
-      if (!validEmail(v)) { msg.textContent = 'Please enter a valid email address.'; return }
-      go.disabled = true; msg.textContent = ''
-      fetch(API + 'email', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify({ email: v }), cache: 'no-store' })
-        .then(function (res) {
-          if (res.ok) { state.email = v; storeEmail(v); state.needEmail = false; b.textContent = "Thanks, we'll write to " + v; b.classList.remove('lcochat-ask'); b.classList.remove('lcochat-ask-need'); setChipsDisabled(false); poll(); return }
-          go.disabled = false
-          if (res.status === 429) { msg.textContent = 'Please try again in a minute.'; return }
-          return res.json().catch(function () { return {} }).then(function (jj) { msg.textContent = (jj && jj.message) || 'That did not save. Please try again.' })
-        }).catch(function () { go.disabled = false; msg.textContent = 'That did not save. Please try again.' })
+      if (!validEmail(v)) { msg.textContent = 'Please enter a valid email address.'; inp.setAttribute('aria-invalid', 'true'); return }
+      inp.removeAttribute('aria-invalid')
+      if (!state.id || (v === state.email && !need)) { done(v); return }   // no chat yet: it goes with the first message
+      sending = true; busy(save, true); msg.textContent = ''
+      // replace: the visitor corrects their own address (the server keeps a verified one; see the PR notes for the ops side)
+      fetch(API + 'email', { method: 'POST', headers: headers({ 'content-type': 'application/json' }), body: JSON.stringify({ email: v, replace: true }), cache: 'no-store' })
+        .then(function (res) { return res.json().catch(function () { return {} }).then(function (j) { return { s: res.status, j: j } }) })
+        .then(function (x) {
+          sending = false; busy(save, false)
+          if (x.s === 200) { done(v); poll(); return }
+          msg.textContent = x.s === 429 ? 'Please try again in a minute.' : (x.j && typeof x.j.message === 'string' && x.j.message) || 'That did not save. Please try again.'
+        }).catch(function () { sending = false; busy(save, false); msg.textContent = 'That did not save. Please try again.' })
     })
-    if (state.typing) log.insertBefore(r, state.typing); else log.appendChild(r)
-    scrollDown()
+    // a tap on Edit is the visitor asking to type: the keyboard comes up (a server ask does not pop it on a phone)
+    if (state.open && (!need || lastPtr !== 'touch')) { try { inp.focus({ preventScroll: true }) } catch (e) { /* ignore */ } }
   }
 
   // Tell the server which of our lines the visitor has actually had in front of them: panel open AND tab visible, highest seq rendered.
@@ -935,11 +1051,12 @@
     if (opt) { l.appendChild(document.createTextNode(' ')); l.appendChild(el('span', 'lcof-opt', '(optional)')) }
     var i = el(type === 'textarea' ? 'textarea' : 'input'); i.name = name
     if (type !== 'textarea') i.type = type
-    if (type === 'email') { i.autocomplete = 'email'; i.maxLength = 254; i.setAttribute('inputmode', 'email') }
+    if (type === 'email') { emailAttrs(i); if (state.email) i.value = state.email }   // the visitor's one address, already known: filled in (owner 2026-11-18)
     else if (type === 'tel') { i.autocomplete = 'tel'; i.maxLength = 40 }
     else if (name === 'name') { i.autocomplete = 'name'; i.maxLength = 80 }
     else if (type === 'textarea') { i.rows = 3; i.maxLength = 2000 }
     if (!opt) i.required = true
+    if (type !== 'textarea') keepInView(i)
     l.appendChild(i); form.appendChild(l)
     return i
   }
@@ -960,7 +1077,10 @@
   }
   // POST the form; ok() on { ok: true }, the server's plain words for the errors it writes for people, one fixed line otherwise
   var SERVER_WORDS = { 200: 1, 413: 1, 429: 1, 500: 1, 503: 1 }
+  // One send at a time: a second Send / Enter while the first is on its way does nothing (form.__lcoBusy, not only the disabled button: Enter in a field submits too).
+  // The button shows it is working at once; a refused field or a server answer frees it again.
   function lcoPost(form, msg, go, product, ok) {
+    if (form.__lcoBusy) return
     if (lcoCheck(form, msg)) return
     var fd = new FormData(form)
     fd.delete('agree'); fd.delete('project')
@@ -968,14 +1088,20 @@
     if (!fd.get('phone')) fd.delete('phone')
     if (fd.has('message') && !String(fd.get('message')).trim()) fd.delete('message')
     var fallback = 'Something went wrong. Please try again, or email us at ' + INFO_MAIL + '.'
-    go.disabled = true; msg.textContent = ''
+    form.__lcoBusy = true; busy(go, true); msg.textContent = ''
+    var sentEmail = String(fd.get('email') || '')
     fetch(INQUIRY, { method: 'POST', body: fd, credentials: 'same-origin' }).then(function (r) {
       return r.json().catch(function () { return null }).then(function (j) {
-        if (r.ok && j && j.ok === true) { ok(); return }
+        if (r.ok && j && j.ok === true) {
+          shareEmail(sentEmail)   // the address that was sent is the visitor's address now: the chat and the other forms use it
+          // the thank-you takes the popup body's place: it keeps the body's height, so the card does not jump
+          var pb = form.closest('.lcobf-body'); if (pb) pb.style.minHeight = pb.offsetHeight + 'px'
+          ok(); return
+        }
         msg.textContent = (j && typeof j.error === 'string' && j.error && SERVER_WORDS[r.status]) ? j.error : fallback
       })
     }).catch(function () { msg.textContent = 'We could not send it. Please check your connection and try again, or email us at ' + INFO_MAIL + '.' })
-      .then(function () { go.disabled = false })
+      .then(function () { form.__lcoBusy = false; busy(go, false) })
   }
 
   // The Black Friday popup (owner 2026-11-17: "a black friday sale banner and have form to input Name, email and phone(optional) that showing everytime user access
@@ -1027,10 +1153,11 @@
     lcoField(form, 'Email', 'email', 'email')
     lcoField(form, 'Phone', 'phone', 'tel', true)
     var go = el('button', 'lcof-go', 'Send'); go.type = 'submit'; go.setAttribute('data-track', 'bfpop-send'); form.appendChild(go)
-    var msg = el('p', 'lcof-msg'); msg.setAttribute('role', 'alert'); form.appendChild(msg)
+    var msg = el('p', 'lcof-msg'); msg.setAttribute('role', 'alert')
     // one link, not two (owner 2026-11-17): the sale page carries the terms and links the privacy policy
     var priv = el('p', 'lcobf-priv', 'We only use your details to reply about your project. ')
-    var pa = el('a', '', 'Sale terms & privacy'); pa.href = BF.detailsHref; pa.setAttribute('data-track', 'bfpop-terms'); priv.appendChild(pa); form.appendChild(priv)
+    var pa = el('a', '', 'Sale terms & privacy'); pa.href = BF.detailsHref; pa.setAttribute('data-track', 'bfpop-terms'); priv.appendChild(pa)
+    var slot = el('div', 'lcof-slot'); slot.appendChild(msg); slot.appendChild(priv); form.appendChild(slot)   // an error takes the privacy line's place: nothing moves (owner 2026-11-18)
     body.appendChild(form)
     if (n >= 2 && kept) {
       // the funnel step keeps its wire name popup_never (the ops book's event kinds); it now means "not again today"
@@ -1106,13 +1233,14 @@
       lcoPost(form, msg, go, sel.value, function () {
         bfpOff('sent'); bfPopClose()   // they gave us their details: the sale popup has nothing more to ask
         var done = el('p', 'lcof-ok', 'Thank you! We will reply by email, usually within one business day.'); done.setAttribute('role', 'status'); done.tabIndex = -1
+        done.style.minHeight = form.offsetHeight + 'px'; done.style.display = 'flex'; done.style.alignItems = 'center'; done.style.justifyContent = 'center'; done.style.textAlign = 'center'   // the page below does not jump up
         form.parentNode.replaceChild(done, form)
         try { done.focus({ preventScroll: true }) } catch (er) { /* ignore */ }
       })
     })
   }
 
-  function catClose() { if (!cat || cat.hidden) return; cat.hidden = true; if (!catBar && catFrom && catFrom.focus) { try { catFrom.focus() } catch (e) { /* ignore */ } } }
+  function catClose() { if (!cat || cat.hidden) return; cat.hidden = true; sheetCheck(); if (!catBar && catFrom && catFrom.focus) { try { catFrom.focus() } catch (e) { /* ignore */ } } }
   function catShow() {
     try { if (localStorage.getItem(CAT_KEY)) return } catch (e) { return }   // storage blocked: never nag
     if (state.open || cat || bfp || bfpShownHere) return   // never over, or right after, the Black Friday popup; it comes on a later page
@@ -1247,24 +1375,84 @@
   var lastPtr = ''
   document.addEventListener('pointerdown', function (e) { lastPtr = e.pointerType || '' }, true)
   document.addEventListener('keydown', function () { lastPtr = 'key' }, true)
-  // Phones: the full-screen panel follows the visual viewport, so the composer sits right above the iOS keyboard instead of under it.
-  var PHONE_MQ = '(max-width:520px)'
-  function fitViewport() {
-    var v = window.visualViewport, on = state.open && v && window.matchMedia && window.matchMedia(PHONE_MQ).matches
-    if (!on) { panel.style.top = ''; panel.style.height = ''; panel.style.bottom = ''; return }
-    var atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 80
-    panel.style.top = Math.max(0, v.offsetTop) + 'px'; panel.style.height = v.height + 'px'; panel.style.bottom = 'auto'
-    if (atEnd) scrollDown()
+  // PHONES AND THE KEYBOARD (owner 2026-11-18). What was wrong: (1) applyGate focused the message box on every call, so the config read of every open and the route tap
+  // popped the keyboard on its own; (2) the panel's size was written straight into its style on every visualViewport event, and whether the newest line was "at the end"
+  // was measured at that moment: on Android Chrome the layout viewport shrinks first, so by then the log had already shrunk under the last line and it stayed hidden;
+  // (3) nothing held the page behind the panel: a drag on the header or the composer scrolled the page, iOS moved the visual viewport with it, and the panel jumped.
+  // Now: the visible area goes into --lco-vvh / --lco-vvt on <html> (at most once a frame), the panel's CSS reads them; the log remembers whether the reader is at the
+  // newest line (its own scroll events) and a ResizeObserver keeps that line in view whatever shrinks it; the page behind is locked (body position:fixed, scroll restored).
+  var PHONE_MQ = '(max-width:520px)', SHEET_MQ = '(max-width:760px)'
+  function mq(q) { try { return window.matchMedia(q).matches } catch (e) { return false } }
+  var vvQ = 0
+  function vvQueue() { if (!vvQ) vvQ = requestAnimationFrame(function () { vvQ = 0; vvApply() }) }
+  function vvApply() {
+    if (!panel || (!state.open && !locks.nav && !locks.sheet)) return
+    var v = window.visualViewport, de = document.documentElement
+    de.style.setProperty('--lco-vvh', (v ? v.height : window.innerHeight) + 'px')
+    de.style.setProperty('--lco-vvt', (v ? Math.max(0, v.offsetTop) : 0) + 'px')
+    var phone = state.open && mq(PHONE_MQ)
+    panel.classList.toggle('lcochat-vv', phone)
+    scrollLock('chat', phone)
+    if (phone && state.stick) log.scrollTop = log.scrollHeight
+    fitNav()
+  }
+  function fitViewport() { vvApply() }   // now, not on the next frame: on open and close
+  // Page scroll lock for full-screen sheets on phones (the chat panel, the site menu, the popup): body position:fixed at -scrollY, put back exactly on release.
+  // Several may hold it at once (locks by name); the last one out restores the scroll (instantly: the site sets scroll-behavior:smooth).
+  var locks = {}, lockY = 0, lockStyle = null
+  function scrollLock(why, on) {
+    var b = document.body, de = document.documentElement
+    if (!b || !!locks[why] === !!on) return
+    var had = Object.keys(locks).length > 0
+    if (on) locks[why] = 1; else delete locks[why]
+    var has = Object.keys(locks).length > 0
+    if (has === had) return
+    if (has) {
+      lockY = window.scrollY || window.pageYOffset || 0; lockStyle = b.getAttribute('style')
+      b.style.position = 'fixed'; b.style.top = -lockY + 'px'; b.style.left = '0'; b.style.right = '0'; b.style.width = '100%'; b.style.overflow = 'hidden'
+      de.classList.add('lco-locked')
+    } else {
+      if (lockStyle == null) b.removeAttribute('style'); else b.setAttribute('style', lockStyle)
+      de.classList.remove('lco-locked')
+      var sb = de.style.scrollBehavior; de.style.scrollBehavior = 'auto'
+      window.scrollTo(0, lockY)
+      de.style.scrollBehavior = sb
+      lastY = Math.max(0, window.scrollY || 0); closedAt = Date.now()   // the restored place is not the visitor scrolling: the chat button stays
+    }
+  }
+  // the site menu (#site-nav.is-open, the hamburger on phones) and the full-screen sheets (the popup; the welcome card where it is a modal): the same lock
+  var siteNav = null
+  function fitNav() {
+    if (!siteNav) return
+    if (!locks.nav) { siteNav.style.maxHeight = ''; siteNav.classList.remove('lco-navscroll'); return }
+    var v = window.visualViewport, h = v ? v.height : window.innerHeight, top = siteNav.getBoundingClientRect().top - (v ? v.offsetTop : 0)
+    siteNav.style.maxHeight = Math.max(160, h - Math.max(0, top)) + 'px'; siteNav.classList.add('lco-navscroll')
+  }
+  function sheetCheck() {
+    var phone = mq(SHEET_MQ), navWas = !!locks.nav
+    var navOn = phone && !!siteNav && siteNav.classList.contains('is-open')
+    var sheet = phone && !!(document.querySelector('.lcobf:not([hidden])') || document.querySelector('.lcocat:not([hidden]):not(.lcocat-bar)'))
+    scrollLock('nav', navOn); scrollLock('sheet', sheet)
+    vvApply(); fitNav()
+    // the header hides when the page scrolls down (hdr.js): the restored scroll position is not the visitor scrolling, so it stays shown
+    if (navWas && !navOn) setTimeout(function () { var h = document.querySelector('.hdr'); if (h) h.classList.remove('hdr-hide') }, 120)
+  }
+  function sheetWatch() {
+    siteNav = document.getElementById('site-nav')
+    if (siteNav && window.MutationObserver) new MutationObserver(sheetCheck).observe(siteNav, { attributes: true, attributeFilter: ['class'] })
+    if (window.MutationObserver) new MutationObserver(sheetCheck).observe(document.body, { childList: true })   // the popup and the welcome card are added to / removed from body
+    try { window.matchMedia(SHEET_MQ).addEventListener('change', sheetCheck) } catch (e) { /* old Safari: the next open checks again */ }
   }
   function open() {
     catClose(); bfPopClose()
-    state.open = true; panel.hidden = false; showBtn(); setUnread(false); btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); checkOnline(); fitViewport()
+    state.open = true; panel.hidden = false; showBtn(); setUnread(false); btn.setAttribute('aria-expanded', 'true'); btn.classList.add('open'); checkOnline(); state.stick = true; fitViewport()
     if (state.id) poll()   // only re-reads a conversation this browser already has
     if (lastPtr !== 'touch') setTimeout(function () { var f = picking() && routeBox.querySelector('.lcoroute-b'); (f || (panel.classList.contains('gating') ? gateIn : ta)).focus() }, 0)
     maybeSeen()
   }
   function close() {
-    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer); if (state.owedSince) state.timer = setTimeout(poll, nextDelay()); else liveStop(); fitViewport(); fitBtn()
+    state.open = false; panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.classList.remove('open'); clearTimeout(state.timer); if (state.owedSince) state.timer = setTimeout(poll, nextDelay()); else liveStop()
+    panel.classList.remove('lcochat-vv', 'lcochat-kb'); scrollLock('chat', false); fitBtn()   // the page is back where it was before lastY / closedAt are read
     lastY = Math.max(0, window.scrollY || 0); closedAt = Date.now()   // the phone keyboard closing moves the page: not a scroll by the visitor
     if (lastPtr !== 'touch') btn.focus()
   }
@@ -1304,7 +1492,10 @@
     var logw = el('div', 'lcochat-logw'); logw.appendChild(log)
     downB = el('button', 'lcochat-down'); downB.type = 'button'; downB.hidden = true; downB.setAttribute('aria-label', 'Jump to the latest message'); downB.appendChild(svg('M12 5v14M6 13l6 6 6-6')); logw.appendChild(downB)
     downB.addEventListener('click', scrollDown)
-    log.addEventListener('scroll', function () { setDown(log.scrollHeight - log.scrollTop - log.clientHeight >= 80) }, { passive: true })
+    // the reader is at the newest line (or not): remembered from the log's own scroll, so a keyboard that shrinks the log first cannot fool it
+    log.addEventListener('scroll', function () { var away = log.scrollHeight - log.scrollTop - log.clientHeight >= 80; state.stick = !away; setDown(away) }, { passive: true })
+    // whatever shrinks or grows the log (the keyboard, the composer growing, an error line): the newest line stays in view for a reader who was there
+    if (window.ResizeObserver) new ResizeObserver(function () { if (state.stick) log.scrollTop = log.scrollHeight }).observe(log)
     err = el('div', 'lcochat-err'); err.hidden = true; err.setAttribute('role', 'alert')
 
     var box = el('div', 'lcochat-box'), pi = el('div', 'lcochat-pi')
@@ -1323,7 +1514,7 @@
     gate = el('div', 'lcochat-gate'); gate.hidden = true
     gate.appendChild(el('h3', '', ASK_EMAIL))
     var gf = el('form', 'lcochat-gate-f'); gf.noValidate = true
-    gateIn = el('input'); gateIn.type = 'email'; gateIn.placeholder = 'you@example.com'; gateIn.autocomplete = 'email'; gateIn.setAttribute('aria-label', 'Your email'); gateIn.maxLength = 254
+    gateIn = el('input'); emailAttrs(gateIn); gateIn.placeholder = 'you@example.com'; gateIn.setAttribute('aria-label', 'Your email'); keepInView(gateIn)
     gateGo = el('button', 'lcochat-gate-go', 'Start chat'); gateGo.type = 'submit'
     gateMsg = el('div', 'lcochat-gate-msg'); gateMsg.setAttribute('role', 'status')
     var gn = el('p', 'lcochat-gate-note', EMAIL_NOTE)
@@ -1333,10 +1524,11 @@
       e.preventDefault()
       var v = gateIn.value.trim().toLowerCase()
       if (!validEmail(v)) { gateMsg.textContent = 'Please enter a valid email address.'; return }
-      state.email = v; storeEmail(v); gateMsg.textContent = ''; applyGate()
+      setEmail(v); gateMsg.textContent = ''; applyGate()
     })
     routeBox = el('div', 'lcochat-route')
-    panel.appendChild(head); panel.appendChild(routeBox); panel.appendChild(gate); panel.appendChild(logw); panel.appendChild(err); panel.appendChild(box)
+    mailBar = el('div', 'lcochat-mail'); mailBar.hidden = true
+    panel.appendChild(head); panel.appendChild(routeBox); panel.appendChild(mailBar); panel.appendChild(gate); panel.appendChild(logw); panel.appendChild(err); panel.appendChild(box)
     document.body.appendChild(btn); document.body.appendChild(panel)
     applyGate()
     resumeFromLink()
@@ -1368,7 +1560,18 @@
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
     })
     document.addEventListener('visibilitychange', function () { if (!document.hidden && state.id && (state.open || state.owedSince)) { poll(); maybeSeen() } })
-    if (window.visualViewport) { window.visualViewport.addEventListener('resize', fitViewport); window.visualViewport.addEventListener('scroll', fitViewport) }
+    if (window.visualViewport) { window.visualViewport.addEventListener('resize', vvQueue); window.visualViewport.addEventListener('scroll', vvQueue) }
+    window.addEventListener('resize', vvQueue)
+    // iOS can be late (or silent) with the resize when the keyboard comes and goes: measure again on focus changes inside the panel, and once more after the animation.
+    // With the keyboard up the composer drops the home-bar inset (the keyboard covers that strip).
+    function kb(e) {
+      var t = e.target, on = e.type === 'focusin' && t && /^(INPUT|TEXTAREA)$/.test(t.tagName) && t.type !== 'file'
+      panel.classList.toggle('lcochat-kb', !!on && mq(PHONE_MQ)); vvQueue(); setTimeout(vvQueue, 350)
+    }
+    panel.addEventListener('focusin', kb); panel.addEventListener('focusout', kb)
+    sheetWatch()
+    // the site's own email fields (/contact, product pages, membership): the same phone keyboard, and the visitor's address when it is known
+    Array.prototype.forEach.call(document.querySelectorAll('form[data-lead] input[type=email], form.member-form input[type=email]'), function (i) { emailAttrs(i); keepInView(i); if (state.email && !i.value) i.value = state.email })
     var fitQ = 0
     function fitQueue() { if (!fitQ) fitQ = requestAnimationFrame(function () { fitQ = 0; fitBtn() }) }
     // the pill/round choice is made when scrolling settles (150 ms), not on every frame, so the button never flickers mid-scroll
