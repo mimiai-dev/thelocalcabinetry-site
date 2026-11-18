@@ -62,7 +62,7 @@ const contact = () => makeForm({ "data-lead": "" }, [["name"], ["email", "email"
   t.win.__tlcForm("popup_shown", { n: 2 });
   t.win.__tlcForm("popup_closed", { h: "esc" });
   t.win.__tlcForm("popup_closed", { h: "<b>" });   // an unknown way is sent without one
-  t.win.__tlcForm("popup_never");
+  t.win.__tlcForm("popup_never");   // the "Don't show again today" button: the wire kind stays popup_never (ops site_form_events CHECK)
   assert.equal(t.batches().length, 0, "batched, not one request per event");
   t.fire("w:pagehide");
   const [b] = t.batches();

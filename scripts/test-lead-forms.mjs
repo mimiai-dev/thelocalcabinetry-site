@@ -2,11 +2,12 @@
 // Lead forms browser test (owner 2026-11-17):  node scripts/test-lead-forms.mjs [--page /p/p_sliding_wardrobe/] [--shots DIR]
 // Headless Chrome (CDP) against the repo root served on a free local port. chat.js draws both:
 //   A. the Black Friday popup: 3-5 s (random) after load; x / Escape / outside click close it for the page; from the 2nd display a
-//      "Don't show this again" button hides it for good; a sent form hides it for good; storage blocked = it shows; never after
+//      "Don't show again today" button hides it until the end of the visitor's local day (it shows again the next day; owner 2026-11-18); a sent form
+//      hides it for the campaign; both keys carry the campaign id; an old "never" no longer hides it; storage blocked = it shows; never after
 //      Nov 30 2026 end of day US Central (2026-12-01T06:00Z); never on /contact; never over the open chat panel; dialog, labels, focus trap, Esc.
 //   B. the contact band right before the site footer (every page but /contact): fields, consent, product_id = the project.
 // /api/inquiry is stubbed IN THE PAGE (window.fetch): nothing is ever sent to a server. The clock and Math.random are stubbed per case.
-// The form funnel (owner 2026-11-18): chat.js tells window.__tlcForm (stubbed here) the popup shown (which display), closed (x / backdrop / Esc / after sending), "never", and its refused fields.
+// The form funnel (owner 2026-11-18): chat.js tells window.__tlcForm (stubbed here) the popup shown (which display), closed (x / backdrop / Esc / after sending), "not today" (wire kind popup_never), and its refused fields.
 // --shots DIR saves the popup and the band at 1280 and 375 px. Exits 1 on any failed check.
 import { spawn } from 'node:child_process'
 import http from 'node:http'
@@ -39,12 +40,13 @@ function serve() {
 }
 
 // the page-side stubs: clock (an absolute instant that keeps flowing), Math.random, blocked storage, the /api/inquiry answer, and the time the popup appeared
-function initSource({ now = null, rnd = null, blocked = false, welcome = false, popOff = false, reply = { status: 200, body: { ok: true } } } = {}) {
+function initSource({ now = null, rnd = null, blocked = false, welcome = false, popOff = false, legacyNever = false, reply = { status: 200, body: { ok: true } } } = {}) {
   return `(() => {
     ${now ? `const R = Date, off = R.parse(${JSON.stringify(now)}) - R.now(); class D extends R { constructor(...a) { if (a.length) super(...a); else super(R.now() + off) } static now() { return R.now() + off } } window.Date = D;` : ''}
     ${rnd != null ? `Math.random = () => ${rnd};` : ''}
     ${blocked ? `Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked') } });` : welcome ? '' : `try { localStorage.setItem('lco_welcome_v1', '1') } catch (e) {}`}
-    ${popOff ? `try { localStorage.setItem('lco_bfpop26_off', 'never') } catch (e) {}` : ''}
+    ${popOff ? `try { localStorage.setItem('lco_bfpop26_off', 'sent') } catch (e) {}` : ''}
+    ${legacyNever ? `try { localStorage.setItem('lco_bfpop26_off', 'never'); localStorage.setItem('lco_bfpop26_n', '3') } catch (e) {}` : ''}
     window.__posts = []
     // the form funnel hook t.js would define on the real site (t.js is silent on 127.0.0.1): what chat.js reports, [kind, display, how, field]
     window.__tlc = []; window.__tlcForm = (k, o) => { window.__tlc.push([k, o && o.n || null, o && o.h || null, o && o.f || null]) }
@@ -126,9 +128,9 @@ async function main() {
     await sleep(2500)
     log(!(await popOn()), 'closed stays closed on this page')
 
-    // 3. the second display: the "Don't show this again" button; focus trap and Escape; the button hides it for good
+    // 3. the second display: the "Don't show again today" button; focus trap and Escape; the button hides it for the rest of the local day
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(3600)
-    log((await popOn()) && (await ev(`!!document.querySelector('.lcobf-never')`)) && (await ev(`localStorage.getItem('${N}')`)) === '2', 'second display: "Don\'t show this again" is there (counted 2)')
+    log((await popOn()) && (await ev(`document.querySelector('.lcobf-never')?.textContent`)) === 'Don’t show again today' && (await ev(`localStorage.getItem('${N}')`)) === '2', 'second display: "Don\'t show again today" is there (counted 2)')
     await ev(`(() => { const f = [...document.querySelectorAll('.lcobf-card button, .lcobf-card a[href], .lcobf-card input')]; f[f.length - 1].focus(); return true })()`)
     await key('Tab', 'Tab')
     const wrap = await ev(`(() => { const f = [...document.querySelectorAll('.lcobf-card button, .lcobf-card a[href], .lcobf-card input')]; return document.activeElement === f[0] })()`)
@@ -144,10 +146,18 @@ async function main() {
     log((await ev(`JSON.stringify(window.__tlc.map((x) => x[2]))`)) === JSON.stringify([null, 'backdrop']), 'funnel: closed by the backdrop')
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(3600)
     await ev(`document.querySelector('.lcobf-never').click(); true`)
-    log(!(await popOn()) && (await ev(`localStorage.getItem('${OFF}')`)) === 'never', '"Don\'t show this again" closes it and keeps it off')
-    log((await ev(`JSON.stringify(window.__tlc.map((x) => x[0]))`)) === JSON.stringify(['popup_shown', 'popup_never']), 'funnel: "never" is its own step, not a close')
+    const today = await ev(`(() => { const d = new Date(), p = (n) => (n < 10 ? '0' : '') + n; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) })()`)
+    log(!(await popOn()) && (await ev(`localStorage.getItem('${OFF}')`)) === today, '"Don\'t show again today" closes it and keeps the visitor\'s local day', `(${today})`)
+    log((await ev(`JSON.stringify(window.__tlc.map((x) => x[0]))`)) === JSON.stringify(['popup_shown', 'popup_never']), 'funnel: "not today" is its own step (popup_never), not a close')
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(5600)
-    log(!(await popOn()), 'after "Don\'t show this again": never shows again')
+    log(!(await popOn()), 'after "Don\'t show again today": not again the same day')
+    await load(PAGE, { now: '2026-11-21T15:00:00Z', rnd: 0 }, true); await sleep(3600)
+    log((await popOn()) && (await ev(`!!document.querySelector('.lcobf-never')`)), 'the next day: it shows again, with the button')
+    await load(PAGE, { now: NOV, rnd: 0, legacyNever: true }); await sleep(3600)
+    log(await popOn(), 'an old "never" (stored before 2026-11-18) holds no day: it shows')
+    await load(PAGE, { now: NOV, rnd: 0 }); await ev(`localStorage.setItem('lco_bfpop25_off', 'sent'); localStorage.setItem('lco_otherpop_off', ${JSON.stringify('2026-11-20')}); true`)
+    await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(3600)
+    log(await popOn(), 'another campaign\'s opt-out or sent form (another id) does not hide this one')
 
     // 4. sending: the fields the server takes, product_id "Black Friday sale", thank-you, never again
     await load(PAGE, { now: NOV, rnd: 0 }); await sleep(3600)
@@ -169,6 +179,8 @@ async function main() {
     log(!(await popOn()) && (await ev(`JSON.stringify(window.__tlc.at(-1))`)) === JSON.stringify(['popup_closed', null, 'done', null]), 'funnel: the Close after sending is told as "done"')
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(5600)
     log(!(await popOn()), 'after sending: never shows again')
+    await load(PAGE, { now: '2026-11-22T15:00:00Z', rnd: 0 }, true); await sleep(5600)
+    log(!(await popOn()), 'after sending: not the next days either (a sent form holds for the campaign)')
     await load(PAGE, { now: NOV, rnd: 0 }); await sleep(3600)
     await fill('.lcobf form', { name: 'Test Buyer', email: 'buyer@example.com', phone: '(12) 34 ext 5' })
     await ev(`document.querySelector('.lcobf .lcof-go').click(); true`); await sleep(500)
