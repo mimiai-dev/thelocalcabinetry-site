@@ -11,6 +11,7 @@ const EP = "/design/api/form-event";
 function makeForm(attrs, fields) {
   const form = {
     tagName: "FORM", elements: [],
+    querySelector: () => ({ value: "" }),   // t.js's first-touch source fills a hidden src field on submit: a stand-in input
     getAttribute: (k) => (k in attrs ? attrs[k] : null), hasAttribute: (k) => k in attrs,
     matches: (sel) => sel.split(",").some((one) => { const m = /^form\[([\w-]+)(?:="([^"]*)")?\]$/.exec(one.trim()); return !!m && m[1] in attrs && (m[2] === undefined || attrs[m[1]] === m[2]); }),
   };
