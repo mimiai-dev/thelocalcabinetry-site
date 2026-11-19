@@ -1,5 +1,6 @@
 // Loyalty card copy (owner 2026-11-18): no semicolons in what customers read, never "points never expire",
 // the policy page states that points expire 1 year after they are earned, and the card pages say "Yearly fee: $0".
+// Rates (owner 2026-11-19, from 2026-11-20): Silver 0.5%, Gold 1%, Diamond 2%, bracketed at $3,000 and $9,000.
 // Reads the built pages: visible text (scripts, styles and tags stripped, entities decoded), meta descriptions and JSON-LD descriptions.
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
@@ -29,6 +30,15 @@ for (const f of [...MEMBER, POLICY]) {
   }
   if (MEMBER.includes(f)) assert.match(visible, /Yearly fee: \$0/, `${f}: says the yearly fee`);
   n++;
+}
+const RATE = { silver: "0.5%", gold: "1%", diamond: "2%" };
+for (const f of MEMBER) {
+  const { said } = copyOf(readFileSync(f, "utf8"));
+  const all = said.join(" ");
+  assert.ok(!/\b3% back|earns? 3%|\$30 in points/.test(all), `${f}: still says the old 3% Diamond rate`);
+  assert.match(all, /Silver earns 0\.5% on the first \$3,000|0\.5% of the goods total, which is \$5 in points|Silver card 0\.5% back in points/, `${f}: Silver 0.5%`);
+  const tier = Object.keys(RATE).find((t) => f.includes(`/${t}/`));
+  if (tier) assert.match(said[1] ?? "", new RegExp(`^The ${tier[0].toUpperCase() + tier.slice(1)} loyalty card: ${RATE[tier].replace(".", "\\.")} back in points`), `${f}: meta states ${RATE[tier]}`);
 }
 const policy = copyOf(readFileSync(POLICY, "utf8")).visible;
 assert.match(policy, /Points expire 1 year after the date they are earned\./, "the policy page states the 1-year expiry");
