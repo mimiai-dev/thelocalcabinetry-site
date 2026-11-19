@@ -1112,7 +1112,7 @@
   // The Black Friday popup (owner 2026-11-17: "a black friday sale banner and have form to input Name, email and phone(optional) that showing everytime user access
   // the page (display banner after 3-5 seconds random of access a page, display on every page, have a button to click don't show this again on the second time it display)").
   // Every page that loads this file except /contact, 3-5 s (random) after load. The x, Escape or a click outside close it for this page only. Displays are counted in
-  // localStorage; from the 2nd display on a "Don't show again today" button hides it until the end of the visitor's local day (owner 2026-11-18: "the don't show
+  // localStorage; a display within 10 minutes of the last one (owner 2026-11-19) gets a "Don’t show again today" button that hides it until the end of the visitor's local day (owner 2026-11-18: "the don't show
   // this again button should work for a day ... so the next day if the user visits they will still see it, because we sometimes have other sales besides Black
   // Friday"); it shows again the next day. A sent form hides it for this campaign (so does the contact band below).
   // Both keys carry the campaign id (POP_ID): a new sale gets a new id, so an opt-out or a sent form from an old sale never hides it.
@@ -1122,6 +1122,8 @@
   var BF_POP_END = Date.parse(BF.until + 'T23:59:59.999-06:00')
   var POP_ID = 'bfpop26'   // the campaign id: a new sale's popup = a new id = new keys (displays counted afresh, no old opt-out applies)
   var BFP_N = 'lco_' + POP_ID + '_n', BFP_OFF = 'lco_' + POP_ID + '_off'   // displays so far | the local day of "Don't show again today" (YYYY-MM-DD) or 'sent'
+  // owner 2026-11-19: the button shows only when the popup comes back within 10 minutes of the last display (a visitor who keeps seeing it gets the way out); a later or first display has just the X
+  var BFP_T = 'lco_' + POP_ID + '_t', BFP_AGAIN_MS = 10 * 60 * 1000   // the last display's time (ms since epoch)
   // the visitor's local calendar day; the opt-out holds while it is the same day. ('never', stored by the old button before 2026-11-18, holds no day: it shows again)
   function localDay() { var d = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n }; return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) }
   var bfp = null, bfpFrom = null, bfpShownHere = false   // shown on this page: the welcome card waits for the next one (two modals in a row is too much)
@@ -1143,6 +1145,8 @@
     // displays are counted per local day (owner 2026-11-18: the opt-out shows only from the 2nd display, the 1st has just the X — every day, since the
     // opt-out only lasts the day): stored as "YYYY-MM-DD:n"; a new day starts again at 1. An old plain count reads as a past day.
     try { var raw = String(localStorage.getItem(BFP_N) || ''), d = localDay(), m = /^(\d{4}-\d{2}-\d{2}):(\d+)$/.exec(raw); n = (m && m[1] === d ? parseInt(m[2], 10) : 0) + 1; var v = d + ':' + n; localStorage.setItem(BFP_N, v); kept = localStorage.getItem(BFP_N) === v } catch (e) { n = 1; kept = false }
+    var again = false
+    try { var now = Date.now(), last = parseInt(localStorage.getItem(BFP_T) || '', 10); again = isFinite(last) && Math.abs(now - last) <= BFP_AGAIN_MS; localStorage.setItem(BFP_T, String(now)); kept = kept && localStorage.getItem(BFP_T) === String(now) } catch (e) { again = false }
     bfpFrom = document.activeElement; bfpShownHere = true
     bfp = el('div', 'lcobf'); bfp.setAttribute('role', 'dialog'); bfp.setAttribute('aria-modal', 'true'); bfp.setAttribute('aria-labelledby', 'lcobf-h')
     var card = el('div', 'lcobf-card'); card.tabIndex = -1
@@ -1164,7 +1168,7 @@
     var pa = el('a', '', 'Sale terms & privacy'); pa.href = BF.detailsHref; pa.setAttribute('data-track', 'bfpop-terms'); priv.appendChild(pa)
     var slot = el('div', 'lcof-slot'); slot.appendChild(msg); slot.appendChild(priv); form.appendChild(slot)   // an error takes the privacy line's place: nothing moves (owner 2026-11-18)
     body.appendChild(form)
-    if (n >= 2 && kept) {
+    if (again && kept) {
       // the funnel step keeps its wire name popup_never (the ops book's event kinds); it now means "not again today"
       var never = el('button', 'lcobf-never', 'Don’t show again today'); never.type = 'button'; never.setAttribute('data-track', 'bfpop-today')
       never.addEventListener('click', function () { tlcForm('popup_never'); bfpOff(localDay()); bfPopClose() })
