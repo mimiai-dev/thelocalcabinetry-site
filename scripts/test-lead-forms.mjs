@@ -145,7 +145,7 @@ async function main() {
     log(wrap && back, 'focus trap: Tab from the last goes to the first, Shift+Tab back')
     await key('Escape', 'Escape')
     log(!(await popOn()), 'Escape closes it')
-    log((await ev(`JSON.stringify(window.__tlc)`)) === JSON.stringify([['popup_shown', 2, null, null], ['popup_closed', null, 'esc', null]]), 'funnel: shown (display 2), closed by Escape', `(${await ev(`JSON.stringify(window.__tlc)`)})`)
+    log((await ev(`JSON.stringify(window.__tlc)`)) === JSON.stringify([['popup_shown', 3, null, null], ['popup_closed', null, 'esc', null]]), 'funnel: shown (display 3), closed by Escape', `(${await ev(`JSON.stringify(window.__tlc)`)})`)
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(3600)
     await ev(`document.querySelector('.lcobf').dispatchEvent(new MouseEvent('click', { bubbles: true })); true`)
     log(!(await popOn()), 'a click on the backdrop closes it')

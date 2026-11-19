@@ -1146,7 +1146,7 @@
     // opt-out only lasts the day): stored as "YYYY-MM-DD:n"; a new day starts again at 1. An old plain count reads as a past day.
     try { var raw = String(localStorage.getItem(BFP_N) || ''), d = localDay(), m = /^(\d{4}-\d{2}-\d{2}):(\d+)$/.exec(raw); n = (m && m[1] === d ? parseInt(m[2], 10) : 0) + 1; var v = d + ':' + n; localStorage.setItem(BFP_N, v); kept = localStorage.getItem(BFP_N) === v } catch (e) { n = 1; kept = false }
     var again = false
-    try { var now = Date.now(), last = parseInt(localStorage.getItem(BFP_T) || '', 10); again = isFinite(last) && now - last >= 0 && now - last <= BFP_AGAIN_MS; localStorage.setItem(BFP_T, String(now)); kept = kept && localStorage.getItem(BFP_T) === String(now) } catch (e) { again = false }
+    try { var now = Date.now(), last = parseInt(localStorage.getItem(BFP_T) || '', 10); again = isFinite(last) && Math.abs(now - last) <= BFP_AGAIN_MS; localStorage.setItem(BFP_T, String(now)); kept = kept && localStorage.getItem(BFP_T) === String(now) } catch (e) { again = false }
     bfpFrom = document.activeElement; bfpShownHere = true
     bfp = el('div', 'lcobf'); bfp.setAttribute('role', 'dialog'); bfp.setAttribute('aria-modal', 'true'); bfp.setAttribute('aria-labelledby', 'lcobf-h')
     var card = el('div', 'lcobf-card'); card.tabIndex = -1
