@@ -128,9 +128,15 @@ async function main() {
     await sleep(2500)
     log(!(await popOn()), 'closed stays closed on this page')
 
+    // 2b. owner 2026-11-19: a display more than 10 minutes after the last one has just the X (the button is only for a popup that comes back within 10 minutes)
+    await ev(`localStorage.setItem('lco_bfpop26_t', String(Date.parse('${NOV}') - 11 * 60 * 1000)); true`)
+    await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(3600)
+    log((await popOn()) && !(await ev(`!!document.querySelector('.lcobf-never')`)), 'a display 11 minutes after the last: no "Don\'t show again today" button')
+    await ev(`document.querySelector('.lcobf-x').click(); true`)
+
     // 3. the second display: the "Don't show again today" button; focus trap and Escape; the button hides it for the rest of the local day
     await load(PAGE, { now: NOV, rnd: 0 }, true); await sleep(3600)
-    log((await popOn()) && (await ev(`document.querySelector('.lcobf-never')?.textContent`)) === 'Don’t show again today' && String(await ev(`localStorage.getItem('${N}')`)).endsWith(':2'), 'second display: "Don\'t show again today" is there (counted 2)')
+    log((await popOn()) && (await ev(`document.querySelector('.lcobf-never')?.textContent`)) === 'Don’t show again today' && String(await ev(`localStorage.getItem('${N}')`)).endsWith(':3'), 'display within 10 minutes of the last: "Don\'t show again today" is there (counted 3)')
     await ev(`(() => { const f = [...document.querySelectorAll('.lcobf-card button, .lcobf-card a[href], .lcobf-card input')]; f[f.length - 1].focus(); return true })()`)
     await key('Tab', 'Tab')
     const wrap = await ev(`(() => { const f = [...document.querySelectorAll('.lcobf-card button, .lcobf-card a[href], .lcobf-card input')]; return document.activeElement === f[0] })()`)
