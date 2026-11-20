@@ -45,7 +45,11 @@ export function inline(s) {
   return out
 }
 
-// block level: ## / ### headings, paragraphs, - lists, 1. lists, > quotes, --- rules, ![alt](src "caption") figures
+// GitHub-style tables: | a | b | header, |---|:-:| separator, then | rows
+const SEP = /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$/
+const isRow = (l) => /^\s*\|.*\|\s*$/.test(l)
+const cells = (l) => l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim())
+// block level: | tables, ## / ### headings, paragraphs, - lists, 1. lists, > quotes, --- rules, ![alt](src "caption") figures
 export function markdown(body, opts = {}) {
   const lines = body.replace(/\r/g, '').replace(/<!--[\s\S]*?-->/g, '').split('\n')
   const out = []; let i = 0; const heads = []
@@ -61,6 +65,13 @@ export function markdown(body, opts = {}) {
     }
     if (/^#\s/.test(l)) throw new Error('the post body must not contain an h1 (# ): the title is the h1')
     if (/^---+$/.test(l.trim())) { flush(); out.push('<hr>'); i++; continue }
+    if (isRow(l) && i + 1 < lines.length && SEP.test(lines[i + 1].trim())) {
+      flush(); const head = cells(l); const align = cells(lines[i + 1]).map((c) => (/^:-+:$/.test(c) ? 'center' : /-:$/.test(c) ? 'right' : ''))
+      const td = (tag, c, k) => `<${tag}${align[k] ? ` style="text-align:${align[k]}"` : ''}>${inline(c)}</${tag}>`
+      const rows = []; i += 2
+      while (i < lines.length && isRow(lines[i])) { const r = cells(lines[i]); rows.push('<tr>' + head.map((_, k) => td('td', r[k] ?? '', k)).join('') + '</tr>'); i++ }
+      out.push('<div class="nw-table"><table><thead><tr>' + head.map((c, k) => td('th', c, k)).join('') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>'); continue
+    }
     if ((m = /^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)\s*(?:\{(\d+)x(\d+)\})?$/.exec(l.trim()))) {
       flush(); const [, alt, src, cap, w, h] = m
       if (!alt) throw new Error('image without alt text: ' + src)
