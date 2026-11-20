@@ -84,6 +84,7 @@ const NEWS_CSS = `
 .nw-prose a{color:var(--navy);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--gold)}
 .nw-prose figure{margin:28px 0}.nw-prose figure img{display:block;width:100%;height:auto}.nw-prose figcaption{font-size:14px;color:var(--soft);margin-top:8px}
 .nw-prose blockquote{margin:24px 0;padding:6px 0 6px 20px;border-left:3px solid var(--gold);color:var(--soft)}
+.nw-table{overflow-x:auto;margin:24px 0;max-width:100%}.nw-table table{border-collapse:collapse;font-size:16px;line-height:1.45;min-width:100%}.nw-table th,.nw-table td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}.nw-table th{background:var(--panel);color:var(--navy);font-weight:600}
 .nw-prose hr{border:0;border-top:1px solid var(--line);margin:34px 0}
 .nw-toc{border:1px solid var(--line);background:var(--panel);padding:16px 20px;margin:0 0 28px;font-size:15px}.nw-toc b{display:block;margin-bottom:6px}.nw-toc ol{margin:0;padding-left:20px}
 .nw-cta{border:1px solid var(--line);background:var(--panel);padding:24px;margin:36px 0 10px}.nw-cta h2{margin:0 0 8px!important;font-size:24px!important}.nw-cta p{margin:0 0 14px}

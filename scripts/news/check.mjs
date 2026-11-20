@@ -66,5 +66,10 @@ for (const f of files) {
     if (fs.readFileSync(t, 'utf8').includes('/news/' + slug + '/')) fail(f, 'draft appears in ' + p)
   }
 }
+// a raw markdown table in built output means the builder did not render it
+for (const d of fs.existsSync(path.join(ROOT, 'news')) ? fs.readdirSync(path.join(ROOT, 'news'), { recursive: true }) : []) {
+  if (!String(d).endsWith('.html')) continue
+  if (/\|\s*:?-{3,}:?\s*\|/.test(fs.readFileSync(path.join(ROOT, 'news', d), 'utf8'))) errs.push(`news/${d}: raw markdown table (|---|) in the built page`)
+}
 if (errs.length) { console.error('news check FAILED:\n- ' + errs.join('\n- ')); process.exit(1) }
 console.log(`news check OK: ${files.length} post file(s)`)
