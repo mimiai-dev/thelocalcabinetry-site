@@ -16,8 +16,8 @@
     return { flat: row[0] * s, asm: row[1] * s, sea: sea, impTruck: impTruck, imp: sea + impTruck };
   }
   function kg(n) { return n < 10 ? (Math.round(n * 10) / 10).toFixed(1) : n < 100 ? String(Math.round(n)) : Math.round(n / 5) * 5 >= 1000 ? (Math.round(n / 5) * 5).toLocaleString("en-US") : String(Math.round(n / 5) * 5); }
-  function lessPct(a, base) { return Math.round((base - a) / base * 20) * 5; }
-  function morePct(a, base) { return Math.round((a - base) / base * 20) * 5; }
+  function lessPct(a, base) { return Math.round((base - a) / base * 100); }
+  function morePct(a, base) { return Math.round((a - base) / base * 100); }
   function nearest(r) { var m = Math.min(r.flat, r.asm, r.imp); return m === r.flat ? "flat" : m === r.asm ? "asm" : "imp"; }
   var NAMES = { flat: "Flat-pack", asm: "Assembled", imp: "Imported" };
   function lines(r) {
