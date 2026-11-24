@@ -103,6 +103,7 @@ const citationsOf = (body) => { const m = /^##\s+Sources\s*$/im.exec(body); if (
 
 // ---------- shared bits
 const ORG = { '@type': 'Organization', '@id': SITE + '/#organization', name: 'The Local Cabinetry', url: SITE + '/', logo: { '@type': 'ImageObject', url: SITE + '/apple-touch-icon.png', width: 180, height: 180 } }
+const FEED_LINKS = '<link rel="alternate" type="application/rss+xml" title="The Local Cabinetry news" href="/news/rss.xml"><link rel="alternate" type="application/atom+xml" title="The Local Cabinetry news" href="/news/atom.xml">'
 const abs = (u) => (u.startsWith('http') ? u : SITE + (u.startsWith('/') ? u : '/' + u))
 function page({ title, description, canonical, ogType = 'website', ogImage = SITE + '/og-home.jpg', jsonld, main, noindex = false, extraHead = '' }) {
   const fullTitle = title.endsWith('The Local Cabinetry') ? title : `${title} | The Local Cabinetry`
@@ -111,8 +112,7 @@ function page({ title, description, canonical, ogType = 'website', ogImage = SIT
     (noindex ? '<meta name="robots" content="noindex,follow">' : '<meta name="robots" content="index,follow,max-image-preview:large">') +
     `<meta property="og:site_name" content="The Local Cabinetry"><meta property="og:type" content="${ogType}"><meta property="og:title" content="${esc(fullTitle)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(canonical)}"><meta property="og:image" content="${esc(ogImage)}">` +
     `<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(fullTitle)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${esc(ogImage)}">` +
-    `<link rel="alternate" type="application/rss+xml" title="The Local Cabinetry news" href="/news/rss.xml"><link rel="alternate" type="application/atom+xml" title="The Local Cabinetry news" href="/news/atom.xml">` +
-    extraHead + `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': jsonld })}</script>` +
+    FEED_LINKS + extraHead + `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': jsonld })}</script>` +
     keepHead + `<link rel="stylesheet" href="/${cssPath}"></head><body>` + hdr + `<main>${main}</main> ` + footer + tail + `</body></html>`
 }
 const crumbsLd = (items) => ({ '@type': 'BreadcrumbList', itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it[0], item: abs(it[1]) })) })
@@ -201,6 +201,24 @@ mark('index.html', 'news-css', posts.length ? `<link rel="stylesheet" href="/${c
 { let ll = read('llms.txt'); const re = /<!-- news:start -->[\s\S]*?<!-- news:end -->/
   const block = `<!-- news:start -->\n` + (posts.length ? `\n## News\n\n- [News](${SITE}/news/): guides, projects and product news.\n` + posts.slice(0, 10).map((p) => `- [${p.fm.title}](${SITE}/news/${p.slug}/): ${p.fm.description}`).join('\n') + '\n' : '') + `<!-- news:end -->`
   put('llms.txt', re.test(ll) ? ll.replace(re, block) : ll.replace(/\s*$/, '\n') + block + '\n') }
+
+const NOT_SERVED = new Set(['node_modules', 'docs', 'scripts', 'deploy', 'content', 'logo-src', 'catalog/src'])
+const htmlPages = (rel = '') => fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true }).flatMap((e) => {
+  const p = rel ? `${rel}/${e.name}` : e.name
+  if (e.name.startsWith('.') || NOT_SERVED.has(p)) return []
+  return e.isDirectory() ? htmlPages(p) : e.name.endsWith('.html') ? [p] : []
+})
+const FEED_ALT = /<link rel="alternate" type="application\/(rss|atom)\+xml"[^>]*>/g
+for (const p of htmlPages()) {
+  const s = OUT.has(p) ? OUT.get(p) : read(p)
+  if (s.includes(FEED_LINKS) || !s.includes('</head>')) continue
+  OUT.set(p, s.replace(FEED_ALT, '').replace('</head>', FEED_LINKS + '</head>'))
+}
+{
+  const line = `Sitemap: ${SITE}/news/atom.xml`
+  const rb = read('robots.txt')
+  put('robots.txt', rb.split('\n').includes(line) ? rb : rb.replace(/\s*$/, '\n') + line + '\n')
+}
 
 // ---------- write or check
 let bad = 0
