@@ -4,3 +4,4 @@ Disallow: /design/api/
 
 Sitemap: https://thelocalcabinetry.com/sitemap-index.xml
 Sitemap: https://thelocalcabinetry.com/sitemap-news.xml
+Sitemap: https://thelocalcabinetry.com/news/atom.xml
