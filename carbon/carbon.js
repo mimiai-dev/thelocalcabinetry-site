@@ -33,7 +33,22 @@
       ? "For this delivery, flat-pack from Houston has the smallest estimated footprint."
       : "For this delivery, " + NAMES[n].toLowerCase() + " comes out lowest on these assumptions." };
   }
-  var api = { lookup: lookup, at: at, kg: kg, lessPct: lessPct, morePct: morePct, nearest: nearest, lines: lines, TABLE: TABLE };
+  var MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  function totalsView(t) {
+    var d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(t.asof || ""));
+    var co2 = Math.max(0, Math.floor(Number(t.co2_kg) || 0)), pallets = Math.max(0, Math.floor(Number(t.pallets) || 0)), cuft = Math.max(0, Math.floor(Number(t.space_cuft) || 0));
+    var big = co2 >= 10000;
+    return {
+      sets: String(Math.max(0, Math.floor(Number(t.sets) || 0))),
+      co2: big ? (Math.floor(co2 / 100) / 10).toLocaleString("en-US") : co2.toLocaleString("en-US"),
+      "co2-unit": big ? "tonnes CO₂e" : "kg CO₂e",
+      space: pallets >= 1 ? pallets.toLocaleString("en-US") : cuft.toLocaleString("en-US"),
+      "space-unit": pallets >= 1 ? (pallets === 1 ? "pallet" : "pallets") : "cu ft",
+      asof: d ? MONTHS[Number(d[2]) - 1] + " " + Number(d[3]) + ", " + d[1] : ""
+    };
+  }
+  function saved(r) { return kg(Math.max(0, r.asm - r.flat)); }
+  var api = { lookup: lookup, at: at, kg: kg, lessPct: lessPct, morePct: morePct, nearest: nearest, lines: lines, totalsView: totalsView, saved: saved, TABLE: TABLE };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.CarbonCalc = api;
 
   if (typeof document === "undefined") return;
@@ -53,6 +68,8 @@
       $("d-" + k).textContent = L.d[k];
     });
     $("res-line").textContent = L.verdict;
+    $("you-kg").textContent = saved(r);
+    $("you-lbl").textContent = label.indexOf("Example") === 0 ? (String(lf) === "25" ? "A 10×10 kitchen to Atlanta" : "A " + lf + " linear-foot kitchen to Atlanta") : "Your kitchen (" + label + ", " + lf + " linear feet)";
   }
   function update() {
     var lf = Math.max(5, Math.min(80, parseFloat($("lf").value) || T.lf));
