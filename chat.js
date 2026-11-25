@@ -59,7 +59,7 @@
   var CAT_KEY = 'lco_welcome_v1'   // set once the welcome card was shown: it never comes back for this browser (was lco_catalog_pop_v1, the catalog-only popup; owner 2026-10-24 T-261024-23)
   var BF_KEY = 'lco_ann_bf26_v1'   // the Black Friday 2026 bar was closed (its own key, so closing it does not hide the membership bar when that returns)
   var FS_KEY = 'lco_ann_fs26_v1'   // the Free shipping bar was closed (its own key: closing it hides neither the Black Friday nor the membership bar)
-  var ANN_KEY = 'lco_ann_v2'      // the top bar was closed (a new announcement = a new key: v2 = the free-month offer, 2026-10-25, so a visitor who closed v1 still sees it)
+  var ANN_KEY = 'lco_ann_v3'
   var KEY = 'lco_visit_v1'
   var MAX_TEXT = 1200, MAX_PHOTO = 5 * 1024 * 1024
 
@@ -337,7 +337,6 @@
     '.fsbar a{color:#e9c983;font-weight:400;font-size:13px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}.fsbar b{font-weight:600}',
     '.fsbar[hidden]{display:none}',
     'div.bfbar{background:#000;flex-wrap:wrap;row-gap:2px;column-gap:12px}div.bfbar a.bfd{font-weight:400;font-size:13px;color:#fff;opacity:.85}',
-    '.lcooffer{margin:0 0 14px;padding:12px 14px;border-left:3px solid #e9c983;background:#0e2740;color:#fff;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}',
     '.lcocat-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#0e2740;font-size:26px;line-height:1;cursor:pointer}',
     '.lcocat-go:focus-visible,.lcocat-x:focus-visible{outline:3px solid #0e2740;outline-offset:2px}',
     '@media (max-width:620px){.lcocat-card{flex-direction:column}.lcocat-img{flex:0 0 150px}.lcocat-tx{padding:22px 20px 24px}.lcocat-tx h2{font-size:22px}}',
@@ -988,24 +987,7 @@
   }
   // The top announcement bar (owner 2026-10-24, T-261024-23: "both a welcome banner on first visit and a top announcement bar"): on every page until closed (then never again in
   // this browser). Our own words and link only; the recent-sales strip (T-261024-22) joins it only with real orders, after the owner's yes.
-  // 2026-10-25 (owner, T-261025-20): the membership offer. A free first month of the membership (ops lib/membership.ts plan free-month: $0, 1 month, the same 10% as the yearly
-  // plan, goods only, freight never discounted; once per customer who was never a member, nothing charged after it). The link opens the membership form with the claim set
-  // (memberOffer below); the form's product_id carries it to ops, which shows an "Offer:" line on the application.
-  var ANN = { text: 'Get your first month of membership free: 10% off all your orders.', link: 'Claim it', href: '/member/annual/?offer=free-month' }
-  var OFFER_PRODUCT = 'Member application: free first month'
-  // /member/annual/?offer=free-month: the membership form becomes the free-month claim (the hidden product_id, a note above the form, the button's words)
-  function memberOffer() {
-    if (!/^\/member\/annual\/?$/.test(location.pathname)) return
-    var q = ''; try { q = new URLSearchParams(location.search).get('offer') || '' } catch (e) { return }
-    if (q !== 'free-month') return
-    var f = document.querySelector('form.member-form'); if (!f) return
-    var pid = f.querySelector('input[name="product_id"]'); if (!pid) return
-    pid.value = OFFER_PRODUCT
-    var b = f.querySelector('button[type="submit"]'); if (b) b.textContent = 'Claim my free month'
-    var note = el('p', 'lcooffer', 'Your first month of membership is free: 10% off your orders for that month. Nothing is charged. After the month you can join for $240 a year, or stop.')
-    f.parentNode.insertBefore(note, f)
-    setTimeout(function () { try { note.scrollIntoView({ block: 'center' }) } catch (e) { /* ignore */ } }, 300)
-  }
+  var ANN = { text: 'Membership is free to join: 10% off your first order.', link: 'Join free', href: '/member/annual/#apply' }
   // Black Friday 2026 (owner 2026-10-31): "plan your kitchen in advance, get 15-20% off your order". Friday 2026-11-27. The bar takes the top place until 2026-11-27 (the sale is that day only, owner 2026-10-31) (the visitor's
   // calendar day, inclusive); from 2026-12-01 the membership bar comes back. Fixed 10% off (owner 2026-10-31: "make it 10% instead", "fixed"; replaced the 15% / 20% tiers); the bar links the terms on /black-friday/.
   var BF = { until: '2026-11-30', text: 'Black Friday sale, Nov 11–30: 10% off your cabinets.', link: 'Plan my kitchen →', href: '/design', details: 'Details', detailsHref: '/black-friday/' }
@@ -1547,7 +1529,7 @@
     resumeFromLink()
     window.addEventListener('hashchange', resumeFromLink)   // the link pasted into a tab that is already on the site
     greet(); applyMode()
-    annShow(); fsShow(); memberOffer(); catArm(); bandShow(); bfPopArm()
+    annShow(); fsShow(); catArm(); bandShow(); bfPopArm()
 
     btn.addEventListener('click', function () { if (state.open) close(); else open() })
     if (window.__lcoQ) { window.__lcoQ = 0; open() }   // a tap that came before this file was ready

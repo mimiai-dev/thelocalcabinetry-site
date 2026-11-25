@@ -14,7 +14,7 @@ The live site loads Fraunces (headings) and Hanken Grotesk (text) from Google Fo
 ## What is new
 - Brand header (logo-tlc.svg as data URI) and footer, a hero with a decorative member card (inline, NOT a customer's card: the real `loyalty/[ref]/card.svg` is customer-specific and must not appear on a public page), "How points work" in 3 steps, a tier table, FAQ (`<details>`, no script), a membership upsell with the 10% off line linking `/member/`.
 - Tier table and step 3 text come from the program and tier rows at render time (the mock shows `{{placeholders}}` marked "sample"): tier name, how you reach it, points earned. Nothing is hardcoded.
-- Upsell text: "Membership is $20 per month, billed yearly ($240 per year), and members get 10% off all orders, plus free 3D layouts and quotes, priority lead times and a dedicated rep." Link: `/member/`.
+- Upsell text: "Membership is free to join. Members get 10% off their first order and earn points on every order." Link: `/member/`.
 
 ## Deliberately NOT done (ops privacy design; the owner/lead must change it if wanted)
 - No progress bar or "points to the next tier": the current page is static on purpose ("it would let an id holder infer lifetime spend"). A progress bar needs a policy decision.

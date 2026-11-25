@@ -18,8 +18,8 @@ Warm, plain, expert, short.
 | Topic | Approved wording |
 |---|---|
 | Design help | Free 3D layouts and quotes. |
-| Price | The standard price list is the same for everyone. Members get 10% off all orders. |
-| Membership | 20 dollars per month, billed yearly (240 dollars per year), 12-month membership. Members get: 10% off all orders; free 3D layouts and quotes; priority lead times and a dedicated rep; cabinets, vanities, closets and flooring on a single invoice. Page: thelocalcabinetry.com/member/ |
+| Price | The standard price list is the same for everyone. Members get 10% off their first order. |
+| Membership | Free to join. Members get 10% off their first order and earn points on every order. No paid plan is sold. Page: thelocalcabinetry.com/member/ |
 | Shipping | Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location. For custom work we confirm the production time when the order is placed. |
 | Warranty | 1-year limited warranty to the original purchaser, for manufacturing defects in materials and workmanship under normal residential use. Full terms: thelocalcabinetry.com/policies#warranty |
 | Certifications | TSCA Title VI, KCMA and CARB2 certified; NGBS Green. (Not ANSI.) |

@@ -7,7 +7,7 @@ Matches the topics on our News page (thelocalcabinetry.com/news/). Posts below l
 2. **Choose your style** (door styles, finishes, collections): use the finish sheets.
 3. **Know what you are buying** (RTA vs assembled, certifications, what is in the box): plain, honest explanations.
 4. **Design with us** (free 3D layout and quote, what to prepare for a design call): the call to action.
-5. **Membership** (10% off all orders, priority lead times, dedicated rep): one post a week at most.
+5. **Membership** (free to join, 10% off your first order, earn points on every order): one post a week at most.
 
 ## Weeks 1 and 2 (5 posts a week; Monday to Friday)
 | Day | Pillar | Idea | Link |
@@ -16,7 +16,7 @@ Matches the topics on our News page (thelocalcabinetry.com/news/). Posts below l
 | W1 Tue | Measure and plan | "How to measure your kitchen in feet" in 5 steps (carousel) | News: how-to-measure-your-kitchen-in-feet (draft) or /how-to-measure-your-kitchen/ |
 | W1 Wed | Choose your style | Finish sheet of the week: Classic (one image, one sentence) | /door-styles/ |
 | W1 Thu | Know what you buy | RTA vs assembled: what arrives, who builds it, when each makes sense | News: rta-vs-assembled-kitchen-cabinets (draft) |
-| W1 Fri | Membership | What members get: 10% off all orders, free 3D layouts and quotes, priority lead times, dedicated rep, one invoice | /member/ |
+| W1 Fri | Membership | Free to join: 10% off your first order, then earn points on every order | /member/ |
 | W2 Mon | Measure and plan | Walk-in closet planning: depth (commonly 22 to 24 inches, planned with you), hanging zones, lighting | News: walk-in-closet-planning (draft) |
 | W2 Tue | Choose your style | Shaker, slim shaker or double shaker: how to choose (use the finish sheets side by side) | /door-styles/ |
 | W2 Wed | Know what you buy | KCMA, CARB2 and TSCA Title VI: what the labels mean (use only the approved certification line) | /about/ |
