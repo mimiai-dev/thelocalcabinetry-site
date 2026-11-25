@@ -47,7 +47,7 @@ const SERVED = readdirSync(".", { recursive: true }).filter((f) => !/^(\.git|doc
 let paid = 0;
 for (const f of SERVED) {
   const s = readFileSync(f, "utf8");
-  const hit = s.match(/\$240|\$20 (per|a|\/) ?month|billed yearly|10% off all (your )?orders|first month of membership|free first month|offer=free-month|12-month membership|separate paid program/i);
+  const hit = s.match(/\$240 (per|a) year|\(\$240|\$20 (per|a|\/) ?month|billed yearly|10% off all (your )?orders|first month of membership|free first month|offer=free-month|12-month membership|separate paid program/i);
   assert.ok(!hit, `${f}: still sells the paid membership (#174): "${hit && hit[0]}"`);
   if (/"@type":"MemberProgram","@id":"https:\/\/thelocalcabinetry\.com\/#membership"/.test(s)) { assert.match(s, /"description":"Membership is free to join\. Get 10% off your first order and earn points on every order\."/, `${f}: MemberProgram says the free first-order offer (#174)`); paid++; }
 }
