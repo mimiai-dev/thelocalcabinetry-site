@@ -28,7 +28,7 @@ This creates `content/news/<today>-<slug>.md` as a DRAFT with the front matter a
 - At least 2 `##` headings, at least 350 words, at least 2 internal links in the text.
 - Every image needs alt text: `![alt text](/path.jpg "optional caption") {1200x800}` (the size in braces becomes width and height).
 - Facts only from our approved list: the warranty sentence (quote it and link `/policies#warranty`, never paraphrase the legal terms), the lead-time sentence ("Lead time is about 7 days. Shipping within the US then takes 3 to 7 days, depending on your location."; for custom work "For custom work we confirm the production time when the order is placed."), 1/2 inch cabinet-grade plywood box with a UV-coated interior and solid-wood dovetailed drawer boxes on the kitchen lines (do not say that about closets), KCMA, CARB2 and TSCA Title VI certified and NGBS Green, RTA means ready to assemble and we do not assemble.
-- The standard price list is the same for everyone; members get 10% off all orders (say nothing more about member discounts, and nothing about trade or distributor prices). No prices at all unless they come from our saved price list.
+- The standard price list is the same for everyone; members get 10% off their first order (say nothing more about member discounts, and nothing about trade or distributor prices). No prices at all unless they come from our saved price list.
 - No images or text from a supplier catalog. Our own photos only.
 
 ## 4. Build and check
