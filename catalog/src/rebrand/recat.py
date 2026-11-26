@@ -5,7 +5,7 @@ ET.register_namespace('',SVG); ET.register_namespace('xlink',XL); ET.register_na
 q=lambda t:'{%s}%s'%(SVG,t)
 NAVY='#0e2740'; NAVY2='#0a1d31'; INK='#14273f'; GOLD='#b4862f'; GOLDD='#8a6420'; CREAM='#f3f0ea'
 MERGE=True
-ALIBABA='--alibaba' in sys.argv   # Alibaba/OneTalk variant (2026-10-21): page 20 without email, phone and street address
+ALIBABA='--alibaba' in sys.argv
 import re as _re
 _DICT=set(w.strip().lower() for w in open('/usr/share/dict/words',errors='ignore'))|{'thelocalcabinetry','kcma','tsca','carb','ngbs','rta','pet','mdf','uv'}
 def rejoin(t):
@@ -169,6 +169,9 @@ def process(p,logo_b64):
                 if (ts.text==txt if exact else txt in (ts.text or '')) and (y is None or abs(float(ts.get('y'))-y)<2): out.append((tx,ts))
         return out
     def logchg(old,new,why): LOG.append((p,old,new,why))
+    def drop(el):
+        for par in root.iter():
+            if el in list(par): par.remove(el); return
     if p==19:
         for tx in list(texts()):
             if any((ts.text or '').strip()=='life.' for ts in ts_of(tx)):
@@ -201,7 +204,11 @@ def process(p,logo_b64):
     if p==1:
         logchg('COTOWINS CABINETRY logo (red wordmark)','The Local Cabinetry wordmark (TLC logo)','brand')
         lg=ET.SubElement(root,q('image')); lg.set('x','441'); lg.set('y','52'); lg.set('width','190'); lg.set('height','58.4'); lg.set('{%s}href'%XL,'data:image/svg+xml;base64,'+logo_b64)
-        for tx,ts in find('https://towins.en.alibaba.com'): replace_text(ts,'thelocalcabinetry.com',tx=tx); logchg('https://towins.en.alibaba.com','thelocalcabinetry.com','brand')
+        if ALIBABA:
+            for tx,ts in find('https://towins.en.alibaba.com'): drop(tx); logchg('https://towins.en.alibaba.com','(removed)','website: off-platform contact on Alibaba')
+            for e in [e for e in root.iter(q('path')) if e.get('d')=='M109.249 761.187H248.742V761.787H109.249Z']: drop(e); logchg('rule over the website line','(removed)','nothing under it')
+        else:
+            for tx,ts in find('https://towins.en.alibaba.com'): replace_text(ts,'thelocalcabinetry.com',tx=tx); logchg('https://towins.en.alibaba.com','thelocalcabinetry.com','brand')
     if p==2:
         for tx,ts in find('Cotowins',209): replace_text(ts,'The Local',tx=tx); logchg('Cotowins','The Local','brand name (heading "The Local Cabinetry")')
         for tx,ts in find('Cotowins',645): replace_text(ts,'The Local Cabinetry',tx=tx); logchg('Cotowins','The Local Cabinetry','brand name')
@@ -213,7 +220,12 @@ def process(p,logo_b64):
             if xs and abs(float(xs[0])-549)<2: ts.text=''
     if p==3:
         for tx,ts in find('Cotowins',278): replace_text(ts,'The Local',tx=tx); logchg('Cotowins Cabinetry','The Local Cabinetry','brand name')
-    if p==20:
+    if p==20 and ALIBABA:
+        for tx,ts in find('https://towins.en.alibaba.com')+find('Visit Our Website'): drop(tx); logchg(ts.text,'(removed)','website: off-platform contact on Alibaba')
+        for e in [e for e in root.iter(q('g')) if e.get('transform')=='matrix(.72,0,0,.74482759,406.8,360.84)']: drop(e)
+        logchg('website icon','(removed)','its line is removed')
+        for e in [e for e in root.iter(q('path')) if e.get('d')=='M340.304 331.02H596.90798V331.62H340.304Z']: drop(e); logchg('rule between See Our Products and the website','(removed)','nothing under it')
+    elif p==20:
         for tx,ts in find('https://towins.en.alibaba.com'): replace_text(ts,'thelocalcabinetry.com',tx=tx); logchg('https://towins.en.alibaba.com','thelocalcabinetry.com','brand')
     if p==20 and not ALIBABA:   # Alibaba variant: no email, phone or street address (off-platform contact on OneTalk)
         ne=ET.SubElement(root,q('text')); ne.set('font-family','Hanken Grotesk'); ne.set('font-size','12'); ne.set('fill',INK); ne.set('font-weight','400')

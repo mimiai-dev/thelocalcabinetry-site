@@ -61,3 +61,15 @@ Kept as in the source, not verified by us (owner decision): wholesaler, Houston,
 | 20 | Houston, TX 77020 | (removed) | street address (second line) |
 
 Kept: "Visit Our Website" and thelocalcabinetry.com on page 20 (the brand URL, also on the cover, page 1). Pages 1 to 19 render pixel-identical to the full catalog; the pdftotext diff is the 4 lines above; 20 pages, same images and embedded fonts.
+
+## Alibaba / OneTalk variant v2 (2026-11-26): no website
+
+`catalog/The-Local-Cabinetry-Catalog-Alibaba-v2.pdf` replaces `The-Local-Cabinetry-Catalog-Alibaba.pdf` as the catalog for Alibaba OneTalk (local-cabinets-ops #4933). Our website is an off-platform contact on Alibaba too, so `recat.py --alibaba` now drops it with the email, phone and street address. The old file stays at its URL so the copy already stored in Ops can still be checked against it; it is no longer sent on Alibaba.
+
+| Page | Alibaba variant v1 | Alibaba variant v2 | Why |
+|---|---|---|---|
+| 1 | thelocalcabinetry.com and the short rule above it | (removed) | website: off-platform contact |
+| 20 | Visit Our Website / thelocalcabinetry.com and its globe icon | (removed) | website: off-platform contact |
+| 20 | rule between See Our Products and the website | (removed) | nothing under it |
+
+Kept: "See Our Products", the logo wordmark and "The Local Cabinetry" in the text (brand name, not a contact), and "Houston" in the page 2 and 3 copy (city only, no street address). No page has a QR code, link annotation, email, phone or URL: pdftotext finds no `.com`, `www`, `@` or `http`, and the PDF has no links. Pages 2 to 19 render pixel-identical to a rebuild of v1 from the same source; that rebuild matches the published v1 to within anti-aliasing (no pixel off by more than 24 of 255 at 100 dpi).
