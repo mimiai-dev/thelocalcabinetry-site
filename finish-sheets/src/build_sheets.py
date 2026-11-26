@@ -31,23 +31,25 @@ CSS='''@font-face{font-family:"Figtree";src:url("catalog/src/fonts/Figtree-VF.tt
 .sec{padding:0 72px}.sec h2{margin:34px 0 12px;font-size:30px;color:#0e2740;border-bottom:2px solid #0e2740;padding-bottom:6px}.sec h2 span{font-size:20px;font-weight:400;color:#51606f;margin-left:12px}
 .row{display:grid;grid-template-columns:repeat(8,1fr);gap:18px 14px}.mini{font-size:17px;line-height:1.15}.mini b{display:block;font-size:20px;color:#0e2740;margin-top:6px}
 '''
-def foot(): return '<div class="ft"><span>Colors are shown as close as a screen allows. Ask us for a door sample before you decide.</span><span>thelocalcabinetry.com &middot; info@thelocalcabinetry.com</span></div>'
+import sys
+ALIBABA='--alibaba' in sys.argv[1:]
+SUFFIX='-alibaba' if ALIBABA else ''
+def foot(): return '<div class="ft"><span>Colors are shown as close as a screen allows. Ask us for a door sample before you decide.</span>'+('' if ALIBABA else '<span>thelocalcabinetry.com &middot; info@thelocalcabinetry.com</span>')+'</div>'
 def render(name,body,h):
     open(f'fs/{name}.html','w').write(f'<!doctype html><meta charset="utf-8"><base href="file://{os.getcwd()}/"><style>{CSS}</style><body>{body}</body>')
     subprocess.run(['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome','--headless=new','--disable-gpu','--hide-scrollbars',f'--window-size=1600,{h}',f'--screenshot=fs/{name}.png',f'file://{os.getcwd()}/fs/{name}.html'],capture_output=True)
-import sys
-ONLY=len(sys.argv)>1
+ONLY=len([a for a in sys.argv[1:] if a!='--alibaba'])>0
 for key,title,sub,items,kind in (LINES if not ONLY else []):
     n=len(items); cols=min(n,4) if n!=5 else 5; 
     cw=(1600-144-36*(cols-1))/cols; w=int(min(cw,330)); h=int(w*1.43)
     tiles=''.join(f'<div class="tile">{door(c,kind,w,h)}<div class="l"><b>{E(c)}</b>{E(nm)}</div></div>' for c,nm in items)
     rows=(n+cols-1)//cols; H=190+56+rows*(h+110)+44+120
     body=f'<div class="hd"><img src="logo-tlc.svg" alt="The Local Cabinetry"><div class="t"><h1>{E(title)} collection</h1><p>{E(sub)}</p></div></div><div class="grid" style="grid-template-columns:repeat({cols},{w}px);justify-content:start">{tiles}</div>{foot()}'
-    render('finish-sheet-'+key,body,H)
+    render('finish-sheet-'+key+SUFFIX,body,H)
 # overview
 secs=''
 for key,title,sub,items,kind in LINES:
     minis=''.join(f'<div class="mini">{door(c,kind,150,215)}<b>{E(c)}</b>{E(nm)}</div>' for c,nm in items)
     secs+=f'<div class="sec"><h2>{E(title)}<span>{E(sub)}</span></h2><div class="row">{minis}</div></div>'
-render('finish-sheet-all',f'<div class="hd"><img src="logo-tlc.svg" alt="The Local Cabinetry"><div class="t"><h1>All finishes</h1><p>Every collection and finish with its code</p></div></div>{secs}{foot()}',2960)
+render('finish-sheet-all'+SUFFIX,f'<div class="hd"><img src="logo-tlc.svg" alt="The Local Cabinetry"><div class="t"><h1>All finishes</h1><p>Every collection and finish with its code</p></div></div>{secs}{foot()}',2960)
 print('done')
