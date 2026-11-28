@@ -331,12 +331,12 @@
     '.lcoann a{color:#e9c983;font-weight:600;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}',
     '.lcoann-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;background:none;color:#fff;font-size:22px;line-height:1;cursor:pointer}.lcoann-x:hover{background:rgba(255,255,255,.12)}',
     '.lcoann[hidden]{display:none}',
-    // the Black Friday bar (owner 2026-10-31): black, white text, gold link, wraps on phones
+    // the Black Friday bar (owner 2026-10-31; last chance in red, owner 2026-11-28 #181): red, white text, white underlined links, wraps on phones
     // the Free shipping bar (owner 2026-11-07): one slim line under the Black Friday / membership bar; its own class, so the announcement-bar tests and the first-bar rule stay as they are
     '.fsbar{position:relative;z-index:2147483000;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px 12px;padding:5px 48px 5px 16px;background:#0e2740;color:#fff;font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center}',
     '.fsbar a{color:#e9c983;font-weight:400;font-size:13px;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}.fsbar b{font-weight:600}',
     '.fsbar[hidden]{display:none}',
-    'div.bfbar{background:#000;flex-wrap:wrap;row-gap:2px;column-gap:12px}div.bfbar a.bfd{font-weight:400;font-size:13px;color:#fff;opacity:.85}',
+    'div.bfbar{background:#b3121b;flex-wrap:wrap;row-gap:2px;column-gap:12px}div.bfbar b{font-weight:700}div.bfbar a{color:#fff}div.bfbar a.bfd{font-weight:400;font-size:13px;color:#fff}',
     '.lcooffer{margin:0 0 14px;padding:12px 14px;border-left:3px solid #e9c983;background:#0e2740;color:#fff;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}',
     '.lcocat-x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.9);color:#0e2740;font-size:26px;line-height:1;cursor:pointer}',
     '.lcocat-go:focus-visible,.lcocat-x:focus-visible{outline:3px solid #0e2740;outline-offset:2px}',
@@ -365,7 +365,7 @@
     '.lcobf {animation:lcobf-fade .7s ease both}.lcobf-card {animation:lcobf-rise .9s cubic-bezier(.2,.7,.2,1) .1s both}',
     '@keyframes lcobf-fade{from{opacity:0}to{opacity:1}}@keyframes lcobf-rise{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}',
     '@media (prefers-reduced-motion:reduce){.lcobf,.lcobf-card {animation:none}}',
-    '.lcobf-eye {margin:0 0 6px;color:var(--gold-lt,#cfa44e);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}',
+    '.lcobf-eye {margin:0 0 6px;color:#ff6b6b;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}',
     '.lcobf-top h2{margin:0;font:500 30px/1.1 var(--serif,"Fraunces",Georgia,"Times New Roman",serif);color:#fff}',
     '.lcobf-body {padding:18px 24px 22px}',
     '.lcobf-body>p{margin:0 0 14px;color:var(--soft,#51606f)}',
@@ -1008,8 +1008,13 @@
   }
   // Black Friday 2026 (owner 2026-10-31): "plan your kitchen in advance, get 15-20% off your order". Friday 2026-11-27. The bar takes the top place until 2026-11-27 (the sale is that day only, owner 2026-10-31) (the visitor's
   // calendar day, inclusive); from 2026-12-01 the membership bar comes back. Fixed 10% off (owner 2026-10-31: "make it 10% instead", "fixed"; replaced the 15% / 20% tiers); the bar links the terms on /black-friday/.
-  var BF = { until: '2026-11-30', text: 'Black Friday sale, Nov 11–30: 10% off your cabinets.', link: 'Plan my kitchen →', href: '/design', details: 'Details', detailsHref: '/black-friday/' }
-  function bfActive() { return localDay() <= BF.until }
+  // Last chance (owner 2026-11-28, #181): the bar in red, "ends <day>" from BF.until (the BF2026 promotions row's last day, America/Chicago), and the bar and the popup
+  // end at the same instant, the end of that day in US Central, for every visitor.
+  var BF = { until: '2026-11-30', lead: 'Last chance:', link: 'Plan my kitchen →', href: '/design', details: 'Details', detailsHref: '/black-friday/' }
+  BF.ends = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+BF.until.slice(5, 7) - 1] + ' ' + (+BF.until.slice(8, 10))
+  BF.text = 'Black Friday 10% off your cabinets ends ' + BF.ends + '.'
+  var BF_END = Date.parse(BF.until + 'T23:59:59.999-06:00')
+  function bfActive() { return Date.now() <= BF_END }
   function annShow() {
     var bf = bfActive(), key = bf ? BF_KEY : ANN_KEY
     // the Black Friday bar shows on every new visit (owner 2026-11-14: "show more frequently"): closing it hides it for this visit only
@@ -1018,7 +1023,9 @@
     try { if (!store || store.getItem(key)) return } catch (e) { return }
     if (document.querySelector('.lcoann')) return
     var bar = el('div', 'lcoann' + (bf ? ' bfbar' : '')); bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Announcement')
-    bar.appendChild(el('span', '', bf ? BF.text : ANN.text))
+    var said = el('span', '', bf ? '' : ANN.text)
+    if (bf) { said.appendChild(el('b', '', BF.lead)); said.appendChild(document.createTextNode(' ' + BF.text)) }
+    bar.appendChild(said)
     var a = el('a', '', bf ? BF.link : ANN.link); a.href = bf ? BF.href : ANN.href; a.setAttribute('data-track', bf ? 'announce-bf' : 'announce-member')
     bar.appendChild(a)
     if (bf) { var dt = el('a', 'bfd', BF.details); dt.href = BF.detailsHref; dt.setAttribute('data-track', 'announce-bf-details'); bar.appendChild(dt) }
@@ -1119,7 +1126,7 @@
   // Storage blocked = it shows (as a first display, without the button it could not keep): it never hides by error. Never over the open chat panel or the welcome card.
   // Never after the end of BF.until (Nov 30) in US Central (CST, UTC-6 after Nov 1): one instant for every visitor, unlike the bar's local calendar day.
   // The words are the bar's facts (Nov 11–30, 10% off your cabinets); the terms (freight and tax excluded, one discount at a time) stay on /black-friday/, linked.
-  var BF_POP_END = Date.parse(BF.until + 'T23:59:59.999-06:00')
+  var BF_POP_END = BF_END
   var POP_ID = 'bfpop26'   // the campaign id: a new sale's popup = a new id = new keys (displays counted afresh, no old opt-out applies)
   var BFP_N = 'lco_' + POP_ID + '_n', BFP_OFF = 'lco_' + POP_ID + '_off'   // displays so far | the local day of "Don't show again today" (YYYY-MM-DD) or 'sent'
   // owner 2026-11-19: the button shows only when the popup comes back within 10 minutes of the last display (a visitor who keeps seeing it gets the way out); a later or first display has just the X
@@ -1151,7 +1158,7 @@
     bfp = el('div', 'lcobf'); bfp.setAttribute('role', 'dialog'); bfp.setAttribute('aria-modal', 'true'); bfp.setAttribute('aria-labelledby', 'lcobf-h')
     var card = el('div', 'lcobf-card'); card.tabIndex = -1
     var top = el('div', 'lcobf-top')
-    top.appendChild(el('p', 'lcobf-eye', 'Black Friday sale · Nov 11–30'))
+    top.appendChild(el('p', 'lcobf-eye', 'Last chance · Black Friday ends ' + BF.ends))
     var h = el('h2', '', '10% off your cabinets'); h.id = 'lcobf-h'; top.appendChild(h)
     var x = el('button', 'lcobf-x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close')
     var body = el('div', 'lcobf-body')

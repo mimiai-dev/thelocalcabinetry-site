@@ -300,16 +300,15 @@ async function main() {
     log(!!claim && claim.pid === 'Member application: free first month' && claim.btn === 'Claim my free month' && claim.note && claim.bar && !claim.wide, '390', 'the claim page: offer on the form, note, button; bar fits the phone', `(${JSON.stringify(claim)})`)
     await send('Page.navigate', { url: base + '/member/annual/' }); await sleep(1500)
     log((await ev(`document.querySelector('form.member-form input[name=product_id]').value`)) === 'Member application' && !(await ev(`!!document.querySelector('.lcooffer')`)), '390', 'the plain membership form claims nothing')
-    // 7. the Black Friday bar (owner 2026-10-31), on the real clock, only while it is in force (until 2026-11-30)
+    // 7. the Black Friday bar (owner 2026-10-31), on the real clock, only while it is in force (until the end of 2026-11-30 US Central, the popup's instant, #181)
     await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: decStub.identifier })
-    const today = new Date(), ymd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-    if (ymd <= '2026-11-30') {
+    if (Date.now() <= Date.parse('2026-11-30T23:59:59.999-06:00')) {
       await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true })
       await send('Page.navigate', { url: base + PAGE }); await sleep(1000)
       await ev(`localStorage.removeItem('lco_ann_bf26_v1'); sessionStorage.removeItem('lco_ann_bf26_v1'); true`)
       await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
       const bf = await ev(`(() => { const b = document.querySelector('.lcoann'); if (!b || b.hidden) return null; const [go, det] = b.querySelectorAll('a'); return { t: b.textContent, bg: getComputedStyle(b).backgroundColor, go: go.getAttribute('href'), det: det && det.getAttribute('href'), wide: document.documentElement.scrollWidth > innerWidth, first: document.body.firstElementChild === b } })()`)
-      log(!!bf && /Black Friday/.test(bf.t) && /10% off your cabinets/.test(bf.t) && bf.bg === 'rgb(0, 0, 0)' && bf.go === '/design' && bf.det === '/black-friday/' && bf.first && !bf.wide, '390', 'the Black Friday bar: black, a fixed 10% (fbfba5e, #125, owner 2026-10-31), Plan my kitchen -> /design, Details -> /black-friday/, no side scroll', `(${JSON.stringify(bf)})`)
+      log(!!bf && /^Last chance: Black Friday 10% off your cabinets ends Nov 30\./.test(bf.t) && bf.bg === 'rgb(179, 18, 27)' && bf.go === '/design' && bf.det === '/black-friday/' && bf.first && !bf.wide, '390', 'the Black Friday bar: last chance in red, ends Nov 30 (#181), a fixed 10% (fbfba5e, #125, owner 2026-10-31), Plan my kitchen -> /design, Details -> /black-friday/, no side scroll', `(${JSON.stringify(bf)})`)
       await ev(`document.querySelector('.lcoann-x').click(); true`)
       await send('Page.navigate', { url: base + PAGE }); await sleep(2000)
       log(!(await ev(bar)), '390', 'closed Black Friday bar stays closed for this visit (its own key)')
